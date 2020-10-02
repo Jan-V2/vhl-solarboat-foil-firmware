@@ -1,0 +1,37 @@
+design:
+  the idea is that the system concists of 2 controllers.
+  one of the controllers is dedicated to running the motors,
+  and the other controller runs the interface.
+  they communicate over rs485 since it's quite resilliant to noise.
+  optionally it is possible talk to the motor controller directly vio usb serial.
+  this is used for testing and debugging.
+  on top of that the motor module transmits data about it's state ovet the can
+  bus, so it can be logged by the telemetry system.
+
+todos:
+  motor controller:
+    command parser:
+      ☐ write system for parsing commands recived over the serial
+          it should scan the serial buffer, and if a command is recieved it
+          should send an ACK in return. when the command has been carried
+          out successfully
+      ☐ HOME command
+          this command runs the motor into the endstop in order to home the machine.
+          first at full speed and then slower (like a 3d printer), in order to
+          improve repeatablity.
+    detect motor states:
+      ☐ detect stall
+          endstop is when the motor is recieve full pwm, but the encoder is not
+          moving, AND the motor is drawing a high current.
+      ☐ detect endstop
+          endstop is when the motor is recieve full pwm, but the encoder is not
+          moving, AND the motor isn't drawing any current.
+      ☐ detect speed in pulses per second
+          create a timer that calculates a moveing average of at how many pulses
+          per second the actuator moves, and put this in the global scope.
+
+  polulu lib rewrite:
+    ☐ cleanup code
+    ☐ make pwm frequency changeable
+    ☐ improve example code
+    ☐ publish improved version
