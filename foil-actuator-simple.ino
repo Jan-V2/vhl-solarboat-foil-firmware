@@ -5,7 +5,6 @@
 #define ENC_PIN_2 13
 
 #define us_in_second 1000000
-#define systick_per_sec 1000
 
 // PWM + means backwards, and - means forwards
 
@@ -20,21 +19,19 @@ static volatile int encoder_pulses_prev = encoder_pulses;
 static volatile u32 systick_count = 0;
 static volatile float speed_pulses_per_sec = 0.0;
 
-int pwm_min
-
-int delay_time = 100;
-
-
-
-float p_term = 2;
-float i_term = 0.0;
+int delay_time = 1;
+float p_term = 1;
+float i_term = 0.0001;
 float d_term = 0.02;
 
+int setpoint = 4000;
+
+int pwm_min = 30;
+float out_min = -370, out_max = 370;
+
 float i_term_result = 0;
-
-float out_min = -300, out_max = 300;
-
-int setpoint = 2000;
+float output = 0;
+float pwm = 0;
 
 //TIM_TypeDef *tim_enc = TIM2;
 //TIM_TypeDef *tim_speed = TIM2;
@@ -49,9 +46,9 @@ static struct {
 
 void encoder_ISR(){
     if (digitalRead(ENC_PIN_2)){
-        encoder_pulses--;
-    }else{
         encoder_pulses++;
+    }else{
+        encoder_pulses--;
     }
 }
 
@@ -74,27 +71,31 @@ void calc_speed() {
 void compute_pid()
 {
     float error = (float)(setpoint - encoder_pulses);
+    if (error > -2 && error < 2){
+        motor_shield.setM1Speed(0);
+        return;
+    }
     i_term_result += i_term * error * (float)delay_time;
     if (i_term_result > out_max) 
         i_term_result = out_max;       // that the I term from PID gets too big
     else if (i_term_result < out_min) 
         i_term_result = out_min;
         
-    int speed = (encoder_pulses - lastInput) / delay_time; 
-    output = p_term * error + i_term_result - d_term * speed;// PID output is the sum of P I and D values
+    int speed = (encoder_pulses - encoder_pulses_prev) / delay_time; 
+    output = p_term * error + i_term_result - d_term * (float)speed;// PID output is the sum of P I and D values
     
     encoder_pulses_prev = encoder_pulses;
-    
+
     if (output > 0){
         if (output > out_max) 
-            output = out_max;     
-        motor_shield.setM1Speed((int)output + pwm_min);
-
+            output = out_max;  
+        pwm = (int)output + pwm_min;
     }else{
         if (output < out_min)
             output = out_min;          
-        motor_shield.setM1Speed((int)output - pwm_min);
+        pwm = (int)output - pwm_min;
     }
+    motor_shield.setM1Speed(pwm);
     
 }
 
@@ -109,8 +110,21 @@ void setup() {
     motor_shield.init();
 }
 
+int print_max = 10;
+int print = 0;
+
 void loop() {
     delay(delay_time);
     compute_pid();
+    
+    if (print == print_max){
+        Serial.print(pwm);
+        Serial.print(' ');
+        Serial.println(encoder_pulses - setpoint);
+        print = 0;
+    }else{
+        print++;
+    }
+    
     
 }
