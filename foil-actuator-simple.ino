@@ -21,17 +21,19 @@ static volatile float speed_pulses_per_sec = 0.0;
 
 int delay_time = 1;
 float p_term = 1;
-float i_term = 0.0001;
-float d_term = 0.02;
+float i_term = 0.0000;
+float d_term = 0.000005;
 
-int setpoint = 4000;
+int setpoint = -1000;
 
-int pwm_min = 30;
+int pwm_min = 40;
 float out_min = -370, out_max = 370;
 
 float i_term_result = 0;
 float output = 0;
 float pwm = 0;
+
+ulong microsLast;
 
 //TIM_TypeDef *tim_enc = TIM2;
 //TIM_TypeDef *tim_speed = TIM2;
@@ -73,15 +75,19 @@ void compute_pid()
     float error = (float)(setpoint - encoder_pulses);
     if (error > -2 && error < 2){
         motor_shield.setM1Speed(0);
+        pwm = 0;
         return;
     }
-    i_term_result += i_term * error * (float)delay_time;
+    
+    ulong cycle_time = micros() - microsLast;
+    
+    i_term_result += i_term * error * (float) cycle_time;
     if (i_term_result > out_max) 
         i_term_result = out_max;       // that the I term from PID gets too big
     else if (i_term_result < out_min) 
         i_term_result = out_min;
         
-    int speed = (encoder_pulses - encoder_pulses_prev) / delay_time; 
+    int speed = (encoder_pulses - encoder_pulses_prev) / cycle_time; 
     output = p_term * error + i_term_result - d_term * (float)speed;// PID output is the sum of P I and D values
     
     encoder_pulses_prev = encoder_pulses;
@@ -96,6 +102,8 @@ void compute_pid()
         pwm = (int)output - pwm_min;
     }
     motor_shield.setM1Speed(pwm);
+    
+    microsLast = micros();
     
 }
 
@@ -125,6 +133,4 @@ void loop() {
     }else{
         print++;
     }
-    
-    
 }

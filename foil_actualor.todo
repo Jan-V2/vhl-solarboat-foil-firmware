@@ -15,10 +15,17 @@ todos:
           it should scan the serial buffer, and if a command is recieved it
           should send an ACK in return. when the command has been carried
           out successfully
-      ☐ HOME command
+      ☐ HOME
           this command runs the motor into the endstop in order to home the machine.
           first at full speed and then slower (like a 3d printer), in order to
           improve repeatablity.
+      ☐ MOVE
+          moves actuator to location in pulses
+      ☐ GRAPH
+          this command starts a graph, the data is spit out over the serial.
+          if the motor reaches the target point, an END command is send out over
+          the serial to signal that the motor has stopped.
+      ☐
     detect motor states:
       ☐ detect stall
           endstop is when the motor is recieve full pwm, but the encoder is not
