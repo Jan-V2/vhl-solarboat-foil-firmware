@@ -4,10 +4,3 @@
 
 // PWM + means backwards, and - means forwards
 
-void home_motor(DualVNH5019MotorShield motor_shield, bool motor_1 = true){
-    if (motor_1){
-        
-    }else{
-        
-    }
-}
