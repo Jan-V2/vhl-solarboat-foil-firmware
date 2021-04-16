@@ -1,8 +1,11 @@
 #include "DualVNH5019MotorShield.h"
 #include "types.h"
 
-#define ENC_PIN_1 11
-#define ENC_PIN_2 13
+#define ENC_PIN_1 PB2
+#define ENC_PIN_2 PB1
+#define ENC2_PIN_1 PB15
+#define ENC2_PIN_2 PB14
+
 
 #define us_in_second 1000000
 
@@ -14,6 +17,7 @@
 DualVNH5019MotorShield motor_shield;
 
 volatile int encoder_pulses = 0;
+volatile int encoder2_pulses = 0;
 static volatile int encoder_pulses_prev = encoder_pulses;
 
 // todo refactor this so that the motor control code is in it's own file (class maybe?)
@@ -63,6 +67,15 @@ void encoder_ISR() {
     }
 }
 
+void encoder2_ISR() {
+    if (digitalRead(ENC2_PIN_2)) {
+        encoder2_pulses++;
+    } else {
+        encoder2_pulses--;
+    }
+}
+
+
 void compute_pid() {
     float error = (float)(motor.setpoint - encoder_pulses);
     if (error > -2 && error < 2) {
@@ -98,6 +111,7 @@ void compute_pid() {
         motor.pwm = (int)motor.output - motor.pwm_min;
     }
     motor_shield.setM1Speed(motor.pwm);
+    motor_shield.setM2Speed(motor.pwm);
     microsLast = micros();
 }
 
@@ -121,6 +135,7 @@ void home_actuator() {
     Serial.println("homing");
 #endif
     motor_shield.setM1Speed(motor.home_pwm_high);
+    motor_shield.setM2Speed(motor.home_pwm_high);
     int motor_current = 0;
     //encoder_pulses_prev = encoder_pulses;
     delay(100);
@@ -152,6 +167,7 @@ void home_actuator() {
     encoder_pulses = 0;
     motor.setpoint = 0;
     motor_shield.setM1Speed(0);
+    motor_shield.setM2Speed(0);
 #ifdef HOME_DEBUG
     Serial.println("homed");
 #endif    
@@ -205,9 +221,9 @@ void process_serial_cmd() {
 
 void setup() {
     Serial.begin(115200);
-
     // configure interrupts and timers
     attachInterrupt(digitalPinToInterrupt(ENC_PIN_1), encoder_ISR, FALLING);
+    attachInterrupt(digitalPinToInterrupt(ENC2_PIN_1), encoder2_ISR, FALLING);
     motor_shield.init();
     Serial.println("ready");
 }
@@ -215,6 +231,11 @@ void setup() {
 void loop() {
     delay(delay_time);
     process_serial_cmd();
+#ifdef PRINT_PULSE
+    Serial.print(encoder_pulses);
+    Serial.print(" ");
+    Serial.println(encoder2_pulses);
+#endif
 
     compute_pid();
     if (drawing_graph){
