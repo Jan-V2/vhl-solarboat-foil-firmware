@@ -6,7 +6,8 @@
 #define ENC2_PIN_1 PB15
 #define ENC2_PIN_2 PB14
 
-
+//#define PRINT_PULSE
+#define HOME_DEBUG
 #define us_in_second 1000000
 
 // PWM + means backwards, and - means forwards
@@ -16,29 +17,47 @@
 
 DualVNH5019MotorShield motor_shield;
 
-volatile int encoder_pulses = 0;
+volatile int encoder1_pulses = 0;
 volatile int encoder2_pulses = 0;
-static volatile int encoder_pulses_prev = encoder_pulses;
+static volatile int encoder1_pulses_prev = encoder1_pulses;
+static volatile int encoder2_pulses_prev = encoder2_pulses;
 
-// todo refactor this so that the motor control code is in it's own file (class maybe?)
+int m2_current_offset = 408;
+
+// todo refactor this so that the motor_0 control code is in it's own file (class maybe?)
 // todo move cmd done acknowledge
 
 int delay_time = 100;
-ulong microsLast;
+ulong microsLast_0;
+ulong microsLast_1;
 
 String read_buffer = "";
 String cmd = "";
 const int bufferSize = 200;
 const char cmd_sep = '|';
+int error_max = 4;
 
 bool drawing_graph = false;
+
+bool has_homed = false;
+bool homed_recently = false;
+int home_pos = -100;
+float offset_max = 150; // 250 is about 1.5 cm either way
+float pulses_max = 19000; 
+float analog_max = 1024;
+int pos_min_change = 200;
+int off_min_change = 20;
+int offset_pin = A4;
+int pos_pin = A2;
+
 
 static struct {
     float p_term = 2;
     float i_term = 0.0000;
     float d_term = 0.000005;
 
-    int setpoint = encoder_pulses;// todo make this encoder data?
+    int setpoint = encoder1_pulses;// todo make this encoder data?
+    int offset = 0;
 
     int pwm_min = 40;
     float out_min = -360, out_max = 360;
@@ -49,7 +68,26 @@ static struct {
     
     int home_pwm_high = 400;
     int home_pwm_low = 70;
-} motor;
+} motor_0;
+
+static struct {
+    float p_term = 2;
+    float i_term = 0.0000;
+    float d_term = 0.000005;
+
+    int setpoint = encoder2_pulses;// todo make this encoder data?
+    int offset = 0;
+
+    int pwm_min = 40;
+    float out_min = -360, out_max = 360;
+ 
+    float i_term_result = 0;
+    float output = 0;
+    float pwm = 0;
+    
+    int home_pwm_high = 400;
+    int home_pwm_low = 70;
+} motor_1;
 
 static struct {
     int len = 5;
@@ -61,9 +99,9 @@ static struct {
 
 void encoder_ISR() {
     if (digitalRead(ENC_PIN_2)) {
-        encoder_pulses++;
+        encoder1_pulses++;
     } else {
-        encoder_pulses--;
+        encoder1_pulses--;
     }
 }
 
@@ -75,12 +113,11 @@ void encoder2_ISR() {
     }
 }
 
-
-void compute_pid() {
-    float error = (float)(motor.setpoint - encoder_pulses);
-    if (error > -2 && error < 2) {
+void compute_pid_0() {
+    float error = (float)(motor_0.setpoint + motor_0.offset - encoder1_pulses);
+    if (error > error_max * -1 && error < error_max) {
         motor_shield.setM1Speed(0);
-        motor.pwm = 0;
+        motor_0.pwm = 0;
         if (drawing_graph){
             drawing_graph = false;
             Serial.println("DONE GRAPH|");
@@ -88,84 +125,150 @@ void compute_pid() {
         return;
     }
 
-    ulong cycle_time = micros() - microsLast;
+    ulong cycle_time = micros() - microsLast_0;
 
-    motor.i_term_result += motor.i_term * error * (float) cycle_time;
-    if (motor.i_term_result > motor.out_max)
-        motor.i_term_result = motor.out_max;       // that the I term from PID gets too big
-    else if (motor.i_term_result < motor.out_min)
-        motor.i_term_result = motor.out_min;
+    motor_0.i_term_result += motor_0.i_term * error * (float) cycle_time;
+    if (motor_0.i_term_result > motor_0.out_max)
+        motor_0.i_term_result = motor_0.out_max;       // that the I term from PID gets too big
+    else if (motor_0.i_term_result < motor_0.out_min)
+        motor_0.i_term_result = motor_0.out_min;
 
-    int speed = (encoder_pulses - encoder_pulses_prev) / cycle_time;
-    motor.output = motor.p_term * error + motor.i_term_result - motor.d_term * (float)speed;// PID motor.output is the sum of P I and D values
+    int speed = (encoder1_pulses - encoder1_pulses_prev) / cycle_time;
+    motor_0.output = motor_0.p_term * error + motor_0.i_term_result - motor_0.d_term * (float)speed;// PID motor_0.output is the sum of P I and D values
 
-    encoder_pulses_prev = encoder_pulses;
+    encoder1_pulses_prev = encoder1_pulses;
 
-    if (motor.output > 0) {
-        if (motor.output > motor.out_max)
-            motor.output = motor.out_max;
-        motor.pwm = (int)motor.output + motor.pwm_min;
+    if (motor_0.output > 0) {
+        if (motor_0.output > motor_0.out_max)
+            motor_0.output = motor_0.out_max;
+        motor_0.pwm = (int)motor_0.output + motor_0.pwm_min;
     } else {
-        if (motor.output < motor.out_min)
-            motor.output = motor.out_min;
-        motor.pwm = (int)motor.output - motor.pwm_min;
+        if (motor_0.output < motor_0.out_min)
+            motor_0.output = motor_0.out_min;
+        motor_0.pwm = (int)motor_0.output - motor_0.pwm_min;
     }
-    motor_shield.setM1Speed(motor.pwm);
-    motor_shield.setM2Speed(motor.pwm);
-    microsLast = micros();
+    motor_shield.setM1Speed(motor_0.pwm);
+    microsLast_0 = micros();
 }
 
-int sample_motor_current(){
-    // samples the motor current 3 times 1 ms apart and take the average.
+void compute_pid_1() {
+    float error = (float)(motor_1.setpoint + motor_1.offset - encoder2_pulses);
+    if (error > error_max * -1 && error < error_max) {
+        motor_shield.setM2Speed(0);
+        motor_1.pwm = 0;
+        if (drawing_graph){
+            drawing_graph = false;
+            Serial.println("DONE GRAPH|");
+        }
+        return;
+    }
+
+    ulong cycle_time = micros() - microsLast_1;
+
+    motor_1.i_term_result += motor_1.i_term * error * (float) cycle_time;
+    if (motor_1.i_term_result > motor_1.out_max)
+        motor_1.i_term_result = motor_1.out_max;       // that the I term from PID gets too big
+    else if (motor_1.i_term_result < motor_1.out_min)
+        motor_1.i_term_result = motor_1.out_min;
+
+    int speed = (encoder2_pulses - encoder2_pulses_prev) / cycle_time;
+    motor_1.output = motor_1.p_term * error + motor_1.i_term_result - motor_1.d_term * (float)speed;// PID motor_1.output is the sum of P I and D values
+
+    encoder2_pulses_prev = encoder2_pulses;
+
+    if (motor_1.output > 0) {
+        if (motor_1.output > motor_1.out_max)
+            motor_1.output = motor_1.out_max;
+        motor_1.pwm = (int)motor_1.output + motor_1.pwm_min;
+    } else {
+        if (motor_1.output < motor_1.out_min)
+            motor_1.output = motor_1.out_min;
+        motor_1.pwm = (int)motor_1.output - motor_1.pwm_min;
+    }
+    motor_shield.setM2Speed(motor_1.pwm);
+    microsLast_1 = micros();
+}
+
+int sample_motor_current(int motor_num){
+    // samples the motor_0 current 3 times 1 ms apart and take the average.
     // this is done in order to improve stablility
     int current = 0;
-    current += motor_shield.getM1CurrentMilliamps();
-    delay(1);
-    current += motor_shield.getM1CurrentMilliamps();
-    delay(1);
-    current += motor_shield.getM1CurrentMilliamps();
-    delay(1);
+    int current1 = 0;
+    int current2 = 0;
+    
+    if (motor_num){
+        //todo fix this
+        current += motor_shield.getM2CurrentMilliamps();
+        delay(1);
+        current2 += motor_shield.getM2CurrentMilliamps();
+        delay(1);
+        current2+= motor_shield.getM2CurrentMilliamps();
+        delay(1);
+        current = current + current1 + current2;
+        current = current - m2_current_offset;
+        // m2 has offset  for some reason
+        
+    }else{
+        current += motor_shield.getM1CurrentMilliamps();
+        delay(1);
+        current += motor_shield.getM1CurrentMilliamps();
+        delay(1);
+        current += motor_shield.getM1CurrentMilliamps();
+        delay(1);
+    }
+    
     return current / 3;
 }
 
-void home_actuator() {
+void home_actuators() {
     // homing sequence blocking routine
     // TODO add stall detection
 #ifdef HOME_DEBUG
     Serial.println("homing");
 #endif
-    motor_shield.setM1Speed(motor.home_pwm_high);
-    motor_shield.setM2Speed(motor.home_pwm_high);
-    int motor_current = 0;
-    //encoder_pulses_prev = encoder_pulses;
+    motor_shield.setM1Speed(motor_0.home_pwm_high);
+    motor_shield.setM2Speed(motor_0.home_pwm_high);
+    int motor_current_1 = 0;
+    int motor_current_2 = 0;
     delay(100);
-    motor_current = sample_motor_current();
-    while(motor_current > 10){
-       //encoder_pulses_prev = encoder_pulses;
+    motor_current_1 = sample_motor_current(0);
+    motor_current_2 = sample_motor_current(1);
+    while(motor_current_1 > 10 || motor_current_2 > 40){
 #ifdef HOME_DEBUG
-       Serial.println(motor_current);
+        //Serial.print(encoder1_pulses);
+        //Serial.print(" ");
+        //Serial.println(encoder2_pulses);
+        Serial.print(motor_current_1);
+        Serial.print(" ");
+        Serial.println(motor_current_2);
 #endif
-       delay(97);
-       motor_current = sample_motor_current();
+       delay(100);
+       motor_current_1 = sample_motor_current(0);
+       motor_current_2 = sample_motor_current(1);
     }
 #ifdef HOME_DEBUG
     Serial.println("stage 1 done");
 #endif
-    motor_shield.setM1Speed( -1 * motor.home_pwm_low);
+    motor_shield.setM1Speed( -1 * motor_0.home_pwm_high);
+    motor_shield.setM2Speed( -1 * motor_0.home_pwm_high);
     delay(1000);
-    motor_shield.setM1Speed(motor.home_pwm_low);
+    motor_shield.setM1Speed(motor_0.home_pwm_high);
+    motor_shield.setM2Speed(motor_0.home_pwm_high);
     delay(20);
-    motor_current = sample_motor_current();
-    while(motor_current > 10){
-       //encoder_pulses_prev = encoder_pulses;
+    motor_current_1 = sample_motor_current(0);
+    motor_current_2 = sample_motor_current(1);
+    while(motor_current_1 > 10 || motor_current_2 > 40){
 #ifdef HOME_DEBUG
-       Serial.println(motor_current);
+       Serial.println("t");
 #endif
        delay(97);
-       motor_current = sample_motor_current();
+       motor_current_1 = sample_motor_current(0);
+       motor_current_2 = sample_motor_current(1);
     }
-    encoder_pulses = 0;
-    motor.setpoint = 0;
+    encoder1_pulses = 0;
+    encoder2_pulses = 0;
+    motor_0.setpoint = 0;
+    motor_1.setpoint = 0;
     motor_shield.setM1Speed(0);
     motor_shield.setM2Speed(0);
 #ifdef HOME_DEBUG
@@ -183,28 +286,35 @@ void process_serial_cmd() {
 
     if ((read_buffer.length() >= bufferSize) || read_buffer.indexOf(cmd_sep) > 0) {
         int cmd_sep_idx = read_buffer.indexOf(cmd_sep);
-
+        int setpoint;
+        
         if (cmd_sep_idx > 0) {
             cmd = read_buffer.substring(0, cmd_sep_idx);
             read_buffer = read_buffer.substring(cmd_sep_idx + 1);
             if (cmd.indexOf("HOME") > -1){
                 Serial.print("ACK HOME|");
-                home_actuator();
+                home_actuators();
                 Serial.print("DONE HOME|");
             }else if (cmd.indexOf("MOVE") > -1){
                 Serial.print("ACK MOVE|");
                 // 5 is cmd len + space
-                motor.setpoint = cmd.substring(cmd.indexOf("MOVE") + 5).toInt();
+                setpoint = cmd.substring(cmd.indexOf("MOVE") + 5).toInt();
+                motor_0.setpoint = setpoint;
+                motor_1.setpoint = setpoint;
 #ifdef CMD_DEBUG
-                Serial.println(motor.setpoint);
+                Serial.println(setpoint);
 #endif
             }else if (cmd.indexOf("GRAPH") > -1){
                 Serial.println("ACK GRAPH|");
                 // 5 is cmd len + space
-                motor.setpoint = cmd.substring(cmd.indexOf("GRAPH") + 6).toInt();
+                setpoint = cmd.substring(cmd.indexOf("GRAPH") + 6).toInt();
+                motor_0.setpoint = setpoint;
+                motor_1.setpoint = setpoint;
                 drawing_graph = true;
             }else if (cmd.indexOf("STOP") > -1){
-                motor.setpoint = encoder_pulses;
+                setpoint = encoder1_pulses;
+                motor_0.setpoint = setpoint;
+                motor_1.setpoint = setpoint;
                 drawing_graph = false;
                 Serial.println("DONE STOP|");
             }
@@ -225,22 +335,59 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(ENC_PIN_1), encoder_ISR, FALLING);
     attachInterrupt(digitalPinToInterrupt(ENC2_PIN_1), encoder2_ISR, FALLING);
     motor_shield.init();
+    delay(10);
+
     Serial.println("ready");
 }
 
 void loop() {
     delay(delay_time);
     process_serial_cmd();
+    
 #ifdef PRINT_PULSE
-    Serial.print(encoder_pulses);
+    Serial.print(encoder1_pulses);
     Serial.print(" ");
     Serial.println(encoder2_pulses);
 #endif
-
-    compute_pid();
+    if (has_homed){
+        compute_pid_0();
+        compute_pid_1();
+    }
+    
+    
+#ifdef PRINT_A
+    Serial.print(analogRead(pos_pin));
+    Serial.print(" ");
+    Serial.println(analogRead(offset_pin));
+#endif
+    
+    int pos = (int)(((float)(analogRead(pos_pin)) / analog_max) * pulses_max) * -1;
+    if (pos > home_pos){
+        if (!homed_recently){
+            home_actuators();
+            has_homed = true;
+            homed_recently = true;
+        }
+    }else{
+        homed_recently = false;
+        if (motor_0.setpoint + pos_min_change < pos || motor_0.setpoint - pos_min_change > pos){
+            motor_0.setpoint = pos;
+            motor_1.setpoint = pos;
+        }
+    }
+    
+    int offset_val = analogRead(offset_pin) * 2 - analog_max;
+    int offset = (int)(((float)(offset_val) / analog_max) * offset_max) * -1;
+    if (motor_0.offset + off_min_change < offset || motor_0.offset - off_min_change > offset){
+        motor_0.offset = offset;
+        motor_1.offset = offset * -1;
+    
+    }
+    
+    
     if (drawing_graph){
-        Serial.print(motor.pwm);
+        Serial.print(motor_0.pwm);
         Serial.print(' ');
-        Serial.println(encoder_pulses - motor.setpoint);
+        Serial.println(encoder1_pulses - motor_0.setpoint);
     }
 }
