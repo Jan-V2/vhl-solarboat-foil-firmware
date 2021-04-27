@@ -47,8 +47,6 @@ float pulses_max = 19000;
 float analog_max = 1024;
 int pos_min_change = 200;
 int off_min_change = 20;
-int offset_pin = A4;
-int pos_pin = A2;
 
 int offset_fixed = -6;
 
@@ -363,28 +361,6 @@ void loop() {
     Serial.println(analogRead(offset_pin));
 #endif
     
-    int pos = (int)(((float)(analogRead(pos_pin)) / analog_max) * pulses_max) * -1;
-    if (pos > home_pos){
-        if (!homed_recently){
-            home_actuators();
-            has_homed = true;
-            homed_recently = true;
-        }
-    }else{
-        homed_recently = false;
-        if (motor_0.setpoint + pos_min_change < pos || motor_0.setpoint - pos_min_change > pos){
-            motor_0.setpoint = pos;
-            motor_1.setpoint = pos;
-        }
-    }
-    
-    int offset_val = analogRead(offset_pin) * 2 - analog_max;
-    int offset = (int)(((float)(offset_val) / analog_max) * offset_max) * -1;
-    if (motor_0.offset + off_min_change < offset || motor_0.offset - off_min_change > offset){
-        motor_0.offset = offset;
-        motor_1.offset = offset;
-    
-    }
     
     
     if (drawing_graph){
