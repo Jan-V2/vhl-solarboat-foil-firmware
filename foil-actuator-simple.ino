@@ -35,14 +35,14 @@ String read_buffer = "";
 String cmd = "";
 const int bufferSize = 200;
 const char cmd_sep = '|';
-int error_max = 4;
+int error_max = 3;
 
 bool drawing_graph = false;
 
 bool has_homed = false;
 bool homed_recently = false;
 int home_pos = -100;
-float offset_max = 150; // 250 is about 1.5 cm either way
+float offset_max = 4 * 65; 
 float pulses_max = 19000; 
 float analog_max = 1024;
 int pos_min_change = 200;
@@ -50,10 +50,12 @@ int off_min_change = 20;
 int offset_pin = A4;
 int pos_pin = A2;
 
+int offset_fixed = -6;
+
 
 static struct {
     float p_term = 2;
-    float i_term = 0.0000;
+    float i_term = 0.00001;
     float d_term = 0.000005;
 
     int setpoint = encoder1_pulses;// todo make this encoder data?
@@ -72,7 +74,7 @@ static struct {
 
 static struct {
     float p_term = 2;
-    float i_term = 0.0000;
+    float i_term = 0.00001;
     float d_term = 0.000005;
 
     int setpoint = encoder2_pulses;// todo make this encoder data?
@@ -114,7 +116,7 @@ void encoder2_ISR() {
 }
 
 void compute_pid_0() {
-    float error = (float)(motor_0.setpoint + motor_0.offset - encoder1_pulses);
+    float error = (float)(motor_0.setpoint + motor_0.offset - encoder1_pulses + offset_fixed);
     if (error > error_max * -1 && error < error_max) {
         motor_shield.setM1Speed(0);
         motor_0.pwm = 0;
@@ -152,7 +154,7 @@ void compute_pid_0() {
 }
 
 void compute_pid_1() {
-    float error = (float)(motor_1.setpoint + motor_1.offset - encoder2_pulses);
+    float error = (float)(motor_1.setpoint + motor_1.offset - encoder2_pulses - offset_fixed);
     if (error > error_max * -1 && error < error_max) {
         motor_shield.setM2Speed(0);
         motor_1.pwm = 0;
@@ -380,7 +382,7 @@ void loop() {
     int offset = (int)(((float)(offset_val) / analog_max) * offset_max) * -1;
     if (motor_0.offset + off_min_change < offset || motor_0.offset - off_min_change > offset){
         motor_0.offset = offset;
-        motor_1.offset = offset * -1;
+        motor_1.offset = offset;
     
     }
     
