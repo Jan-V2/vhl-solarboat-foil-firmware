@@ -2,26 +2,17 @@
 #include "types.h"
 #include "motor_config.h"
 
-#define ENC_PIN_1 PB2
-#define ENC_PIN_2 PB1
-#define ENC2_PIN_1 PB15
-#define ENC2_PIN_2 PB14
+#define ENC0_PIN_1 PB2
+#define ENC0_PIN_2 PB1
+#define ENC1_PIN_1 PB15
+#define ENC1_PIN_2 PB14
 
 //#define PRINT_PULSE
 #define HOME_DEBUG
 #define us_in_second 1000000
 
-// PWM + means backwards, and - means forwards
-
 // todo change pwm frequency
 // todo add build flags like -Wno-unused-variables
-
-
-
-float error0_prev = 0;
-
-
-// todo refactor this so that the motor_0 control code is in it's own file (class maybe?)
 // todo move cmd done acknowledge
 
 int delay_time = 100;
@@ -52,7 +43,7 @@ static struct {
 
 
 void encoder0_ISR() {
-    if (digitalRead(ENC_PIN_2)) {
+    if (digitalRead(ENC0_PIN_2)) {
         motor_0.encoder_pulses++;
     } else {
         motor_0.encoder_pulses--;
@@ -60,7 +51,7 @@ void encoder0_ISR() {
 }
 
 void encoder1_ISR() {
-    if (digitalRead(ENC2_PIN_2)) {
+    if (digitalRead(ENC1_PIN_2)) {
         motor_1.encoder_pulses++;
     } else {
         motor_1.encoder_pulses--;
@@ -92,10 +83,10 @@ void compute_pid(Motor m) {
     else if (m.i_term_result < m.out_min)
         m.i_term_result = m.out_min;
 
-    float speed = (error - error0_prev) / (float)cycle_time;
+    float speed = (error - m.pref_error) / (float)cycle_time;
     m.pid_out = m.p_term * error + m.i_term_result - m.d_term * speed;// PID m.pid_out is the sum of P I and D values
 
-    error0_prev = error;
+    m.pref_error = error;
 
     if (m.pid_out > 0) {
         if (m.pid_out > m.out_max)
@@ -246,8 +237,8 @@ void process_serial_cmd() {
 void setup() {
     Serial.begin(115200);
     // configure interrupts and timers
-    attachInterrupt(digitalPinToInterrupt(ENC_PIN_1), encoder0_ISR, FALLING);
-    attachInterrupt(digitalPinToInterrupt(ENC2_PIN_1), encoder1_ISR, FALLING);
+    attachInterrupt(digitalPinToInterrupt(ENC0_PIN_1), encoder0_ISR, FALLING);
+    attachInterrupt(digitalPinToInterrupt(ENC1_PIN_1), encoder1_ISR, FALLING);
     motor_shield.init();
     delay(10);
 

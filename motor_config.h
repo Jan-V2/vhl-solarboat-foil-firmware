@@ -5,6 +5,7 @@ DualVNH5019MotorShield motor_shield;
 const int offset_fixed_global = 6;
 
 struct Motor {
+    //TODO organize this struct
     void (*set_speed)(int speed);
     int (*get_current)();
         
@@ -24,6 +25,7 @@ struct Motor {
     float out_min = -360, out_max = 360;
 
     float i_term_result = 0;
+    float pref_error = 0;
     float pid_out = 0;
     float pwm = 0;
     
