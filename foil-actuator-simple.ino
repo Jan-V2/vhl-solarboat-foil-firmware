@@ -59,9 +59,6 @@ void encoder1_ISR() {
 }
 
 
-
-
-
 void compute_pid(Motor m) {
     m.offset_fixed = -1 * offset_fixed_global;
     float error = (float)(m.setpoint + m.offset - m.encoder_pulses - offset_fixed_global);
@@ -100,8 +97,6 @@ void compute_pid(Motor m) {
     m.set_speed(m.pwm);
     microsLast_0 = micros();
 }
-
-
 
 int sample_motor_current(Motor m){
     // samples the motor_0 current 3 times 1 ms apart and take the average.
