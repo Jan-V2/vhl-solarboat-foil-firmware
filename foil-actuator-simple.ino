@@ -1,6 +1,10 @@
 #include "DualVNH5019MotorShield.h"
 #include "types.h"
 
+#define PETER_FILTER // peters filter voor potmeter
+#define SLOWSTART
+//#define FINE_TUNE_POT
+
 #define ENC_PIN_1 PB2
 #define ENC_PIN_2 PB1
 #define ENC2_PIN_1 PB15
@@ -19,38 +23,47 @@ DualVNH5019MotorShield motor_shield;
 
 volatile int encoder1_pulses = 0;
 volatile int encoder2_pulses = 0;
-static volatile int encoder1_pulses_prev = encoder1_pulses;
-static volatile int encoder2_pulses_prev = encoder2_pulses;
 
-int m2_current_offset = 408;
-
-// todo refactor this so that the motor_0 control code is in it's own file (class maybe?)
-// todo move cmd done acknowledge
-
-int delay_time = 100;
-ulong microsLast_0;
-ulong microsLast_1;
-
+// vars for serial readout
 String read_buffer = "";
 String cmd = "";
 const int bufferSize = 200;
 const char cmd_sep = '|';
-int error_max = 3;
 
 bool drawing_graph = false;
 
+// vars for pot control
 bool has_homed = false;
 bool homed_recently = false;
 int home_pos = -100;
 float offset_max = 4 * 65; 
 float pulses_max = 19000; 
 float analog_max = 1024;
-int pos_min_change = 200;
-int off_min_change = 20;
+
+int offset_fixed = -6; // twists the foil left or right
+
+// analog pins
 int offset_pin = A4;
 int pos_pin = A2;
 
-int offset_fixed = -6;
+int m2_current_offset = 408; // bodges bug in current readout
+
+int delay_time = 1; // delay time in loop
+ulong microsLast_0; // used for pwm
+ulong microsLast_1; // used for pwm
+int error_max = 3; // if error less than error_max pwm = 0
+
+
+#ifdef PETER_FILTER
+int setpoint_filtered = 0;
+float filter_ratio = 0.99;
+#else
+int pos_min_change = 200;
+#endif
+
+#ifdef FINE_TUNE_POT
+int off_min_change = 20;
+#endif
 
 
 static struct {
@@ -58,15 +71,17 @@ static struct {
     float i_term = 0.00001;
     float d_term = 0.000005;
 
-    int setpoint = encoder1_pulses;// todo make this encoder data?
-    int offset = 0;
+    int setpoint = 0;
+    int offset = 0; // voor finetune pot
+    float pref_error = 0;
 
     int pwm_min = 40;
     float out_min = -360, out_max = 360;
 
     float i_term_result = 0;
     float output = 0;
-    float pwm = 0;
+    int pwm = 0;
+    int pwm_last = 0;
     
     int home_pwm_high = 400;
     int home_pwm_low = 70;
@@ -77,15 +92,17 @@ static struct {
     float i_term = 0.00001;
     float d_term = 0.000005;
 
-    int setpoint = encoder2_pulses;// todo make this encoder data?
-    int offset = 0;
+    int setpoint = 0;
+    int offset = 0; // voor finetune pot
+    float pref_error = 0;
 
     int pwm_min = 40;
     float out_min = -360, out_max = 360;
  
     float i_term_result = 0;
     float output = 0;
-    float pwm = 0;
+    int pwm = 0;
+    int pwm_last = 0;
     
     int home_pwm_high = 400;
     int home_pwm_low = 70;
@@ -135,11 +152,11 @@ void compute_pid_0() {
     else if (motor_0.i_term_result < motor_0.out_min)
         motor_0.i_term_result = motor_0.out_min;
 
-    int speed = (encoder1_pulses - encoder1_pulses_prev) / cycle_time;
-    motor_0.output = motor_0.p_term * error + motor_0.i_term_result - motor_0.d_term * (float)speed;// PID motor_0.output is the sum of P I and D values
-
-    encoder1_pulses_prev = encoder1_pulses;
-
+    float speed_error = (error - motor_0.pref_error) / (float)cycle_time;
+    // PID motor_0.output is the sum of P I and D values
+    motor_0.output = motor_0.p_term * error + motor_0.i_term_result - motor_0.d_term * speed_error;
+    motor_0.pref_error = error;
+    
     if (motor_0.output > 0) {
         if (motor_0.output > motor_0.out_max)
             motor_0.output = motor_0.out_max;
@@ -149,7 +166,22 @@ void compute_pid_0() {
             motor_0.output = motor_0.out_min;
         motor_0.pwm = (int)motor_0.output - motor_0.pwm_min;
     }
+
+#ifdef SLOWSTART
+    int pwm_diff = motor_0.pwm_last - motor_0.pwm;
+    if (pwm_diff > 10 || pwm_diff < -10){
+        motor_0.pwm_last = motor_0.pwm;
+    }else{
+        if (pwm_diff > 0){
+            motor_0.pwm_last += 10;
+        }else{
+            motor_0.pwm_last -= 10;
+        }
+    }
+    motor_shield.setM1Speed(motor_0.pwm_last);
+#else
     motor_shield.setM1Speed(motor_0.pwm);
+#endif
     microsLast_0 = micros();
 }
 
@@ -173,10 +205,11 @@ void compute_pid_1() {
     else if (motor_1.i_term_result < motor_1.out_min)
         motor_1.i_term_result = motor_1.out_min;
 
-    int speed = (encoder2_pulses - encoder2_pulses_prev) / cycle_time;
-    motor_1.output = motor_1.p_term * error + motor_1.i_term_result - motor_1.d_term * (float)speed;// PID motor_1.output is the sum of P I and D values
+    float speed_error = (error - motor_1.pref_error) / (float)cycle_time;
+    // PID motor_1.output is the sum of P I and D values
+    motor_1.output = motor_1.p_term * error + motor_1.i_term_result - motor_1.d_term * speed_error;
+    motor_1.pref_error = error;
 
-    encoder2_pulses_prev = encoder2_pulses;
 
     if (motor_1.output > 0) {
         if (motor_1.output > motor_1.out_max)
@@ -187,7 +220,25 @@ void compute_pid_1() {
             motor_1.output = motor_1.out_min;
         motor_1.pwm = (int)motor_1.output - motor_1.pwm_min;
     }
-    motor_shield.setM2Speed(motor_1.pwm);
+    
+    
+#ifdef SLOWSTART
+    // changes pwm by at most 10 each delay_time ms
+    int pwm_diff = motor_1.pwm_last - motor_1.pwm;
+    if (pwm_diff > 10 || pwm_diff < -10){
+        motor_1.pwm_last = motor_1.pwm;
+    }else{
+        if (pwm_diff > 0){
+            motor_1.pwm_last += 10;
+        }else{
+            motor_1.pwm_last -= 10;
+        }
+    }
+    motor_shield.setM1Speed(motor_1.pwm_last);
+#else
+    motor_shield.setM1Speed(motor_1.pwm);
+#endif
+    
     microsLast_1 = micros();
 }
 
@@ -362,7 +413,7 @@ void loop() {
     Serial.print(" ");
     Serial.println(analogRead(offset_pin));
 #endif
-    
+
     int pos = (int)(((float)(analogRead(pos_pin)) / analog_max) * pulses_max) * -1;
     if (pos > home_pos){
         if (!homed_recently){
@@ -372,21 +423,28 @@ void loop() {
         }
     }else{
         homed_recently = false;
+#ifdef PETER_FILTER
+        setpoint_filtered = pos * (1 - filter_ratio) + setpoint_filtered * filter_ratio;
+        motor_0.setpoint = setpoint_filtered;
+        motor_1.setpoint = setpoint_filtered;
+#else
         if (motor_0.setpoint + pos_min_change < pos || motor_0.setpoint - pos_min_change > pos){
             motor_0.setpoint = pos;
             motor_1.setpoint = pos;
         }
+#endif
     }
-    
+
+#ifdef FINE_TUNE_POT
     int offset_val = analogRead(offset_pin) * 2 - analog_max;
     int offset = (int)(((float)(offset_val) / analog_max) * offset_max) * -1;
     if (motor_0.offset + off_min_change < offset || motor_0.offset - off_min_change > offset){
         motor_0.offset = offset;
         motor_1.offset = offset;
-    
     }
+#endif
     
-    
+
     if (drawing_graph){
         Serial.print(motor_0.pwm);
         Serial.print(' ');
