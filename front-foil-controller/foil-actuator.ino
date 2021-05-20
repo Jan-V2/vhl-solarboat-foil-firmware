@@ -4,6 +4,8 @@
 #define PETER_FILTER // peters filter voor potmeter
 #define SLOWSTART
 //#define FINE_TUNE_POT
+//comment
+
 
 #define ENC_PIN_1 PB2
 #define ENC_PIN_2 PB1
