@@ -1,10 +1,11 @@
 // de cpu is een stm32f103RBT6  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-
+// LED's
 #define LED_BUILTIN PC13
 #define LED_GREEN PC13
 #define LED_ORANGE PC14
 #define LED_RED PC15
 
+//input/buttons
 #define BUTTON_4 PC3
 #define BUTTON_3 PA0
 #define BUTTON_2 PA1
@@ -13,9 +14,24 @@
 #define ENC_1B PC4
 #define ENC_2A PC2
 #define ENC_2B PC1
-
 #define ENC_1_BTN PB0
 #define ENC_2_BTN PC0
+
+//ultrasound sensor
+#define trig_1 PB3
+#define echo_1 PB4
+#define trig_2 PB5
+#define echo_2 PB6
+
+//LCD 
+#define E  PB15
+#define RS PB14
+#define D0 PC6
+#define D1 PC7
+#define D2 PC8
+#define D3 PC9
+
+
 
 int enc_1_pulses = 0;
 int enc_2_pulses = 0;
