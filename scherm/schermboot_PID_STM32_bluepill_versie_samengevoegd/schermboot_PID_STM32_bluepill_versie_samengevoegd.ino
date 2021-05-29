@@ -1,11 +1,11 @@
 //#include <Arduino.h>
-
+#include "pinmap.h"
 const uint8_t    triggerPin              = 3;                // Pin number for trigger signal
 const uint8_t    echoPin                 = 2;                // Pin number for echo signal (interrupt pin)
-const uint8_t    buttonPin4              = PB6;               // Pin number for button
-const uint8_t    buttonPin3              = PB7;               // Pin number for button
-const uint8_t    buttonPin2              = PB9;               // Pin number for button
-const uint8_t    buttonPin1              = PB8;               // Pin number for button
+const uint8_t    buttonPin4              = BUTTON_4;               // Pin number for button
+const uint8_t    buttonPin3              = BUTTON_3;               // Pin number for button
+const uint8_t    buttonPin2              = BUTTON_2;               // Pin number for button
+const uint8_t    buttonPin1              = BUTTON_1? ;               // Pin number for button
 const uint8_t    buttonPinHome           = 7;
   const uint8_t   pollTimeSensor           = 89;               // How many milliseconds between sensor polls (the PID runs at the same speed)
 //const uint16_t   soundSpeed              = 343;              // Speed of sound in m/s (choos one soundspeed)
@@ -49,6 +49,7 @@ LiquidCrystal lcd(PC15, PC14, PA0, PA1, PA2, PA3, PA4, PA5, PA6, PA7);
 void setup()
 {
   pinMode(LED_BUILTIN, OUTPUT);
+  setup_buttons_and_encoders();
  
   lcd.begin(16, 2);                                // Switch on the LCD screen
   lcd.setCursor(2, 0);
