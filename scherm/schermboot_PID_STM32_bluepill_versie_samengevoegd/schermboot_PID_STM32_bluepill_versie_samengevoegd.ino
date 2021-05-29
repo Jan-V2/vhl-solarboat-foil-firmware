@@ -1,12 +1,12 @@
 //#include <Arduino.h>
 #include "pinmap.h"
-const uint8_t    triggerPin              = 3;                // Pin number for trigger signal
-const uint8_t    echoPin                 = 2;                // Pin number for echo signal (interrupt pin)
+const uint8_t    triggerPin              = trig_1;                // Pin number for trigger signal
+const uint8_t    echoPin                 = echo_1;                // Pin number for echo signal (interrupt pin)
 const uint8_t    buttonPin4              = BUTTON_4;               // Pin number for button
 const uint8_t    buttonPin3              = BUTTON_3;               // Pin number for button
 const uint8_t    buttonPin2              = BUTTON_2;               // Pin number for button
-const uint8_t    buttonPin1              = BUTTON_1? ;               // Pin number for button
-const uint8_t    buttonPinHome           = 7;
+const uint8_t    buttonPin1              = BUTTON_1;               // Pin number for button
+const uint8_t    buttonPinHome           = ENC_1_BTN;
   const uint8_t   pollTimeSensor           = 89;               // How many milliseconds between sensor polls (the PID runs at the same speed)
 //const uint16_t   soundSpeed              = 343;              // Speed of sound in m/s (choos one soundspeed)
 const float      soundSpeed              = 58.3;             // speed of sound in micosecond/cm (58,3) (choos one soundspeed)
@@ -43,7 +43,7 @@ bool             buttonStateChange   = false;            // is true if one of of
 
  
 #include <LiquidCrystal.h>
-LiquidCrystal lcd(PC15, PC14, PA0, PA1, PA2, PA3, PA4, PA5, PA6, PA7);
+LiquidCrystal lcd(RS, E, D0, D1, D2, D3);
 //RunningMedian travelTimeMedian = RunningMedian(medianSize);
 
 void setup()
