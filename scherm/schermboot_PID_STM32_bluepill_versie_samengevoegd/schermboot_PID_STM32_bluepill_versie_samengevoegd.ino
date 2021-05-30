@@ -1,5 +1,6 @@
 //#include <Arduino.h>
 #include "pinmap.h"
+
 const uint8_t    triggerPin              = trig_1;                // Pin number for trigger signal
 const uint8_t    echoPin                 = echo_1;                // Pin number for echo signal (interrupt pin)
 const uint8_t    buttonPin4              = BUTTON_4;               // Pin number for button
@@ -43,7 +44,7 @@ bool             buttonStateChange   = false;            // is true if one of of
 
  
 #include <LiquidCrystal.h>
-LiquidCrystal lcd(RS, E, D0, D1, D2, D3);
+LiquidCrystal lcd(RS, E, D4, D5, D6, D7);
 //RunningMedian travelTimeMedian = RunningMedian(medianSize);
 
 void setup()
@@ -51,7 +52,7 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);
   setup_buttons_and_encoders();
  
-  lcd.begin(16, 2);                                // Switch on the LCD screen
+  lcd.begin(16, 4);                                // Switch on the LCD screen
   lcd.setCursor(2, 0);
   lcd.print F(("VHL-Nordwin"));                    // Print these words to my LCD screen
   lcd.setCursor(1, 1);

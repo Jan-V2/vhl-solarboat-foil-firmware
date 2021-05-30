@@ -1,4 +1,5 @@
 // de cpu is een stm32f103RBT6  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+
 // LED's
 #define LED_BUILTIN PC13
 #define LED_GREEN PC13
@@ -26,12 +27,10 @@
 //LCD 
 #define E  PB15
 #define RS PB14
-#define D0 PC6
-#define D1 PC7
-#define D2 PC8
-#define D3 PC9
-
-
+#define D4 PC6
+#define D5 PC7
+#define D6 PC8
+#define D7 PC9
 
 int enc_1_pulses = 0;
 int enc_2_pulses = 0;
