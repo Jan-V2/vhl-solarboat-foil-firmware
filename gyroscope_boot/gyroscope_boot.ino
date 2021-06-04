@@ -1,3 +1,6 @@
+#include <can.h>
+#include <mcp2515.h>
+
 ///////////////////////////////////////////////////////////////////////////////////////
 /*Terms of use
   ///////////////////////////////////////////////////////////////////////////////////////
@@ -45,6 +48,7 @@
 //#include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 
+MCP2515 mcp2515(9);
 
 
 //Declaring some global variables
@@ -76,6 +80,10 @@ void setup() {
   Wire.setClock(400000);                                                 // FAST
   Serial.begin(2000000);                                                 //Use only for debugging
 
+  mcp2515.reset();
+  mcp2515.setBitrate(CAN_125KBPS);
+  mcp2515.setNormalMode();
+
 
   delay(500);
   digitalWrite(10, LOW);                                              //Set digital output 13 high to indicate startup
@@ -106,11 +114,6 @@ void setup() {
   Serial.print(gyroCalc, 3);                                                // print met veel komma getallen omdat het kan
   Serial.print(gycoCalcRad, 3);
   Serial.print(radToDeg, 3);
-
-
-  //  Serial.init();                                                          //Initialize the Serial
-  //  Serial.backlight();                                                     //Activate backlight
-  //  Serial.clear();                                                         //Clear the Serial
 
   //  Serial.setCursor(0,0);                                                  //Set the Serial cursor to position to position 0,0
   Serial.println("  MPU-6050 IMU");                                         //println text to screen
@@ -148,7 +151,12 @@ void setup() {
 }
 
 void loop() {
+/*
+  uint8_t test[8];
 
+  test[0] = waarde;
+  test[1] = waarde << 8;
+*/
   read_mpu_6050_data();                                                //Read the raw acc and gyro data from the MPU-6050
 
   gyro_x -= gyro_x_cal;                                                //Subtract the offset calibration value from the raw gyro_x value
@@ -188,10 +196,23 @@ void loop() {
   angle_pitch_output = angle_pitch_output * 0.9 + angle_pitch * 0.1;   //Take 90% of the output pitch value and add 10% of the raw pitch value
   angle_roll_output = angle_roll_output * 0.9 + angle_roll * 0.1;      //Take 90% of the output roll value and add 10% of the raw roll value
 
-  write_Serial();                                                         //Write the roll and pitch values to the Serial display
-
+  mcp2515.sendMessage(&float_to_frame(angle_pitch_output, 100));                                                         //Write the roll and pitch values to the Serial display
+  mcp2515.sendMessage(&float_to_frame(angle_roll_output, 101));    
+  
   while (micros() - loop_timer < 2000);                                //Wait until the loop_timer reaches 2000us (500Hz) before starting the next loop
   loop_timer = micros();                                               //Reset the loop timer
+}
+
+can_frame float_to_frame(float f, uint16_t can_id){
+  byte bytes[sizeof(float)];
+  memcpy(bytes, &f, sizeof(float));
+  can_frame ret;
+  for (uint8_t i = 0; i < sizeof(float); i++){
+      ret.data[i] = bytes[i];
+  }
+  ret.can_id = can_id;
+  ret.can_dlc = sizeof(float);
+  return ret;
 }
 
 
