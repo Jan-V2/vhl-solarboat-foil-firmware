@@ -84,16 +84,7 @@ void setup() {
   mcp2515.setBitrate(CAN_125KBPS);
   mcp2515.setNormalMode();
 
-
-  delay(500);
-  digitalWrite(10, LOW);                                              //Set digital output 13 high to indicate startup
-
   setup_mpu_6050_registers();                                          //Setup the registers of the MPU-6050 (500dfs / +/-8g) and start the gyro
-
-  delay(500);
-  //Set digital output 13 high to indicate startup
-
-
 
   //Gyro angle calculations
   //0.0000611 = 1 / 250Hz / 65.5
@@ -105,29 +96,7 @@ void setup() {
   //57.296 = 1 / (3.142 / 180) The Arduino asin function is in radians
   radToDeg = 1 / (3.14159265359 / 180);
 
-
-  while (!Serial)
-  {
-    // wait for serial
-  }
-  digitalWrite(10, HIGH);
-  Serial.print(gyroCalc, 3);                                                // print met veel komma getallen omdat het kan
-  Serial.print(gycoCalcRad, 3);
-  Serial.print(radToDeg, 3);
-
-  //  Serial.setCursor(0,0);                                                  //Set the Serial cursor to position to position 0,0
-  Serial.println("  MPU-6050 IMU");                                         //println text to screen
-  // Serial.setCursor(0,1);                                                   //Set the Serial cursor to position to position 0,1
-  //  Serial.println("     V1.0");                                            //println text to screen
-
-  delay(1500);                                                              //Delay 1.5 second to display the text
-  //Serial.clear();                                                           //Clear the Serial
-
-  //Serial.setCursor(0,0);                                                    //Set the Serial cursor to position to position 0,0
-  Serial.println("Calibrating gyro");                                       //println text to screen
-  //  Serial.setCursor(0,1);                                                  //Set the Serial cursor to position to position 0,1
   for (int cal_int = 0; cal_int < 2000 ; cal_int ++) {                 //Run this code 2000 times
-    if (cal_int % 125 == 0)Serial.print(".");                             //println a dot on the Serial every 125 readings
     read_mpu_6050_data();                                              //Read the raw acc and gyro data from the MPU-6050
     gyro_x_cal += gyro_x;                                              //Add the gyro x-axis offset to the gyro_x_cal variable
     gyro_y_cal += gyro_y;                                              //Add the gyro y-axis offset to the gyro_y_cal variable
@@ -138,25 +107,18 @@ void setup() {
   gyro_y_cal /= 2000;                                                  //Divide the gyro_y_cal variable by 2000 to get the avarage offset
   gyro_z_cal /= 2000;                                                  //Divide the gyro_z_cal variable by 2000 to get the avarage offset
 
-  //  Serial.clear();                                                         //Clear the Serial
-
-  //  Serial.setCursor(0,0);                                                  //Set the Serial cursor to position to position 0,0
-  Serial.println("Pitch:");                                                 //println text to screen
-  // Serial.setCursor(0,1);                                                  //Set the Serial cursor to position to position 0,1
-  Serial.println("Roll :");                                                 //println text to screen
-
   digitalWrite(10, LOW);                                               //All done, turn the LED off
 
   loop_timer = micros();                                               //Reset the loop timer
 }
 
 void loop() {
-/*
-  uint8_t test[8];
+  /*
+    uint8_t test[8];
 
-  test[0] = waarde;
-  test[1] = waarde << 8;
-*/
+    test[0] = waarde;
+    test[1] = waarde << 8;
+  */
   read_mpu_6050_data();                                                //Read the raw acc and gyro data from the MPU-6050
 
   gyro_x -= gyro_x_cal;                                                //Subtract the offset calibration value from the raw gyro_x value
@@ -196,25 +158,33 @@ void loop() {
   angle_pitch_output = angle_pitch_output * 0.9 + angle_pitch * 0.1;   //Take 90% of the output pitch value and add 10% of the raw pitch value
   angle_roll_output = angle_roll_output * 0.9 + angle_roll * 0.1;      //Take 90% of the output roll value and add 10% of the raw roll value
 
-  mcp2515.sendMessage(&float_to_frame(angle_pitch_output, 100));                                                         //Write the roll and pitch values to the Serial display
-  mcp2515.sendMessage(&float_to_frame(angle_roll_output, 101));    
-  
   while (micros() - loop_timer < 2000);                                //Wait until the loop_timer reaches 2000us (500Hz) before starting the next loop
   loop_timer = micros();                                               //Reset the loop timer
 }
 
-can_frame float_to_frame(float f, uint16_t can_id){
+can_frame float_to_frame(float f, uint16_t can_id) {
   byte bytes[sizeof(float)];
   memcpy(bytes, &f, sizeof(float));
   can_frame ret;
-  for (uint8_t i = 0; i < sizeof(float); i++){
-      ret.data[i] = bytes[i];
+  for (uint8_t i = 0; i < sizeof(float); i++) {
+    ret.data[i] = bytes[i];
   }
   ret.can_id = can_id;
   ret.can_dlc = sizeof(float);
   return ret;
 }
 
+void send_can_data() {
+  if (Serial_loop_counter == 4) {
+    mcp2515.sendMessage(&float_to_frame(angle_pitch_output, 100));
+    mcp2515.sendMessage(&float_to_frame(angle_roll_output, 101));
+  }
+
+  if (Serial_loop_counter == 4) {
+    Serial_loop_counter = 0;                     //Reset the counter after 14 characters
+  }
+  Serial_loop_counter ++;                                                 //Increase the counter
+}
 
 void read_mpu_6050_data() {                                            //Subroutine for reading the raw gyro and accelerometer data
   Wire.beginTransmission(0x68);                                        //Start communicating with the MPU-6050
@@ -222,53 +192,14 @@ void read_mpu_6050_data() {                                            //Subrout
   Wire.endTransmission();                                              //End the transmission
   Wire.requestFrom(0x68, 14);                                          //Request 14 bytes from the MPU-6050
   while (Wire.available() < 14);                                       //Wait until all the bytes are received
-  acc_x = Wire.read() << 8 | Wire.read();                              //Add the low and high byte to the acc_x variable
+  acc_x = Wire.read() << 8 | Wire.read();
+  //Add the low and high byte to the acc_x variable
   acc_y = Wire.read() << 8 | Wire.read();                              //Add the low and high byte to the acc_y variable
   acc_z = Wire.read() << 8 | Wire.read();                              //Add the low and high byte to the acc_z variable
   temperature = Wire.read() << 8 | Wire.read();                        //Add the low and high byte to the temperature variable
   gyro_x = Wire.read() << 8 | Wire.read();                             //Add the low and high byte to the gyro_x variable
   gyro_y = Wire.read() << 8 | Wire.read();                             //Add the low and high byte to the gyro_y variable
   gyro_z = Wire.read() << 8 | Wire.read();                             //Add the low and high byte to the gyro_z variable
-
-
-}
-
-void write_Serial() {                                                     //Subroutine for writing the Serial
-  //To get a 500Hz program loop (2ms) it's only possible to write one character per loop
-  //Writing multiple characters is taking to much time
-  if (Serial_loop_counter == 14)Serial_loop_counter = 0;                     //Reset the counter after 14 characters
-  Serial_loop_counter ++;                                                 //Increase the counter
-  if (Serial_loop_counter == 1) {
-    angle_pitch_buffer = angle_pitch_output * 10;                      //Buffer the pitch angle because it will change
-    //Serial.setCursor(6,0);                                                //Set the Serial cursor to position to position 0,0
-  }
-
-  if (Serial_loop_counter == 2) {
-    Serial.print("Pitch: ");
-    if (angle_pitch_buffer < 0)Serial.print("-");                         //println - if value is negative
-    else Serial.print("+");                                               //println + if value is negative
-  }
-  if (Serial_loop_counter == 3)Serial.print(abs(angle_pitch_buffer) / 1000); //println first number
-  if (Serial_loop_counter == 4)Serial.print((abs(angle_pitch_buffer) / 100) % 10); //println second number
-  if (Serial_loop_counter == 5)Serial.print((abs(angle_pitch_buffer) / 10) % 10); //println third number
-  if (Serial_loop_counter == 6)Serial.print(".");                            //println decimal point
-  if (Serial_loop_counter == 7)Serial.println(abs(angle_pitch_buffer) % 10);   //println decimal number
-/*
-  if (Serial_loop_counter == 8) {
-    angle_roll_buffer = angle_roll_output * 10;
-    //  Serial.setCursor(6,1);
-  }
-  if (Serial_loop_counter == 9) {
-    Serial.print("Roll: ");
-    if (angle_roll_buffer < 0)Serial.print("-");                          //println - if value is negative
-    else Serial.print("+");                                               //println + if value is negative
-  }
-  if (Serial_loop_counter == 10)Serial.print(abs(angle_roll_buffer) / 1000); //println first number
-  if (Serial_loop_counter == 11)Serial.print((abs(angle_roll_buffer) / 100) % 10); //println second number
-  if (Serial_loop_counter == 12)Serial.print((abs(angle_roll_buffer) / 10) % 10); //println third number
-  if (Serial_loop_counter == 13)Serial.print(".");                           //println decimal point
-  if (Serial_loop_counter == 14)Serial.println(abs(angle_roll_buffer) % 10);   //println decimal number
-*/
 }
 
 void setup_mpu_6050_registers() {
