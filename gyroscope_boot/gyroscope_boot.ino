@@ -158,6 +158,8 @@ void loop() {
   angle_pitch_output = angle_pitch_output * 0.9 + angle_pitch * 0.1;   //Take 90% of the output pitch value and add 10% of the raw pitch value
   angle_roll_output = angle_roll_output * 0.9 + angle_roll * 0.1;      //Take 90% of the output roll value and add 10% of the raw roll value
 
+  send_can_data();
+
   while (micros() - loop_timer < 2000);                                //Wait until the loop_timer reaches 2000us (500Hz) before starting the next loop
   loop_timer = micros();                                               //Reset the loop timer
 }
@@ -171,16 +173,24 @@ can_frame float_to_frame(float f, uint16_t can_id) {
   }
   ret.can_id = can_id;
   ret.can_dlc = sizeof(float);
+  Serial.print (bytes[0], HEX);
+  Serial.print (bytes[1], HEX);
+  Serial.print (bytes[2], HEX);
+  Serial.println (bytes[3], HEX);
   return ret;
 }
 
 void send_can_data() {
-  if (Serial_loop_counter == 4) {
+  if (Serial_loop_counter == 20) {
     mcp2515.sendMessage(&float_to_frame(angle_pitch_output, 100));
+  }
+  if (Serial_loop_counter == 20) {
+    delayMicroseconds(875);
     mcp2515.sendMessage(&float_to_frame(angle_roll_output, 101));
+    Serial.println("CAN_SEND");
   }
 
-  if (Serial_loop_counter == 4) {
+  if (Serial_loop_counter == 40) {
     Serial_loop_counter = 0;                     //Reset the counter after 14 characters
   }
   Serial_loop_counter ++;                                                 //Increase the counter
