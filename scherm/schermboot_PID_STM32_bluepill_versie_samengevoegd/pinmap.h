@@ -11,7 +11,7 @@ MOSI	PA7
 
 // LED's //KLOPT
 #define LED_BUILTIN PC13
-//#define LED_GREEN PC13
+#define LED_GREEN PC13
 //#define LED_ORANGE PC14
 //#define LED_RED PC15
 
@@ -64,8 +64,8 @@ void encoder2_ISR(){
 
 void setup_buttons_and_encoders(){    
     pinMode(LED_GREEN, OUTPUT);
-    pinMode(LED_ORANGE, OUTPUT);
-    pinMode(LED_RED, OUTPUT);
+//    pinMode(LED_ORANGE, OUTPUT);
+//    pinMode(LED_RED, OUTPUT);
     pinMode(BUTTON_1, INPUT_PULLUP);
     pinMode(BUTTON_2, INPUT_PULLUP);
     pinMode(BUTTON_3, INPUT_PULLUP);
