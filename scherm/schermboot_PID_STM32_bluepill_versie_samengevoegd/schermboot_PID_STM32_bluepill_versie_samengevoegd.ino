@@ -3,10 +3,10 @@
 
 const uint8_t    triggerPin              = trig_1;                // Pin number for trigger signal
 const uint8_t    echoPin                 = echo_1;                // Pin number for echo signal (interrupt pin)
-const uint8_t    buttonPin4              = BUTTON_4;               // Pin number for button
-const uint8_t    buttonPin3              = BUTTON_3;               // Pin number for button
-const uint8_t    buttonPin2              = BUTTON_2;               // Pin number for button
-const uint8_t    buttonPin1              = BUTTON_1;               // Pin number for button
+const uint8_t    buttonPin4              = BUTTON_1;               // Pin number for button
+const uint8_t    buttonPin3              = BUTTON_2;               // Pin number for button
+const uint8_t    buttonPin2              = BUTTON_3;               // Pin number for button
+const uint8_t    buttonPin1              = BUTTON_4;               // Pin number for button
 const uint8_t    buttonPinHome           = ENC_1_BTN;
   const uint8_t   pollTimeSensor           = 89;               // How many milliseconds between sensor polls (the PID runs at the same speed)
 //const uint16_t   soundSpeed              = 343;              // Speed of sound in m/s (choos one soundspeed)
@@ -25,7 +25,7 @@ uint16_t         pidChangeDetection  = 0;                // is used to see if th
 int16_t          kp                  = 0;                // P parameter from the PID
 int16_t          ki                  = 0;                // I parameter from the PID
 int16_t          kd                  = 0;                // D parameter from the PID
-uint8_t          setDistance         = 65;               // target distance in cm that the PID will try to reache
+uint8_t          setDistance         = 65;               // target distance in cm that the PID will try to reach, this value can be changed on de 
 int16_t          leftAcutatorStroke  = 150;              // amount of mm the actuator is extened. value is 150 so you dont have to press the button 1000x. the vlalue will only be send when the controllmode is != OFF
 int16_t          rightAcutatorStroke = 150;              // amount of mm the actuator is extened. value is 150 so you dont have to press the button 1000x. the vlalue will only be send when the controllmode is != OFF
 int16_t          leftAcutatorStroke2 = 150;
@@ -49,6 +49,7 @@ LiquidCrystal lcd(RS, E, D4, D5, D6, D7);
 
 void setup()
 {
+   Serial.begin(250000);
   pinMode(LED_BUILTIN, OUTPUT);
   setup_buttons_and_encoders();
  
@@ -58,7 +59,7 @@ void setup()
   lcd.setCursor(1, 1);
   lcd.print F(("Zonnebootteam"));
 
-  Serial.begin(250000);
+ 
   pinMode(triggerPin, OUTPUT);                     // Pin 3 as triggerpin (output)
   pinMode(echoPin, INPUT);                         // Pin 2 [INT0] as echopin (input)
   pinMode(buttonPin1, INPUT_PULLUP);
