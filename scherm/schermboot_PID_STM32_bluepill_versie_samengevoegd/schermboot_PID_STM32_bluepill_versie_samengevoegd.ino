@@ -201,15 +201,15 @@ void loop()
 void read_CAN_data() {
   if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK) {
     if (canMsg.can_id == 0x64) {
-      pitch = float_from_can(0);
-      roll = float_from_can(4);
+      pitch = float_from_can(0);// byte 0-3 is float pitch
+      roll = float_from_can(4);// byte 4-7 is float pitch
 
     } else if (canMsg.can_id == 0x32) {
-      PWM_links = int_from_can(0);
-      PWM_rechts = int_from_can(2);
+      PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]); //byte 0-1 is int16_t PWM links
+      PWM_rechts = int16_from_can(canMsg.data[2], canMsg.data[3]); //byte 0-1 is int16_t PWM rechts
 
     } else if (canMsg.can_id == 0x33) {
-      PWM_achter = int_from_can(0)
+      PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]); //byte 0-1 is int16_t PWM achter
     }
 
   }
@@ -856,4 +856,12 @@ float float_from_can(uint8_t start_idx)
   float f;
   memcpy(&f, byteVal, sizeof(float));
   return f;
+}
+
+int16_t int16_from_can(uint8_t b1, uint8_t b2)
+{
+    // maakt van twee bytes een int16_t
+    int16_t ret;
+    ret = b1 | (int16_t)b2 << 8;
+    return ret;
 }
