@@ -210,6 +210,9 @@ void read_CAN_data() {
 
     } else if (canMsg.can_id == 0x33) {
       PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]); //byte 0-1 is int16_t PWM achter
+      
+    } else if (canMsg.can_id == 0x33) {
+      overcurrent_achter = canMsg.data[0]; //byte 0 is uint8_t overcurrent achter
     }
 
   }
