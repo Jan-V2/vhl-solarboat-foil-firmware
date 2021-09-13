@@ -1,5 +1,10 @@
 //#include <Arduino.h>
 #include "pinmap_bluepill.h"
+#include <SPI.h>
+#include <mcp2515.h>
+
+struct can_frame canMsg;
+MCP2515 mcp2515(PB0);
 
 const uint8_t    triggerPin              = trig_1;                // Pin number for trigger signal
 const uint8_t    echoPin                 = echo_1;                // Pin number for echo signal (interrupt pin)
@@ -8,7 +13,7 @@ const uint8_t    buttonPin3              = BUTTON_2;               // Pin number
 const uint8_t    buttonPin2              = BUTTON_3;               // Pin number for button
 const uint8_t    buttonPin1              = BUTTON_4;               // Pin number for button
 const uint8_t    buttonPinHome           = ENC_1_BTN;
-  const uint8_t   pollTimeSensor           = 89;               // How many milliseconds between sensor polls (the PID runs at the same speed)
+const uint8_t    pollTimeSensor          = 89;               // How many milliseconds between sensor polls (the PID runs at the same speed)
 //const uint16_t   soundSpeed              = 343;              // Speed of sound in m/s (choos one soundspeed)
 const float      soundSpeed              = 58.3;             // speed of sound in micosecond/cm (58,3) (choos one soundspeed)
 const uint16_t   refreshDistanceDisplay  = 399;              // How many milliseconds between display updates
@@ -19,13 +24,13 @@ const uint16_t  maxPulseEncoder          = 19500;           // the maximum amoun
 volatile uint32_t travelTime         = 0;                // the time it takes the sound to comback to the sensor in micoseconds
 uint16_t         distance            = 0;                // distance from de ultrasoic sensor in cm
 volatile bool    newMesurement       = false;            // is true when the interupt is triggerd to indicate a new mesurement
-uint8_t          controlMode         = 0;                // 0 = off, 1 = manuel, 2 = PID 3 = homeing
+uint8_t          controlMode         = 0;                // 0 = off, 1 = manuel, 2 = PID
 uint8_t          cursorPlace         = 0;                // is used to select the parameter that you want to change when in PID controlmode
 uint16_t         pidChangeDetection  = 0;                // is used to see if there are changes in the PID setting
 int16_t          kp                  = 0;                // P parameter from the PID
 int16_t          ki                  = 0;                // I parameter from the PID
 int16_t          kd                  = 0;                // D parameter from the PID
-uint8_t          setDistance         = 65;               // target distance in cm that the PID will try to reach, this value can be changed on de 
+uint8_t          setDistance         = 65;               // target distance in cm that the PID will try to reach, this value can be changed on de
 int16_t          leftAcutatorStroke  = 150;              // amount of mm the actuator is extened. value is 150 so you dont have to press the button 1000x. the vlalue will only be send when the controllmode is != OFF
 int16_t          rightAcutatorStroke = 150;              // amount of mm the actuator is extened. value is 150 so you dont have to press the button 1000x. the vlalue will only be send when the controllmode is != OFF
 int16_t          leftAcutatorStroke2 = 150;
@@ -42,24 +47,33 @@ bool             buttonStateChange3  = false;            // is true if a button 
 bool             buttonStateChange4  = false;            // is true if a button is recently changed its state
 bool             buttonStateChange   = false;            // is true if one of of the buttons has a state change. can be used as a flag to update the screen once before the refreshDisplay counter
 
- 
+// data van CAN
+float pitch;
+float roll;
+
+bool home_front_foil;
+bool home_rear_foi;
+
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(RS, E, D4, D5, D6, D7);
 //RunningMedian travelTimeMedian = RunningMedian(medianSize);
 
 void setup()
 {
-   Serial.begin(250000);
+  Serial.begin(250000);
   pinMode(LED_BUILTIN, OUTPUT);
   setup_buttons_and_encoders();
- 
+
   lcd.begin(16, 4);                                // Switch on the LCD screen
   lcd.setCursor(0, 0);
   lcd.print F(("VHL-Nordwin"));                    // Print these words to my LCD screen
   lcd.setCursor(0, 2);
   lcd.print F(("Zonnebootteam"));
 
- 
+  mcp2515.reset();
+  mcp2515.setBitrate(CAN_125KBPS);
+  mcp2515.setNormalMode();
+
   pinMode(triggerPin, OUTPUT);                     // Pin 3 as triggerpin (output)
   pinMode(echoPin, INPUT);                         // Pin 2 [INT0] as echopin (input)
   pinMode(buttonPin1, INPUT_PULLUP);
@@ -172,6 +186,8 @@ void loop()
     displayControlMode();
   }
 
+  read_CAN_data();
+
   //===================================================================== main loop reset buttonStateChange ============================================================
 
   buttonStateChange1 = false;                                     // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
@@ -181,6 +197,19 @@ void loop()
   buttonStateChange  = false;                                     // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
 }
 
+//======================================================================== read_CAN_data ======================================================================
+void read_CAN_data() {
+  if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK) {
+    if (canMsg.can_id == 0x64) {
+      pitch = float_from_can(0);
+      roll = float_from_can(4);
+
+      Serial.print(pitch);
+      Serial.print("\t");
+      Serial.println(roll);
+    }
+  }
+}
 //========================================================================= doMeasurement =====================================================================
 
 void doMeasurement()
@@ -372,11 +401,11 @@ void computeButtonPress()
       }
 
 
- //     voltageDac = map((leftAcutatorStroke * 65), 0, maxPulseEncoder, 0, 4095); TODO
+      //     voltageDac = map((leftAcutatorStroke * 65), 0, maxPulseEncoder, 0, 4095); TODO
 
- //     dac.setVoltage(voltageDac, false); TODO
+      //     dac.setVoltage(voltageDac, false); TODO
 
- //     Serial.print(voltageDac); TODO
+      //     Serial.print(voltageDac); TODO
     }
   }
 
@@ -384,7 +413,7 @@ void computeButtonPress()
   {
     if (buttonHome == HIGH)
     {
- //     dac.setVoltage(0, false); TODO
+      //     dac.setVoltage(0, false); TODO
     } else {
 
       if ((button1 == HIGH) && (buttonStateChange1))
@@ -508,7 +537,7 @@ void computePid()
   diffError = error - oldError;
   diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;
 
-  P = -1 * (kp*0.10) * error;
+  P = -1 * (kp * 0.10) * error;
   I = I + (-0.00001 * ki * error * (pidTime - lastPidTime));
   D = -1 * kd * diffErrorFilter / (pidTime - lastPidTime);
 
@@ -810,4 +839,16 @@ void startupMenu()
     delay(25);
   }
   lcd.clear();
+}
+
+float float_from_can(uint8_t start_idx)
+{
+  byte byteVal[sizeof(float)];
+  for (int i = 0; i < sizeof(float); i++)
+  {
+    byteVal[i] = canMsg.data[start_idx + i];
+  }
+  float f;
+  memcpy(&f, byteVal, sizeof(float));
+  return f;
 }
