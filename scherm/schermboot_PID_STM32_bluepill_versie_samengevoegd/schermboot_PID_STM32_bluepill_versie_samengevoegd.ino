@@ -1,5 +1,5 @@
 //#include <Arduino.h>
-#include "pinmap.h"
+#include "pinmap_bluepill.h"
 
 const uint8_t    triggerPin              = trig_1;                // Pin number for trigger signal
 const uint8_t    echoPin                 = echo_1;                // Pin number for echo signal (interrupt pin)
@@ -54,9 +54,9 @@ void setup()
   setup_buttons_and_encoders();
  
   lcd.begin(16, 4);                                // Switch on the LCD screen
-  lcd.setCursor(2, 0);
+  lcd.setCursor(0, 0);
   lcd.print F(("VHL-Nordwin"));                    // Print these words to my LCD screen
-  lcd.setCursor(1, 1);
+  lcd.setCursor(0, 2);
   lcd.print F(("Zonnebootteam"));
 
  
@@ -70,7 +70,7 @@ void setup()
 
 
   // Attach function call_INT0 to pin 2 when it CHANGEs state
-  attachInterrupt(digitalPinToInterrupt(PA12), call_INT0, CHANGE );          // Pin 2 -> INT0
+  attachInterrupt(digitalPinToInterrupt(echoPin), call_INT0, CHANGE );          // Pin 2 -> INT0
 
   delay(25);
   while (buttonAll == 0)
