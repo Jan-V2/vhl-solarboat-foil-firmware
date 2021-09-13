@@ -22,3 +22,6 @@ Pulsen achter
 
 scherm -> gyro
 home
+
+pid
+limit I factor when motor is at full speed (in motor controllers and screen)
