@@ -50,6 +50,10 @@ bool             buttonStateChange   = false;            // is true if one of of
 // data van CAN
 float pitch;
 float roll;
+uint8_t overcurrent_achter;
+int16_t PWM_links;
+int16_t PWM_rechts;
+int16_t PWM_achter;
 
 bool home_front_foil;
 bool home_rear_foi;
@@ -868,3 +872,12 @@ int16_t int16_from_can(uint8_t b1, uint8_t b2)
     ret = b1 | (int16_t)b2 << 8;
     return ret;
 }
+
+can_frame int_to_frame_twice(int16_t i16_1, int16_t i16_2, int16_t i16_3, uint16_t can_id) {
+  byte bytes[sizeof(int16_t) *3];
+  memcpy(bytes, &i16, sizeof(int16_t));
+  memcpy(bytes + sizeof(int16_t), &f2, sizeof(int16_t));
+  memcpy(bytes + sizeof(int16_t)*2, &f2, sizeof(int16_t));
+  can_frame ret;
+  for (uint8_t i = 0; i < sizeof(float) * 2; i++) {
+    ret.data[i] = bytes[i];
