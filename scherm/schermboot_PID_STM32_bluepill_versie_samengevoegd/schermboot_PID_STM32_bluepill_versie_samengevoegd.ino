@@ -204,12 +204,17 @@ void read_CAN_data() {
       pitch = float_from_can(0);
       roll = float_from_can(4);
 
-      Serial.print(pitch);
-      Serial.print("\t");
-      Serial.println(roll);
+    } else if (canMsg.can_id == 0x32) {
+      PWM_links = int_from_can(0);
+      PWM_rechts = int_from_can(2);
+
+    } else if (canMsg.can_id == 0x33) {
+      PWM_achter = int_from_can(0)
     }
+
   }
 }
+
 //========================================================================= doMeasurement =====================================================================
 
 void doMeasurement()
