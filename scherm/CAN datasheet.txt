@@ -1,0 +1,24 @@
+CAN ID'S
+
+ID  HEX  BITS DATA  TYPE  BITS DATA TYPE
+100 0X64 0-3  Pitch Float 4-7  Roll Float
+50  0X32 0-1  Left  INT16 2-3  Roll INT16
+51  0X33 0-1  Rear  INT16 
+
+
+100 is used to transmit gyro data
+50 is used to transmit PWM data from the front motors back to the screen(consists of Left and right).
+51 is used to transmit PWM data from the rear motor back to the screen.
+
+
+TODO
+vleugel -> scherm
+error codes
+
+scherm -> vleugel home
+home (achter en voor)
+Pulsen voor LR
+Pulsen achter
+
+scherm -> gyro
+home
