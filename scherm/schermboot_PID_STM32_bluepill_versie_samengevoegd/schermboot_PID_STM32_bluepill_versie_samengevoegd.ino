@@ -214,7 +214,7 @@ void read_CAN_data() {
 
     } else if (canMsg.can_id == 0x33) {
       PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]); //byte 0-1 is int16_t PWM achter
-      
+
     } else if (canMsg.can_id == 0x33) {
       overcurrent_achter = canMsg.data[0]; //byte 0 is uint8_t overcurrent achter
     }
@@ -867,17 +867,19 @@ float float_from_can(uint8_t start_idx)
 
 int16_t int16_from_can(uint8_t b1, uint8_t b2)
 {
-    // maakt van twee bytes een int16_t
-    int16_t ret;
-    ret = b1 | (int16_t)b2 << 8;
-    return ret;
+  // maakt van twee bytes een int16_t
+  int16_t ret;
+  ret = b1 | (int16_t)b2 << 8;
+  return ret;
 }
 
 can_frame int_to_frame_twice(int16_t i16_1, int16_t i16_2, int16_t i16_3, uint16_t can_id) {
-  byte bytes[sizeof(int16_t) *3];
-  memcpy(bytes, &i16, sizeof(int16_t));
-  memcpy(bytes + sizeof(int16_t), &f2, sizeof(int16_t));
-  memcpy(bytes + sizeof(int16_t)*2, &f2, sizeof(int16_t));
+  byte bytes[sizeof(int16_t) * 3];
+  memcpy(bytes, &i16_1, sizeof(int16_t));
+  memcpy(bytes + sizeof(int16_t), &i16_1, sizeof(int16_t));
+  memcpy(bytes + sizeof(int16_t) * 2, &i16_3, sizeof(int16_t));
   can_frame ret;
-  for (uint8_t i = 0; i < sizeof(float) * 2; i++) {
+  for (uint8_t i = 0; i < sizeof(int16_t)* 3; i++) {
     ret.data[i] = bytes[i];
+  }
+}
