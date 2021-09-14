@@ -12,7 +12,7 @@ const uint8_t    buttonPin4              = BUTTON_1;               // Pin number
 const uint8_t    buttonPin3              = BUTTON_2;               // Pin number for button
 const uint8_t    buttonPin2              = BUTTON_3;               // Pin number for button
 const uint8_t    buttonPin1              = BUTTON_4;               // Pin number for button
-const uint8_t    buttonPinHome           = ENC_1_BTN;
+const uint8_t    buttonPin_encoder_1     = ENC_1_BTN;
 const uint8_t    pollTimeSensor          = 89;               // How many milliseconds between sensor polls (the PID runs at the same speed)
 //const uint16_t   soundSpeed              = 343;              // Speed of sound in m/s (choos one soundspeed)
 const float      soundSpeed              = 58.3;             // speed of sound in micosecond/cm (58,3) (choos one soundspeed)
@@ -24,7 +24,7 @@ const uint16_t  maxPulseEncoder          = 19500;           // the maximum amoun
 volatile uint32_t travelTime         = 0;                // the time it takes the sound to comback to the sensor in micoseconds
 uint16_t         distance            = 0;                // distance from de ultrasoic sensor in cm
 volatile bool    newMesurement       = false;            // is true when the interupt is triggerd to indicate a new mesurement
-uint8_t          controlMode         = 0;                // 0 = off, 1 = manuel, 2 = PID
+uint8_t          controlMode         = 0;                // 0 = off, 1 = manuel, 2 = PID en 3 = HOME
 uint8_t          cursorPlace         = 0;                // is used to select the parameter that you want to change when in PID controlmode
 uint16_t         pidChangeDetection  = 0;                // is used to see if there are changes in the PID setting
 int16_t          kp                  = 0;                // P parameter from the PID
@@ -40,7 +40,10 @@ uint8_t          button2             = LOW;              // LOW in rest state an
 uint8_t          button3             = LOW;              // LOW in rest state and HIGH when pressed
 uint8_t          button4             = LOW;              // LOW in rest state and HIGH when pressed
 uint8_t          buttonAll           = 0;                // to count the total buttons that are high
-uint8_t          buttonHome          = LOW;              // home the foils
+uint8_t          button_encoder_1    = LOW;              // home the foils
+uint8_t          button_encoder_2    = LOW;
+bool             buttonStateChange_enc_1 = false;
+bool             buttonStateChange_enc_2 = false;
 bool             buttonStateChange1  = false;            // is true if a button is recently changed its state
 bool             buttonStateChange2  = false;            // is true if a button is recently changed its state
 bool             buttonStateChange3  = false;            // is true if a button is recently changed its state
@@ -54,8 +57,8 @@ uint8_t overcurrent_achter;
 int16_t PWM_links;
 int16_t PWM_rechts;
 int16_t PWM_achter;
-int16_t CAN_pulsen_links;
-int16_t CAN_pulsen_rechts;
+int16_t CAN_pulsen_voor;
+int16_t CAN_pulsen_offset;
 int16_t CAN_pulsen_achter;
 uint8_t home_front_foil;
 uint8_t home_rear_foi;
@@ -86,7 +89,7 @@ void setup()
   pinMode(buttonPin2, INPUT_PULLUP);
   pinMode(buttonPin3, INPUT_PULLUP);
   pinMode(buttonPin4, INPUT_PULLUP);
-  pinMode(buttonPinHome, INPUT_PULLUP);
+  pinMode(buttonPin_encoder_1, INPUT_PULLUP);
 
 
   // Attach function call_INT0 to pin 2 when it CHANGEs state
@@ -143,7 +146,7 @@ void loop()
   {
     x = 255;                                                             // delay before longpress starts
   }
-  if ((millis() - lastButtonCompute > x)  || (buttonStateChange) || (buttonHome == HIGH))        // normal compute delay or longpess delay
+  if ((millis() - lastButtonCompute > x)  || (buttonStateChange) || (button_encoder_1 == HIGH))        // normal compute delay or longpess delay
   {
     lastButtonCompute = millis();
     computeButtonPress();
@@ -195,12 +198,15 @@ void loop()
   read_CAN_data();
 
   //===================================================================== main loop reset buttonStateChange ============================================================
-
+ 
+  buttonStateChange_enc_1 = false;
+  buttonStateChange_enc_2 = false;
   buttonStateChange1 = false;                                     // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
   buttonStateChange2 = false;                                     // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
   buttonStateChange3 = false;                                     // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
   buttonStateChange4 = false;                                     // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
   buttonStateChange  = false;                                     // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
+
 }
 
 //======================================================================== read_CAN_data ======================================================================
@@ -208,7 +214,7 @@ void read_CAN_data() {
   if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK) {
     if (canMsg.can_id == 0x64) {
       pitch = float_from_can(0);// byte 0-3 is float pitch
-      roll = float_from_can(4);// byte 4-7 is float pitch
+      roll = float_from_can(4);// byte 4-7 is float roll
 
     } else if (canMsg.can_id == 0x32) {
       PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]); //byte 0-1 is int16_t PWM links
@@ -216,9 +222,7 @@ void read_CAN_data() {
 
     } else if (canMsg.can_id == 0x33) {
       PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]); //byte 0-1 is int16_t PWM achter
-
-    } else if (canMsg.can_id == 0x33) {
-      overcurrent_achter = canMsg.data[0]; //byte 0 is uint8_t overcurrent achter
+      overcurrent_achter = canMsg.data[2]; //byte 2 is uint8_t overcurrent achter uint8_t
     }
 
   }
@@ -226,7 +230,7 @@ void read_CAN_data() {
 
 //========================================================================= send_CAN_data ==================================================================
 void send_CAN_data() {
-int_to_frame_thrice(CAN_pulsen_links, CAN_pulsen_rechts, CAN_pulsen_achter, uint16_t can_id)
+  int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200);
 }
 //========================================================================= doMeasurement =====================================================================
 
@@ -382,7 +386,7 @@ void computeButtonPress()
 
   if ((buttonAll == 1) && (controlMode == 1))                             // works only in manuel
   {
-    if (buttonHome == HIGH)
+    if (button_encoder_1 == HIGH)
     {
       // dac.setVoltage(0, false); TODO
       Serial.println("HOME");
@@ -429,7 +433,7 @@ void computeButtonPress()
 
   else  if ((buttonAll == 1) && (controlMode == 2))                                           // works only when in PID mode
   {
-    if (buttonHome == HIGH)
+    if (button_encoder_1 == HIGH)
     {
       //     dac.setVoltage(0, false); TODO
     } else {
@@ -702,12 +706,12 @@ void buttonPressDetection()
   button2 = ! digitalRead(buttonPin2);
   button3 = ! digitalRead(buttonPin3);
   button4 = ! digitalRead(buttonPin4);
-  buttonHome = ! digitalRead(buttonPinHome);
+  button_encoder_1 = ! digitalRead(buttonPin_encoder_1);
 
-  //Serial.print(buttonHome);
+  //Serial.print(button_encoder_1);
 
 
-  buttonAll   = button1 + button2 + button3 + button4 + buttonHome;
+  buttonAll   = button1 + button2 + button3 + button4 + button_encoder_1;
   //=========================================================================== buttonStateChange detection =======================================================================
 
   static uint8_t lastButton1 = LOW;
@@ -885,7 +889,7 @@ can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3, uint1
   memcpy(bytes + sizeof(int16_t), &i16_1, sizeof(int16_t));
   memcpy(bytes + sizeof(int16_t) * 2, &i16_3, sizeof(int16_t));
   can_frame ret;
-  for (uint8_t i = 0; i < sizeof(int16_t)* 3; i++) {
+  for (uint8_t i = 0; i < sizeof(int16_t) * 3; i++) {
     ret.data[i] = bytes[i];
   }
 }
