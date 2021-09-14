@@ -222,6 +222,10 @@ void read_CAN_data() {
   }
 }
 
+//========================================================================= send_CAN_data ==================================================================
+
+int_to_frame_thrice(CAN_pulsen_links, CAN_pulsen_rechts, CAN_pulsen_achter, uint16_t can_id)
+
 //========================================================================= doMeasurement =====================================================================
 
 void doMeasurement()
@@ -873,7 +877,7 @@ int16_t int16_from_can(uint8_t b1, uint8_t b2)
   return ret;
 }
 
-can_frame int_to_frame_twice(int16_t i16_1, int16_t i16_2, int16_t i16_3, uint16_t can_id) {
+can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3, uint16_t can_id) {
   byte bytes[sizeof(int16_t) * 3];
   memcpy(bytes, &i16_1, sizeof(int16_t));
   memcpy(bytes + sizeof(int16_t), &i16_1, sizeof(int16_t));
