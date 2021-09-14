@@ -54,9 +54,11 @@ uint8_t overcurrent_achter;
 int16_t PWM_links;
 int16_t PWM_rechts;
 int16_t PWM_achter;
-
-bool home_front_foil;
-bool home_rear_foi;
+int16_t CAN_pulsen_links;
+int16_t CAN_pulsen_rechts;
+int16_t CAN_pulsen_achter;
+uint8_t home_front_foil;
+uint8_t home_rear_foi;
 
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(RS, E, D4, D5, D6, D7);
@@ -223,9 +225,9 @@ void read_CAN_data() {
 }
 
 //========================================================================= send_CAN_data ==================================================================
-
+void send_CAN_data() {
 int_to_frame_thrice(CAN_pulsen_links, CAN_pulsen_rechts, CAN_pulsen_achter, uint16_t can_id)
-
+}
 //========================================================================= doMeasurement =====================================================================
 
 void doMeasurement()
