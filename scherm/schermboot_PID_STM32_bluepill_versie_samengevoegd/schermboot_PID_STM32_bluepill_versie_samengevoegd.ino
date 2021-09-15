@@ -70,8 +70,7 @@ uint8_t home_rear_foi;
 LiquidCrystal lcd(RS, E, D4, D5, D6, D7);
 //RunningMedian travelTimeMedian = RunningMedian(medianSize);
 
-void setup()
-{
+void setup() {
   Serial.begin(250000);
   pinMode(LED_BUILTIN, OUTPUT);
   setup_buttons_and_encoders();
@@ -103,8 +102,7 @@ void setup()
     buttonPressDetection();             // wait until button press
     delay(25);
   }
-  while (buttonAll == 1)
-  {
+  while (buttonAll == 1) {
     buttonPressDetection();             // wait until button release
     delay(25);
   }
@@ -117,50 +115,42 @@ void setup()
     ; //Wait for Serial
   }
   Serial.println F(("--- Serial monitor started ---"));
-
 }
 
-void loop()
-{
+void loop() {
   digitalWrite(LED_BUILTIN, HIGH);
   //================================================================== main loop poll sensor ==========================================================================
 
   static uint32_t lastPollSensor = 0;
-  if (millis() - lastPollSensor > pollTimeSensor)
-  {
+  if (millis() - lastPollSensor > pollTimeSensor) {
     lastPollSensor = millis();
     doMeasurement();                                                     // measure the distance from the ultrasonic sensor
   }
 
   static uint32_t lastPollButtons = 0;
-  if (millis() - lastPollButtons > pollTimeButtons)
-  {
+  if (millis() - lastPollButtons > pollTimeButtons) {
     lastPollButtons = millis();
     buttonPressDetection();                                              // check for buttonpress
   }
-
 
   //================================================================== main loop compute data ==========================================================================
 
   static uint8_t x;
   static uint32_t lastButtonCompute = 0;
-  if (buttonStateChange)                                                 // check if button was just pressed
-  {
+  if (buttonStateChange) {                                               // check if button was just pressed
     x = 255;                                                             // delay before longpress starts
   }
-  if ((millis() - lastButtonCompute > x)  || (buttonStateChange) || (button_encoder_1 == HIGH))        // normal compute delay or longpess delay
-  {
+
+  if ((millis() - lastButtonCompute > x)  || (buttonStateChange) || (button_encoder_1 == HIGH)) {       // normal compute delay or longpess delay
     lastButtonCompute = millis();
     computeButtonPress();
-    if (!buttonStateChange)                                              // if no state change the button is still pressed
-    {
+    if (!buttonStateChange) {                                            // if no state change the button is still pressed
       x = buttonCompompute;                                              // reset delay to (longpress) normal delay
     }
   }
 
   static uint16_t lastPidChangeDetection = 1;
-  if (((newMesurement || (pidChangeDetection != lastPidChangeDetection)) && controlMode == 2))
-  {
+  if (((newMesurement || (pidChangeDetection != lastPidChangeDetection)) && controlMode == 2)) {
     newMesurement = false;
     computePid();
   }
@@ -168,31 +158,30 @@ void loop()
   //================================================================== main loop display data ==========================================================================
 
   static uint32_t lastRefreshDistanceDisplay = 0;
-  if (millis() - lastRefreshDistanceDisplay > refreshDistanceDisplay)
-  {
+  if (millis() - lastRefreshDistanceDisplay > refreshDistanceDisplay) {
     lastRefreshDistanceDisplay = millis();
     computeDistance();                                              // can stay in display data instead off compute date because it is only uesed here
     displayDistance();
   }
+
   static int16_t lastLeftAcutatorStroke = 0;
   static int16_t lastRightAcutatorStroke = 0;
-  if ((leftAcutatorStroke != lastLeftAcutatorStroke) || (rightAcutatorStroke != lastRightAcutatorStroke))
-  {
+
+  if ((leftAcutatorStroke != lastLeftAcutatorStroke) || (rightAcutatorStroke != lastRightAcutatorStroke)) {
     lastLeftAcutatorStroke = leftAcutatorStroke;
     lastRightAcutatorStroke = rightAcutatorStroke;
     displayActuatorStroke();
   }
 
-  if ((pidChangeDetection != lastPidChangeDetection) && controlMode == 2) // wanneer de PID ingesteld word
-  {
+  if ((pidChangeDetection != lastPidChangeDetection) && controlMode == 2) {// wanneer de PID ingesteld word
     lastPidChangeDetection = pidChangeDetection;
     pidDisplay();
   }
 
 
   static uint8_t lastControlMode = 255;                           // use 255 so that it runs at least ones to display the data
-  if (controlMode != lastControlMode)
-  {
+
+  if (controlMode != lastControlMode) {
     lastControlMode = controlMode;
     displayControlMode();
   }
@@ -208,10 +197,10 @@ void loop()
   buttonStateChange3 = false;                                     // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
   buttonStateChange4 = false;                                     // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
   buttonStateChange  = false;                                     // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
-
 }
 
 //======================================================================== read_CAN_data ======================================================================
+
 void read_CAN_data() {
   if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK) {
     if (canMsg.can_id == 0x64) {
@@ -233,20 +222,14 @@ void read_CAN_data() {
 }
 
 //========================================================================= send_CAN_data ==================================================================
+
 void send_CAN_data() {
   int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200);
 }
+
 //========================================================================= doMeasurement =====================================================================
 
-void doMeasurement()
-{
-  // First measurement(s) will be 0
-  //noInterrupts();   // cli()
-  // travelTimeMedian.add(travelTime);
-  //distance = travelTime / 58;       //speed of sound = 58,3 (micosecond/cm)
-  // interrupts();     // sei();
-
-
+void doMeasurement() {
   // Initiate next trigger
   digitalWrite(triggerPin, LOW);    // LOW
   delayMicroseconds(2);             // for 2µs
@@ -257,125 +240,90 @@ void doMeasurement()
 
 //============================================================================ pidDisplay ===============================================================
 
-void pidDisplay()
-{
-  if (cursorPlace == 0)                                    // if 0 change the setDitance parameter
-  {
+void pidDisplay() {
+  if (cursorPlace == 0) {                                   // if 0 change the setDitance parameter
     lcd.setCursor(6, 0);
     lcd.print F((">"));
-
-    if (setDistance < 10)
-    {
+    if (setDistance < 10) {
       lcd.print F((" "));
     }
+
     lcd.print(setDistance);
     lcd.setCursor(9, 0);
     lcd.print F(("cm"));
-  }
-  else
-  {
+  } else {
     lcd.setCursor(6, 0);
     lcd.print F(("S"));
   }
 
-  if (cursorPlace == 1)                                    // if 1 change the differnce between left and right actuatorStroke parameter
-  {
+  if (cursorPlace == 1) {                                   // if 1 change the differnce between left and right actuatorStroke parameter
     lcd.setCursor(12, 0);
     lcd.print F((">"));
     lcd.setCursor(12, 1);
     lcd.print F((">"));
-  }
-  else
-  {
+  } else {
     lcd.setCursor(12, 0);
     lcd.print F(("L"));
     lcd.setCursor(12, 1);
     lcd.print F(("R"));
   }
 
-  if (cursorPlace == 2)                                    // if 2 change the P from the PID parameter
-  {
+  if (cursorPlace == 2) {                                   // if 2 change the P from the PID parameter
     lcd.setCursor(0, 1);
     lcd.print F((">"));
     lcd.print(kp);
-    if (kp < 10)
-    {
+    if (kp < 10) {
       lcd.print F(("  "));
-    }
-    else if (kp < 100)
-    {
+    } else if (kp < 100) {
       lcd.print F((" "));
     }
-  }
-  else
-  {
+  } else {
     lcd.setCursor(0, 1);
     lcd.print F(("P"));
     lcd.print(kp);
-    if (kp < 10)
-    {
+    if (kp < 10) {
       lcd.print F(("  "));
-    }
-    else if (kp < 100)
-    {
+    } else if (kp < 100) {
       lcd.print F((" "));
     }
   }
 
-  if (cursorPlace == 3)                                    // if 3 change the I from the PID parameter
-  {
+  if (cursorPlace == 3) {                                   // if 3 change the I from the PID parameter
     lcd.setCursor(4, 1);
     lcd.print F((">"));
     lcd.print(ki);
-    if (ki < 10)
-    {
+    if (ki < 10) {
       lcd.print F(("  "));
-    }
-    else if (ki < 100)
-    {
+    } else if (ki < 100) {
       lcd.print F((" "));
     }
-  }
-  else
-  {
+  } else {
     lcd.setCursor(4, 1);
     lcd.print F(("I"));
     lcd.print(ki);
-    if (ki < 10)
-    {
+    if (ki < 10) {
       lcd.print F(("  "));
-    }
-    else if (ki < 100)
-    {
+    } else if (ki < 100) {
       lcd.print F((" "));
     }
   }
 
-  if (cursorPlace == 4)                                    // if 4 change the D from the PID parameter
-  {
+  if (cursorPlace == 4) {                                   // if 4 change the D from the PID parameter
     lcd.setCursor(8, 1);
     lcd.print F((">"));
     lcd.print(kd);
-    if (kd < 10)
-    {
+    if (kd < 10) {
       lcd.print F(("  "));
-    }
-    else if (kd < 100)
-    {
+    } else if (kd < 100) {
       lcd.print F((" "));
     }
-  }
-  else
-  {
+  } else {
     lcd.setCursor(8, 1);
     lcd.print F(("D"));
     lcd.print(kd);
-    if (kd < 10)
-    {
+    if (kd < 10) {
       lcd.print F(("  "));
-    }
-    else if (kd < 100)
-    {
+    } else if (kd < 100) {
       lcd.print F((" "));
     }
   }
@@ -383,132 +331,71 @@ void pidDisplay()
 
 //===================================================================== computeButtonPress =========================================================================
 
-void computeButtonPress()
-{
+void computeButtonPress() {
   static int8_t differnce = 0;
   differnce = leftAcutatorStroke - rightAcutatorStroke;
 
-  if ((buttonAll == 1) && (controlMode == 1))                             // works only in manuel
-  {
-    if (button_encoder_1 == HIGH)
-    {
+  if ((buttonAll == 1) && (controlMode == 1)) {                            // works only in manuel
+    if (button_encoder_1 == HIGH) {
       // dac.setVoltage(0, false); TODO
       Serial.println("HOME");
     } else {
-
-      if (button1 == HIGH)
-      {
+      if (button1 == HIGH) {
         leftAcutatorStroke++;
         rightAcutatorStroke++;
-      }
-
-      else if (button2 == HIGH)
-      {
+      } else if (button2 == HIGH) {
         leftAcutatorStroke--;
         rightAcutatorStroke--;
-      }
-
-      else if ((button3 == HIGH) && (buttonStateChange3))
-      {
-        if (differnce < 9)
-        {
+      } else if ((button3 == HIGH) && (buttonStateChange3)) {
+        if (differnce < 9) {
           leftAcutatorStroke++;
           rightAcutatorStroke--;
         }
-      }
-
-      else if ((button4 == HIGH) && (buttonStateChange4))
-      {
-        if (differnce > -9)
-        {
+      } else if ((button4 == HIGH) && (buttonStateChange4)) {
+        if (differnce > -9) {
           leftAcutatorStroke--;
           rightAcutatorStroke++;
         }
       }
-
-
-      //     voltageDac = map((leftAcutatorStroke * 65), 0, maxPulseEncoder, 0, 4095); TODO
-
-      //     dac.setVoltage(voltageDac, false); TODO
-
-      //     Serial.print(voltageDac); TODO
     }
   } else  if ((buttonAll == 1) && (controlMode == 2)) {                                           // works only when in PID_voor mode
-
-    if ((button1 == HIGH) && (buttonStateChange1))
-    {
+    if ((button1 == HIGH) && (buttonStateChange1)) {
       cursorPlace--;
     }
-    else if ((button2 == HIGH) && (buttonStateChange2))
-    {
+    else if ((button2 == HIGH) && (buttonStateChange2)) {
       cursorPlace++;
-      if (cursorPlace == 5)
-      {
+      if (cursorPlace == 5) {
         cursorPlace = 0;
       }
-    }
-
-    else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 0))                 // if cursor place is at 0 change setDistance
-    {
+    } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 0)) {                // if cursor place is at 0 change setDistance
       setDistance--;
-    }
-
-    else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 0))
-    {
+    } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 0)) {
       setDistance++;
-    }
-
-    else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 1))                 // if cursor place is at 1 change left and right acutatorStroke
-    {
-      if (differnce < 9)
-      {
+    } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 1)) {                // if cursor place is at 1 change left and right acutatorStroke
+      if (differnce < 9) {
         leftAcutatorStroke2++;
         rightAcutatorStroke2--;
       }
-    }
-
-    else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1))
-    {
-      if (differnce > -9)
-      {
+    } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1)) {
+      if (differnce > -9) {
         leftAcutatorStroke2--;
         rightAcutatorStroke2++;
       }
-    }
-
-    else if ((button3 == HIGH) && (cursorPlace == 2))                 // if cursor place is at 2 change the P from PID
-    {
+    } else if ((button3 == HIGH) && (cursorPlace == 2)) {                // if cursor place is at 2 change the P from PID
       kp--;
-    }
-
-    else if ((button4 == HIGH) && (cursorPlace == 2))
-    {
+    } else if ((button4 == HIGH) && (cursorPlace == 2)) {
       kp++;
-    }
-
-    else if ((button3 == HIGH) && (cursorPlace == 3))                 // if cursor place is at 3 change the I from PID
-    {
+    } else if ((button3 == HIGH) && (cursorPlace == 3)) {                // if cursor place is at 3 change the I from PID
       ki--;
-    }
-
-    else if ((button4 == HIGH) && (cursorPlace == 3))
-    {
+    } else if ((button4 == HIGH) && (cursorPlace == 3)) {
       ki++;
-    }
-
-    else if ((button3 == HIGH) && (cursorPlace == 4))                 // if cursor place is at 4 change the D from PID
-    {
+    } else if ((button3 == HIGH) && (cursorPlace == 4)) {                // if cursor place is at 4 change the D from PID
       kd--;
-    }
-
-    else if ((button4 == HIGH) && (cursorPlace == 4))
-    {
+    } else if ((button4 == HIGH) && (cursorPlace == 4)) {
       kd++;
     }
-
     pidChangeDetection = setDistance + cursorPlace + kp + ki + kd;
   }
-
 
   leftAcutatorStroke = constrain(leftAcutatorStroke, 0, 300);
   rightAcutatorStroke = constrain(rightAcutatorStroke, 0, 300);
@@ -519,19 +406,15 @@ void computeButtonPress()
   kd = constrain(kd, 0, 999);
 }
 
-
 //======================================================================= computeDistance ==========================================================================
 
-void computeDistance()
-{
+void computeDistance() {
   distance = (travelTime + (0.5 * soundSpeed)) / soundSpeed;          // because int are rounded down we add 0,5 cm or 29 micoseconds
-
 }
 
 //======================================================================= computePid ==========================================================================
 
-void computePid()
-{
+void computePid() {
   static uint16_t setTrevelTime = 0;
   static int16_t error = 0;
   static int16_t diffError = 0;
@@ -564,8 +447,7 @@ void computePid()
   I = constrain(I, -1300, 1300);
   D = constrain(D, -325, 325);
 
-  if (ki == 0)
-  {
+  if (ki == 0) {
     I = 0;
   }
 
@@ -590,30 +472,21 @@ void computePid()
   // oldPidTotal = newPidTotal;
   oldError = error;
   lastPidTime = pidTime;
-
 }
 
 //======================================================================= displayDistance ==========================================================================
 
-void displayDistance()
-{
+void displayDistance() {
   lcd.setCursor(0, 0);                               // set curser at distantce place
 
-  if (distance == 0)                                 // check for error
-  {
+  if (distance == 0) {                                // check for error
     lcd.print F(("ERROR"));                          // print error
-  }
-  else {                                             // if no error print the distance
-
-    if (distance < 10)
-    {
+  } else {                                             // if no error print the distance
+    if (distance < 10) {
       lcd.print F(("  "));
-    }
-    else if (distance < 100)
-    {
+    } else if (distance < 100) {
       lcd.print F((" "));
     }
-
     lcd.print(distance);
     lcd.print F(("cm"));                            // print unit cm for distance
   }
@@ -621,48 +494,29 @@ void displayDistance()
 
 //======================================================================= displayActuatorStroke ==========================================================================
 
-void displayActuatorStroke()
-{
-  if (controlMode == 2)
-  {
+void displayActuatorStroke() {
+  if (controlMode == 2) {
     lcd.setCursor(13, 0);                             // set cursor for left acutator distance in mm
-  }
-  else
-  {
+  } else {
     lcd.setCursor(10, 0);                             // set cursor for left acutator distance in mm
     lcd.print F(("L"));
-  }
-
-  if (leftAcutatorStroke < 10)
-  {
+  } if (leftAcutatorStroke < 10) {
     lcd.print F(("  "));
-  }
-  else if (leftAcutatorStroke < 100)
-  {
+  } else if (leftAcutatorStroke < 100) {
     lcd.print F((" "));
   }
   lcd.print(leftAcutatorStroke);                   // print distance right acutator
   lcd.print F(("mm"));                              // print unit mm for acutator distance
 
-  //=================================================================================================================================================
-
-  if (controlMode == 2)
-  {
+  if (controlMode == 2) {
     lcd.setCursor(13, 1);                             // set cursor for left acutator distance in mm
-
-  }
-  else
-  {
+  } else {
     lcd.setCursor(10, 1);                             // set cursor for left acutator distance in mm
     lcd.print F(("R"));
   }
-
-  if (rightAcutatorStroke < 10)
-  {
+  if (rightAcutatorStroke < 10) {
     lcd.print F(("  "));
-  }
-  else if (rightAcutatorStroke < 100)
-  {
+  } else if (rightAcutatorStroke < 100) {
     lcd.print F((" "));
   }
   lcd.print(rightAcutatorStroke);                   // print distance right acutator
@@ -671,23 +525,15 @@ void displayActuatorStroke()
 
 //======================================================================= displayControlMode ==========================================================================
 
-void displayControlMode()
-{
+void displayControlMode() {
   lcd.setCursor(6, 0);
-  if (controlMode == 0)                                // check controlmode. for off, manuel or automatic PID control
-  {
+  if (controlMode == 0) {                               // check controlmode. for off, manuel or automatic PID control
     lcd.print F(("OFF"));
-  }
-  else if (controlMode == 1)
-  {
+  } else if (controlMode == 1) {
     lcd.print F(("MAN"));
-  }
-  else if (controlMode == 2)
-  {
+  } else if (controlMode == 2) {
     //lcd.print F(("PID"));
-  }
-  else if (controlMode == 3)
-  {
+  } else if (controlMode == 3) {
     lcd.setCursor(0, 1);
     lcd.print("HOMING");
   }
@@ -695,10 +541,7 @@ void displayControlMode()
 
 //======================================================================== buttonPressDetection =========================================================================
 
-void buttonPressDetection()
-{
-
-
+void buttonPressDetection() {
   button1 = ! digitalRead(buttonPin1);
   button2 = ! digitalRead(buttonPin2);
   button3 = ! digitalRead(buttonPin3);
@@ -707,6 +550,7 @@ void buttonPressDetection()
   button_encoder_2 = ! digitalRead(buttonPin_encoder_2);
 
   buttonAll = button1 + button2 + button3 + button4 + button_encoder_1 + button_encoder_2;
+
   //=========================================================================== buttonStateChange detection =======================================================================
 
   static uint8_t lastButton1 = LOW;
@@ -716,46 +560,33 @@ void buttonPressDetection()
   static uint8_t lastButton_encoder_1 = LOW;
   static uint8_t lastButton_encoder_2 = LOW;
 
-  if (lastButton1 != button1)                           // button1
-  {
+  if (lastButton1 != button1) {                          // button1
     lastButton1 = button1;
     buttonStateChange1 = true;
   }
-
-  if (lastButton2 != button2)                           // button2
-  {
+  if (lastButton2 != button2) {                          // button2
     lastButton2 = button2;
     buttonStateChange2 = true;
   }
-
-  if (lastButton3 != button3)                           // button3
-  {
+  if (lastButton3 != button3) {                          // button3
     lastButton3 = button3;
     buttonStateChange3 = true;
   }
-
-  if (lastButton4 != button4)                           // button4
-  {
+  if (lastButton4 != button4) {                          // button4
     lastButton4 = button4;
     buttonStateChange4 = true;
   }
-  if (lastButton_encoder_1 != button_encoder_1)                           // button3
-  {
+  if (lastButton_encoder_1 != button_encoder_1) {                          // encoder button 1
     lastButton_encoder_1 = button_encoder_1;
     buttonStateChange_enc_1 = true;
   }
-
-  if (lastButton_encoder_2 != button_encoder_2)                           // button4
-  {
+  if (lastButton_encoder_2 != button_encoder_2) {                          // encoder button 2
     lastButton_encoder_2 = button_encoder_2;
     buttonStateChange_enc_2 = true;
   }
-
-  if ((buttonStateChange1 + buttonStateChange2 + buttonStateChange3 + buttonStateChange4) > 0)
-  {
+  if ((buttonStateChange1 + buttonStateChange2 + buttonStateChange3 + buttonStateChange4 + buttonStateChange_enc_1 + buttonStateChange_enc_2) > 0) {
     buttonStateChange = true;
   }
-
 }
 
 //=============================================================================== interrupt for ultrasonic sensor ==================================================================
@@ -782,21 +613,14 @@ void call_INT0() {
     //=========================================================================== out of range detection =========================================================================
 
     static uint8_t i = 0;
-    if ((travelTime > 15000) || (travelTime < 1300)) // if object is out of range or mesurement error
-    {
+    if ((travelTime > 15000) || (travelTime < 1300)) {// if object is out of range or mesurement error
       travelTime = oldTravelTime;                   // use preveus mesurement becaus of mesurement error
-
-      if (( i < 4) && (travelTime > 1300))           // count out of range mesurement untill five
-      {
+      if (( i < 4) && (travelTime > 1300)) {          // count out of range mesurement untill five
         i++;
-      }
-      else
-      {
+      } else {
         travelTime = 0;                            // if object is realy out of range return 0
       }
-    }
-    else
-    {
+    } else {
       oldTravelTime = travelTime;                 // save a new mesurement as old mesurment
       i = 0;                                      // reset out of range counter
     }
@@ -805,8 +629,7 @@ void call_INT0() {
 
 //=========================================================================== startupMenu =========================================================================
 
-void startupMenu()
-{
+void startupMenu() {
   lcd.print F(("1:OFF"));                // print Menu
   lcd.setCursor(0, 1);
   lcd.print F(("2:Manuel"));
@@ -819,50 +642,34 @@ void startupMenu()
   lcd.setCursor(9, 2);
   lcd.print F(("6:balans"));
 
-  while (buttonAll == 0)
-  {
+  while (buttonAll == 0) {
     buttonPressDetection();             // wait until button press
     delay(25);
   }
-
-  if (button1)
-  {
+  if (button1) {
     controlMode = 0;                    // contolMode OFF
     lcd.clear();
-  }
-  else
-  {
+  } else {
     lcd.clear();
     lcd.setCursor(2, 0);
     lcd.print F(("Hold button"));
     delay(1000);
   }
-
   buttonPressDetection();
   delay(25);
   buttonPressDetection();
 
-  if (button2)
-  {
+  if (button2) {
     controlMode = 1;                    // contolMode Manuel
-  }
-  else if (button3)
-  {
+  } else if (button3) {
     controlMode = 2;                    // contolMode PID
-  }
-  else if (button4)
-  {
+  } else if (button4) {
     controlMode = 3;                    // contolMode HOME
   }
-
-
-
   lcd.setCursor(1, 0);
   lcd.print F(("Release button"));      //  as feedback for menue selection
 
-
-  while (buttonAll > 0)
-  {
+  while (buttonAll > 0) {
     buttonPressDetection();             // wait until button release
     delay(25);
   }
