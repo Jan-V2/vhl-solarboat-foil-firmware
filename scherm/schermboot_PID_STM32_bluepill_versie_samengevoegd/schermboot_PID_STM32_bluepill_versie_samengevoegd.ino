@@ -96,11 +96,10 @@ void setup()
 
 
   // Attach function call_INT0 to pin 2 when it CHANGEs state
-  attachInterrupt(digitalPinToInterrupt(echoPin), call_INT0, CHANGE );          // Pin 2 -> INT0
+  attachInterrupt(digitalPinToInterrupt(echoPin), call_INT0, CHANGE);          // Pin 2 -> INT0
 
   delay(25);
-  while (buttonAll == 0)
-  {
+  while (buttonAll == 0) {
     buttonPressDetection();             // wait until button press
     delay(25);
   }
@@ -184,7 +183,7 @@ void loop()
     displayActuatorStroke();
   }
 
-  if ((pidChangeDetection != lastPidChangeDetection) && controlMode == 2)
+  if ((pidChangeDetection != lastPidChangeDetection) && controlMode == 2) // wanneer de PID ingesteld word
   {
     lastPidChangeDetection = pidChangeDetection;
     pidDisplay();
@@ -434,99 +433,92 @@ void computeButtonPress()
 
       //     Serial.print(voltageDac); TODO
     }
-  }
+  } else  if ((buttonAll == 1) && (controlMode == 2)) {                                           // works only when in PID_voor mode
 
-  else  if ((buttonAll == 1) && (controlMode == 2))                                           // works only when in PID mode
-  {
-    if (button_encoder_1 == HIGH)
+    if ((button1 == HIGH) && (buttonStateChange1))
     {
-      //     dac.setVoltage(0, false); TODO
-    } else {
-
-      if ((button1 == HIGH) && (buttonStateChange1))
+      cursorPlace--;
+    }
+    else if ((button2 == HIGH) && (buttonStateChange2))
+    {
+      cursorPlace++;
+      if (cursorPlace == 5)
       {
-        cursorPlace--;
+        cursorPlace = 0;
       }
-      else if ((button2 == HIGH) && (buttonStateChange2))
-      {
-        cursorPlace++;
-        if (cursorPlace == 5)
-        {
-          cursorPlace = 0;
-        }
-      }
-
-      else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 0))                 // if cursor place is at 0 change setDistance
-      {
-        setDistance--;
-      }
-
-      else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 0))
-      {
-        setDistance++;
-      }
-
-      else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 1))                 // if cursor place is at 1 change left and right acutatorStroke
-      {
-        if (differnce < 9)
-        {
-          leftAcutatorStroke2++;
-          rightAcutatorStroke2--;
-        }
-      }
-
-      else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1))
-      {
-        if (differnce > -9)
-        {
-          leftAcutatorStroke2--;
-          rightAcutatorStroke2++;
-        }
-      }
-
-      else if ((button3 == HIGH) && (cursorPlace == 2))                 // if cursor place is at 2 change the P from PID
-      {
-        kp--;
-      }
-
-      else if ((button4 == HIGH) && (cursorPlace == 2))
-      {
-        kp++;
-      }
-
-      else if ((button3 == HIGH) && (cursorPlace == 3))                 // if cursor place is at 3 change the I from PID
-      {
-        ki--;
-      }
-
-      else if ((button4 == HIGH) && (cursorPlace == 3))
-      {
-        ki++;
-      }
-
-      else if ((button3 == HIGH) && (cursorPlace == 4))                 // if cursor place is at 4 change the D from PID
-      {
-        kd--;
-      }
-
-      else if ((button4 == HIGH) && (cursorPlace == 4))
-      {
-        kd++;
-      }
-
-      pidChangeDetection = setDistance + cursorPlace + kp + ki + kd;
     }
 
+    else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 0))                 // if cursor place is at 0 change setDistance
+    {
+      setDistance--;
+    }
 
-    leftAcutatorStroke = constrain(leftAcutatorStroke, 0, 300);
-    rightAcutatorStroke = constrain(rightAcutatorStroke, 0, 300);
-    cursorPlace = constrain(cursorPlace, 0, 4);
-    setDistance = constrain(setDistance, 20, 99);
-    kp = constrain(kp, 0, 999);
-    ki = constrain(ki, 0, 999);
-    kd = constrain(kd, 0, 999);
+    else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 0))
+    {
+      setDistance++;
+    }
+
+    else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 1))                 // if cursor place is at 1 change left and right acutatorStroke
+    {
+      if (differnce < 9)
+      {
+        leftAcutatorStroke2++;
+        rightAcutatorStroke2--;
+      }
+    }
+
+    else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1))
+    {
+      if (differnce > -9)
+      {
+        leftAcutatorStroke2--;
+        rightAcutatorStroke2++;
+      }
+    }
+
+    else if ((button3 == HIGH) && (cursorPlace == 2))                 // if cursor place is at 2 change the P from PID
+    {
+      kp--;
+    }
+
+    else if ((button4 == HIGH) && (cursorPlace == 2))
+    {
+      kp++;
+    }
+
+    else if ((button3 == HIGH) && (cursorPlace == 3))                 // if cursor place is at 3 change the I from PID
+    {
+      ki--;
+    }
+
+    else if ((button4 == HIGH) && (cursorPlace == 3))
+    {
+      ki++;
+    }
+
+    else if ((button3 == HIGH) && (cursorPlace == 4))                 // if cursor place is at 4 change the D from PID
+    {
+      kd--;
+    }
+
+    else if ((button4 == HIGH) && (cursorPlace == 4))
+    {
+      kd++;
+    }
+
+    pidChangeDetection = setDistance + cursorPlace + kp + ki + kd;
   }
+
+
+  leftAcutatorStroke = constrain(leftAcutatorStroke, 0, 300);
+  rightAcutatorStroke = constrain(rightAcutatorStroke, 0, 300);
+  cursorPlace = constrain(cursorPlace, 0, 4);
+  setDistance = constrain(setDistance, 20, 99);
+  kp = constrain(kp, 0, 999);
+  ki = constrain(ki, 0, 999);
+  kd = constrain(kd, 0, 999);
 }
+
 
 //======================================================================= computeDistance ==========================================================================
 
@@ -747,7 +739,7 @@ void buttonPressDetection()
     lastButton4 = button4;
     buttonStateChange4 = true;
   }
-    if (lastButton_encoder_1 != button_encoder_1)                           // button3
+  if (lastButton_encoder_1 != button_encoder_1)                           // button3
   {
     lastButton_encoder_1 = button_encoder_1;
     buttonStateChange_enc_1 = true;
@@ -770,23 +762,17 @@ void buttonPressDetection()
 
 // Interrupt handling for INT0 (pin 2 on Arduino Uno)
 // Keep this as FAST and LIGHT (cpu load) as possible !
-void call_INT0()
-{
+void call_INT0() {
   byte pinRead;
   pinRead = digitalRead(echoPin);    // same as digitalRead(2) but faster
-
-
 
   unsigned long currentTime = micros();  // Get current time (in µs)
   static volatile uint32_t startTime;
   static uint32_t oldTravelTime = 0;
-  if (pinRead)
-  {
+  if (pinRead) {
     // If pin state has changed to HIGH -> remember start time (in µs)
     startTime = currentTime ;
-  }
-  else
-  {
+  } else {
     // If pin state has changed to LOW -> calculate time passed (in µs)
     travelTime = currentTime - startTime;
     newMesurement = true;
@@ -825,9 +811,13 @@ void startupMenu()
   lcd.setCursor(0, 1);
   lcd.print F(("2:Manuel"));
   lcd.setCursor(9, 0);
-  lcd.print F(("3:PID"));
+  lcd.print F(("3:V vl"));
   lcd.setCursor(9, 1);
   lcd.print F(("4:HOME"));
+  lcd.setCursor(0, 2);
+  lcd.print F(("5:A vl"));
+  lcd.setCursor(9, 2);
+  lcd.print F(("6:balans"));
 
   while (buttonAll == 0)
   {
