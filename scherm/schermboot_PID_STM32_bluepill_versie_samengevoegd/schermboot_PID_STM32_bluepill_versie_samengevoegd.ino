@@ -23,7 +23,7 @@ const uint8_t buttonCompompute = 49;          // How many milliseconds between b
 const uint16_t maxPulseEncoder = 19500;       // the maximum amount of pulses for the front foil motor encoder
 
 volatile uint32_t travelTime = 0;     // the time it takes the sound to comback to the sensor in micoseconds
-uint16_t distance = 0;                // distance from de ultrasoic sensor in cm
+int16_t distance = 0;                // distance from de ultrasoic sensor in cm
 volatile bool newMesurement = false;  // is true when the interupt is triggerd to indicate a new mesurement
 uint8_t controlMode = 0;              // 0 = off, 1 = manuel, 2 = PID en 3 = HOME
 uint8_t cursorPlace = 0;              // is used to select the parameter that you want to change when in PID controlmode
@@ -149,7 +149,7 @@ void loop() {
   static uint16_t lastPidChangeDetection = 1;
   if (((newMesurement || (pidChangeDetection != lastPidChangeDetection)) && controlMode == 2)) {
     newMesurement = false;
-    computePid();
+    computePid_Vvl();
   }
 
   //================================================================== main loop display data ==========================================================================
@@ -395,71 +395,69 @@ void computeButtonPress() {
 //======================================================================= computeDistance ==========================================================================
 
 void computeDistance() {
-  static uint16_t distance_sensor;
+  static int16_t distance_sensor;
   distance_sensor = (travelTime + (0.5 * soundSpeed)) / soundSpeed;  // afstand in cm. because int are rounded down we add 0,5 cm or 29 micoseconds
   static float pitch_rad; // arduino werkt in radians.
 pitch_rad = pitch * M_PI / 180.0; // degees to radians
-distance = distance_sensor - (270 * tan(pitch_rad)); // afstand van het dek tot het water onder de vleugel door rekening te houden met de hoek van de boot.
+distance = distance_sensor - (270 * tan(pitch_rad)) + 0.5; // afstand van het dek tot het water onder de vleugel door rekening te houden met de hoek van de boot. because int are rounded down we add 0,5
 }
 
 //======================================================================= computePid ==========================================================================
 
-void computePid() {
-  static uint16_t setTrevelTime = 0;
-  static int16_t error = 0;
-  static int16_t diffError = 0;
-  static int16_t diffErrorFilter = 0;
-  static int16_t oldError = 0;
-  static int16_t P = 0;
-  static int16_t I = 0;
-  static int16_t D = 0;
-  static int16_t newPidTotal = 0;
+void computePid_Vvl() {
+  static float error = 0;
+  static float diffError = 0;
+  static float diffErrorFilter = 0;
+  static float oldError = 0;
+  static float P = 0;
+  static float I = 0;
+  static float D = 0;
+  static float pidVvlTotal = 0;
   static int16_t pidOffset = 0;
-  static int32_t lastPidTime = 0;
-  static int32_t pidTime = 0;
+  static uint32_t lastPidTime = 0;
+  static uint32_t pidTime = 0;
   static int32_t leftAcutatorPos;
   static int32_t rightAcutatorPos;
+  static int16_t pidLoopTime_ms = 0;
+  static float pidLoopTime_s = 0;
 
   pidTime = millis();
-
-  setTrevelTime = setDistance * soundSpeed;
-  error = travelTime - setTrevelTime;
+  pidLoopTime_ms = pidTime - lastPidTime;
+  lastPidTime = pidTime;
+  pidLoopTime_s = float(pidLoopTime_ms) / 1000.0;
+  error = float(setDistance) - float(distance);
   diffError = error - oldError;
-  diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;
+  oldError = error;
+  diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3; // filter om te voorkomen dat de D te aggrasief reageert op ruis.
 
-  P = -1 * (kp * 0.10) * error;
-  I = I + (-0.00001 * ki * error * (pidTime - lastPidTime));
-  D = -1 * kd * diffErrorFilter / (pidTime - lastPidTime);
+  P = float(kp) * error / 100.0; // delen door 100 om komma te besparen op het display.
+  if ((abs(PWM_links) + abs(PWM_rechts)) != 800) {
+  I = I + (float(ki) * error * pidLoopTime_s / 100.0);
+  }
+  D = (float(kd) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
 
-  P = constrain(P, -2600, 1300);
-  I = constrain(I, -1300, 1300);
-  D = constrain(D, -325, 325);
+  P = constrain(P, -12.0, 12.0);
+  I = constrain(I, -12.0, 12.0);
+  D = constrain(D, -12.0, 12.0);
 
   if (ki == 0) {
     I = 0;
   }
 
-  newPidTotal = P + I + D;
-  Serial.println(newPidTotal);
+  pidVvlTotal = P + I + D; // PID wordt berekend in graden
+  Serial.println(pidVvlTotal);
 
-  //pidOffset = newPidTotal - oldPidTotal;
+  //pidOffset = pidVvlTotal - oldPidTotal;
 
-  newPidTotal = constrain(newPidTotal, -2600, 1300);
+  pidVvlTotal = constrain(pidVvlTotal, -2600, 1300);
 
-  pidOffset = newPidTotal;
+  pidOffset = pidVvlTotal;
 
   leftAcutatorStroke = leftAcutatorStroke2 + (pidOffset / 65);  // afstand in mm
   rightAcutatorStroke = rightAcutatorStroke2 + (pidOffset / 65);
 
   leftAcutatorPos = (leftAcutatorStroke2 * 65) + pidOffset;  // afstand in pulsen
   rightAcutatorPos = (rightAcutatorStroke2 * 65) + pidOffset;
-
-  Serial.println(leftAcutatorPos);
-  Serial.println(rightAcutatorPos);
-
-  // oldPidTotal = newPidTotal;
-  oldError = error;
-  lastPidTime = pidTime;
 }
 
 //======================================================================= displayDistance ==========================================================================
