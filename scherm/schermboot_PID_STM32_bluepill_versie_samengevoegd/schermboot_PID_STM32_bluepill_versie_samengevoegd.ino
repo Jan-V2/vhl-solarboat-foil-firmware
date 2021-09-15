@@ -106,7 +106,6 @@ void setup() {
     buttonPressDetection();  // wait until button release
     delay(25);
   }
-
   lcd.clear();
 
   startupMenu();
@@ -126,7 +125,6 @@ void loop() {
     lastPollSensor = millis();
     doMeasurement();  // measure the distance from the ultrasonic sensor
   }
-
   static uint32_t lastPollButtons = 0;
   if (millis() - lastPollButtons > pollTimeButtons) {
     lastPollButtons = millis();
@@ -137,10 +135,10 @@ void loop() {
 
   static uint8_t x;
   static uint32_t lastButtonCompute = 0;
+
   if (buttonStateChange) {  // check if button was just pressed
     x = 255;                // delay before longpress starts
   }
-
   if ((millis() - lastButtonCompute > x) || (buttonStateChange) || (button_encoder_1 == HIGH)) {  // normal compute delay or longpess delay
     lastButtonCompute = millis();
     computeButtonPress();
@@ -148,7 +146,6 @@ void loop() {
       x = buttonCompompute;    // reset delay to (longpress) normal delay
     }
   }
-
   static uint16_t lastPidChangeDetection = 1;
   if (((newMesurement || (pidChangeDetection != lastPidChangeDetection)) && controlMode == 2)) {
     newMesurement = false;
@@ -163,7 +160,6 @@ void loop() {
     computeDistance();  // can stay in display data instead off compute date because it is only uesed here
     displayDistance();
   }
-
   static int16_t lastLeftAcutatorStroke = 0;
   static int16_t lastRightAcutatorStroke = 0;
 
@@ -172,13 +168,10 @@ void loop() {
     lastRightAcutatorStroke = rightAcutatorStroke;
     displayActuatorStroke();
   }
-
   if ((pidChangeDetection != lastPidChangeDetection) && controlMode == 2) {  // wanneer de PID ingesteld word
     lastPidChangeDetection = pidChangeDetection;
     pidDisplay();
   }
-
-
   static uint8_t lastControlMode = 255;  // use 255 so that it runs at least ones to display the data
 
   if (controlMode != lastControlMode) {
@@ -246,7 +239,6 @@ void pidDisplay() {
     if (setDistance < 10) {
       lcd.print F((" "));
     }
-
     lcd.print(setDistance);
     lcd.setCursor(9, 0);
     lcd.print F(("cm"));
@@ -254,7 +246,6 @@ void pidDisplay() {
     lcd.setCursor(6, 0);
     lcd.print F(("S"));
   }
-
   if (cursorPlace == 1) {  // if 1 change the differnce between left and right actuatorStroke parameter
     lcd.setCursor(12, 0);
     lcd.print F((">"));
@@ -266,7 +257,6 @@ void pidDisplay() {
     lcd.setCursor(12, 1);
     lcd.print F(("R"));
   }
-
   if (cursorPlace == 2) {  // if 2 change the P from the PID parameter
     lcd.setCursor(0, 1);
     lcd.print F((">"));
@@ -286,7 +276,6 @@ void pidDisplay() {
       lcd.print F((" "));
     }
   }
-
   if (cursorPlace == 3) {  // if 3 change the I from the PID parameter
     lcd.setCursor(4, 1);
     lcd.print F((">"));
@@ -306,7 +295,6 @@ void pidDisplay() {
       lcd.print F((" "));
     }
   }
-
   if (cursorPlace == 4) {  // if 4 change the D from the PID parameter
     lcd.setCursor(8, 1);
     lcd.print F((">"));
