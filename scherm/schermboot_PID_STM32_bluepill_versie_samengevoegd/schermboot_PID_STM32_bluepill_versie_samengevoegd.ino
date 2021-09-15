@@ -665,7 +665,7 @@ void startupMenu() {
 
 float float_from_can(uint8_t start_idx) {
   byte byteVal[sizeof(float)];
-  for (int i = 0; i < sizeof(float); i++) {
+  for (uint i = 0; i < sizeof(float); i++) {
     byteVal[i] = canMsg.data[start_idx + i];
   }
   float f;
