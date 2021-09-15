@@ -62,6 +62,7 @@ int16_t PWM_achter;
 int16_t CAN_pulsen_voor = 123;
 int16_t CAN_pulsen_offset = 456;
 int16_t CAN_pulsen_achter = 789;
+
 uint8_t home_front_foil;
 uint8_t home_rear_foi;
 
@@ -76,9 +77,9 @@ void setup()
   setup_buttons_and_encoders();
 
   lcd.begin(16, 4);                                // Switch on the LCD screen
-  lcd.setCursor(0, 0);
+  lcd.setCursor(2, 0);
   lcd.print F(("VHL-Nordwin"));                    // Print these words to my LCD screen
-  lcd.setCursor(0, 2);
+  lcd.setCursor(1, 2);
   lcd.print F(("Zonnebootteam"));
 
   mcp2515.reset();
