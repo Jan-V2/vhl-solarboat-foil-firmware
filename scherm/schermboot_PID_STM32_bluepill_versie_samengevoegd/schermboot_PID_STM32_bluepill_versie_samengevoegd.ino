@@ -13,6 +13,7 @@ const uint8_t    buttonPin3              = BUTTON_2;               // Pin number
 const uint8_t    buttonPin2              = BUTTON_3;               // Pin number for button
 const uint8_t    buttonPin1              = BUTTON_4;               // Pin number for button
 const uint8_t    buttonPin_encoder_1     = ENC_1_BTN;
+const uint8_t    buttonPin_encoder_2     = ENC_2_BTN;
 const uint8_t    pollTimeSensor          = 89;               // How many milliseconds between sensor polls (the PID runs at the same speed)
 //const uint16_t   soundSpeed              = 343;              // Speed of sound in m/s (choos one soundspeed)
 const float      soundSpeed              = 58.3;             // speed of sound in micosecond/cm (58,3) (choos one soundspeed)
@@ -40,10 +41,10 @@ uint8_t          button2             = LOW;              // LOW in rest state an
 uint8_t          button3             = LOW;              // LOW in rest state and HIGH when pressed
 uint8_t          button4             = LOW;              // LOW in rest state and HIGH when pressed
 uint8_t          buttonAll           = 0;                // to count the total buttons that are high
-uint8_t          button_encoder_1    = LOW;              // home the foils
-uint8_t          button_encoder_2    = LOW;
-bool             buttonStateChange_enc_1 = false;
-bool             buttonStateChange_enc_2 = false;
+uint8_t          button_encoder_1    = LOW;              // LOW in rest state and HIGH when pressed
+uint8_t          button_encoder_2    = LOW;              // LOW in rest state and HIGH when pressed
+bool             buttonStateChange_enc_1 = false;        // is true if a button is recently changed its state
+bool             buttonStateChange_enc_2 = false;        // is true if a button is recently changed its state
 bool             buttonStateChange1  = false;            // is true if a button is recently changed its state
 bool             buttonStateChange2  = false;            // is true if a button is recently changed its state
 bool             buttonStateChange3  = false;            // is true if a button is recently changed its state
@@ -57,9 +58,10 @@ uint8_t overcurrent_achter;
 int16_t PWM_links;
 int16_t PWM_rechts;
 int16_t PWM_achter;
-int16_t CAN_pulsen_voor;
-int16_t CAN_pulsen_offset;
-int16_t CAN_pulsen_achter;
+
+int16_t CAN_pulsen_voor = 123;
+int16_t CAN_pulsen_offset = 456;
+int16_t CAN_pulsen_achter = 789;
 uint8_t home_front_foil;
 uint8_t home_rear_foi;
 
@@ -198,7 +200,7 @@ void loop()
   read_CAN_data();
 
   //===================================================================== main loop reset buttonStateChange ============================================================
- 
+
   buttonStateChange_enc_1 = false;
   buttonStateChange_enc_2 = false;
   buttonStateChange1 = false;                                     // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
@@ -223,6 +225,8 @@ void read_CAN_data() {
     } else if (canMsg.can_id == 0x33) {
       PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]); //byte 0-1 is int16_t PWM achter
       overcurrent_achter = canMsg.data[2]; //byte 2 is uint8_t overcurrent achter uint8_t
+
+      Serial.println(PWM_achter);
     }
 
   }
@@ -707,17 +711,17 @@ void buttonPressDetection()
   button3 = ! digitalRead(buttonPin3);
   button4 = ! digitalRead(buttonPin4);
   button_encoder_1 = ! digitalRead(buttonPin_encoder_1);
+  button_encoder_2 = ! digitalRead(buttonPin_encoder_2);
 
-  //Serial.print(button_encoder_1);
-
-
-  buttonAll   = button1 + button2 + button3 + button4 + button_encoder_1;
+  buttonAll = button1 + button2 + button3 + button4 + button_encoder_1 + button_encoder_2;
   //=========================================================================== buttonStateChange detection =======================================================================
 
   static uint8_t lastButton1 = LOW;
   static uint8_t lastButton2 = LOW;
   static uint8_t lastButton3 = LOW;
   static uint8_t lastButton4 = LOW;
+  static uint8_t lastButton_encoder_1 = LOW;
+  static uint8_t lastButton_encoder_2 = LOW;
 
   if (lastButton1 != button1)                           // button1
   {
@@ -741,6 +745,17 @@ void buttonPressDetection()
   {
     lastButton4 = button4;
     buttonStateChange4 = true;
+  }
+    if (lastButton_encoder_1 != button_encoder_1)                           // button3
+  {
+    lastButton_encoder_1 = button_encoder_1;
+    buttonStateChange_enc_1 = true;
+  }
+
+  if (lastButton_encoder_2 != button_encoder_2)                           // button4
+  {
+    lastButton_encoder_2 = button_encoder_2;
+    buttonStateChange_enc_2 = true;
   }
 
   if ((buttonStateChange1 + buttonStateChange2 + buttonStateChange3 + buttonStateChange4) > 0)
