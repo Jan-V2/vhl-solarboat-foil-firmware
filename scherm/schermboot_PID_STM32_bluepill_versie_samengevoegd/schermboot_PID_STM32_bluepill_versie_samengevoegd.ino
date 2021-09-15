@@ -16,7 +16,7 @@ const uint8_t buttonPin_encoder_1 = ENC_1_BTN;
 const uint8_t buttonPin_encoder_2 = ENC_2_BTN;
 const uint8_t pollTimeSensor = 89;  // How many milliseconds between sensor polls (the PID runs at the same speed)
 //const uint16_t   soundSpeed              = 343;              // Speed of sound in m/s (choos one soundspeed)
-const float soundSpeed = 58.3;                // speed of sound in micosecond/cm (58,3) (choos one soundspeed)
+const float soundSpeed = 58.309038;                // speed of sound in micosecond/cm (29,15*2=58.3 want heen en terug)  (choos one soundspeed)
 const uint16_t refreshDistanceDisplay = 399;  // How many milliseconds between display updates
 const uint8_t pollTimeButtons = 24;           // How many milliseconds between button polls
 const uint8_t buttonCompompute = 49;          // How many milliseconds between button compute. less mili is faster long press
@@ -395,7 +395,9 @@ void computeButtonPress() {
 //======================================================================= computeDistance ==========================================================================
 
 void computeDistance() {
-  distance = (travelTime + (0.5 * soundSpeed)) / soundSpeed;  // because int are rounded down we add 0,5 cm or 29 micoseconds
+  distance = (travelTime + (0.5 * soundSpeed)) / soundSpeed;  // afstand in cm. because int are rounded down we add 0,5 cm or 29 micoseconds
+  static float pitch_rad; // arduino werkt in radians.
+pitch_rad = pitch * m_PI
 }
 
 //======================================================================= computePid ==========================================================================
@@ -409,9 +411,7 @@ void computePid() {
   static int16_t P = 0;
   static int16_t I = 0;
   static int16_t D = 0;
-  //static int16_t pidTotaal = 0;
   static int16_t newPidTotal = 0;
-  //static int16_t oldPidTotal = 0;
   static int16_t pidOffset = 0;
   static int32_t lastPidTime = 0;
   static int32_t pidTime = 0;
@@ -586,7 +586,7 @@ void call_INT0() {
 
   unsigned long currentTime = micros();  // Get current time (in µs)
   static volatile uint32_t startTime;
-  static uint32_t oldTravelTime = 0;
+  static volatile uint32_t oldTravelTime = 0;
   if (pinRead) {
     // If pin state has changed to HIGH -> remember start time (in µs)
     startTime = currentTime;
