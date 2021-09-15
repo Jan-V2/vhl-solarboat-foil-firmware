@@ -395,9 +395,11 @@ void computeButtonPress() {
 //======================================================================= computeDistance ==========================================================================
 
 void computeDistance() {
-  distance = (travelTime + (0.5 * soundSpeed)) / soundSpeed;  // afstand in cm. because int are rounded down we add 0,5 cm or 29 micoseconds
+  static uint16_t distance_sensor;
+  distance_sensor = (travelTime + (0.5 * soundSpeed)) / soundSpeed;  // afstand in cm. because int are rounded down we add 0,5 cm or 29 micoseconds
   static float pitch_rad; // arduino werkt in radians.
-pitch_rad = pitch * m_PI
+pitch_rad = pitch * M_PI / 180.0; // degees to radians
+distance = distance_sensor - (270 * tan(pitch_rad)); // afstand van het dek tot het water onder de vleugel door rekening te houden met de hoek van de boot.
 }
 
 //======================================================================= computePid ==========================================================================
