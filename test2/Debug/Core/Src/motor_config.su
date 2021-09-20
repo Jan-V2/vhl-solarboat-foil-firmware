@@ -1,0 +1,8 @@
+motor_config.cpp:48:6:void set_m1_speed(int)	16	static
+motor_config.cpp:49:6:void set_m2_speed(int)	16	static
+motor_config.cpp:50:5:int get_m1_current()	8	static
+motor_config.cpp:51:5:int get_m2_current()	8	static
+motor_config.cpp:12:8:Motor::Motor()	16	static
+motor_config.cpp:54:7:Motor get_motor(Motor_Num)	16	static
+motor_config.cpp:68:1:void __static_initialization_and_destruction_0(int, int)	16	static
+motor_config.cpp:68:1:cpp)	8	static

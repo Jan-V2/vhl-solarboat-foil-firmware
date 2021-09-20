@@ -1,0 +1,12 @@
+DualVNH5019MotorShield.cpp:5:1:DualVNH5019MotorShield::DualVNH5019MotorShield()	96	static
+DualVNH5019MotorShield.cpp:40:6:void DualVNH5019MotorShield::init()	16	static
+DualVNH5019MotorShield.cpp:60:6:void DualVNH5019MotorShield::setM1Speed(int)	24	static
+DualVNH5019MotorShield.cpp:96:6:void DualVNH5019MotorShield::setM2Speed(int)	24	static
+DualVNH5019MotorShield.cpp:130:6:void DualVNH5019MotorShield::setSpeeds(int, int)	24	static
+DualVNH5019MotorShield.cpp:137:6:void DualVNH5019MotorShield::setM1Brake(int)	16	static
+DualVNH5019MotorShield.cpp:154:6:void DualVNH5019MotorShield::setM2Brake(int)	16	static
+DualVNH5019MotorShield.cpp:171:6:void DualVNH5019MotorShield::setBrakes(int, int)	24	static
+DualVNH5019MotorShield.cpp:178:14:unsigned int DualVNH5019MotorShield::getM1CurrentMilliamps()	16	static
+DualVNH5019MotorShield.cpp:187:14:unsigned int DualVNH5019MotorShield::getM2CurrentMilliamps()	16	static
+DualVNH5019MotorShield.cpp:196:15:unsigned char DualVNH5019MotorShield::getM1Fault()	16	static
+DualVNH5019MotorShield.cpp:202:15:unsigned char DualVNH5019MotorShield::getM2Fault()	16	static

@@ -1,0 +1,18 @@
+motor_config.h:45:6:void set_m1_speed(int)	16	static
+motor_config.h:46:6:void set_m2_speed(int)	16	static
+motor_config.h:47:5:int get_m1_current()	8	static
+motor_config.h:48:5:int get_m2_current()	8	static
+motor_config.h:11:8:Motor::Motor()	16	static
+motor_config.h:51:7:Motor get_motor(Motor_Num)	16	static
+project.cpp:42:8:<unnamed struct>::<constructor>()	32	static
+project.cpp:52:6:void ret()	8	static
+project.cpp:54:6:void encoder1_ISR()	8	static
+project.cpp:62:6:void encoder2_ISR()	8	static
+project.cpp:71:6:void compute_pid(Motor)	24	static
+project.cpp:110:5:int sample_motor_current(Motor)	24	static
+project.cpp:122:6:void home_actuators()	104	static
+project.cpp:184:6:void user_init()	144	static
+project.cpp:214:6:void parse_uart_cmds()	16	static
+project.cpp:256:6:void user_while()	8	static
+project.cpp:277:1:void __static_initialization_and_destruction_0(int, int)	16	static
+project.cpp:277:1:cpp)	8	static
