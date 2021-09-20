@@ -324,26 +324,21 @@ void computeButtonPress() {
   differnce = leftAcutatorStroke - rightAcutatorStroke;
 
   if ((buttonAll == 1) && (controlMode == 1)) {  // works only in manuel
-    if (button_encoder_1 == HIGH) {
-      // dac.setVoltage(0, false); TODO
-      Serial.println("HOME");
-    } else {
-      if (button1 == HIGH) {
+    if (button1 == HIGH) {
+      leftAcutatorStroke++;
+      rightAcutatorStroke++;
+    } else if (button2 == HIGH) {
+      leftAcutatorStroke--;
+      rightAcutatorStroke--;
+    } else if ((button3 == HIGH) && (buttonStateChange3)) {
+      if (differnce < 9) {
         leftAcutatorStroke++;
-        rightAcutatorStroke++;
-      } else if (button2 == HIGH) {
-        leftAcutatorStroke--;
         rightAcutatorStroke--;
-      } else if ((button3 == HIGH) && (buttonStateChange3)) {
-        if (differnce < 9) {
-          leftAcutatorStroke++;
-          rightAcutatorStroke--;
-        }
-      } else if ((button4 == HIGH) && (buttonStateChange4)) {
-        if (differnce > -9) {
-          leftAcutatorStroke--;
-          rightAcutatorStroke++;
-        }
+      }
+    } else if ((button4 == HIGH) && (buttonStateChange4)) {
+      if (differnce > -9) {
+        leftAcutatorStroke--;
+        rightAcutatorStroke++;
       }
     }
   } else if ((buttonAll == 1) && (controlMode == 2)) {  // works only when in PID_voor mode
@@ -422,7 +417,8 @@ void computePid_Vvl() {
   static int16_t pidLoopTime_ms = 0;
   static float pidLoopTime_s = 0;
   static float hoek_voor_vleugel = 0;
-  static uint16_t pulsen_liniear
+  static uint16_t pulsen_liniear;
+  static float afstand_liniear;
 
   pidTime = millis();
   pidLoopTime_ms = pidTime - lastPidTime;
@@ -452,8 +448,8 @@ void computePid_Vvl() {
   pidVvlTotal = constrain(pidVvlTotal, -12.0, 12.0);
 
   hoek_voor_vleugel = pidVvlTotal - pitch;
-  afstand_liniear = sqrt(43.2*43.2 + 13.4*13.4 - 2 * 43.2 * 13.4 * cos((hoek_voor_vleugel + 90.0 - 22.49831) * M_PI / 180.0));// lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel))
-  pulsen_liniear = afstand_liniear * pulsen_per_mm * 1;                                                                               // pulsen naar voorvleugel = afstand in cm maal pulsen per cm
+  afstand_liniear = sqrt(43.2 * 43.2 + 13.4 * 13.4 - 2 * 43.2 * 13.4 * cos((hoek_voor_vleugel + 90.0 - 22.49831) * M_PI / 180.0));  // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel))
+  pulsen_liniear = afstand_liniear * pulsen_per_mm * 10;                                                                            // pulsen naar voorvleugel = afstand in cm maal pulsen per cm
   CAN_pulsen_voor = pulsen_liniear;
 }
 
@@ -461,16 +457,16 @@ void computePid_Vvl() {
 
 void displayDistance() {
   lcd.setCursor(0, 0);  // set curser at distantce place
-
-  if (distance == 0) {       // check for error
+  int x constrain(distance, 0, 99);
+  if (x == 0) {              // check for error
     lcd.print F(("ERROR"));  // print error
   } else {                   // if no error print the distance
-    if (distance < 10) {
+    if (x < 10) {
       lcd.print F(("  "));
-    } else if (distance < 100) {
+    } else if (x < 100) {
       lcd.print F((" "));
     }
-    lcd.print(distance);
+    lcd.print(x);
     lcd.print F(("cm"));  // print unit cm for distance
   }
 }
@@ -510,16 +506,19 @@ void displayActuatorStroke() {
 //======================================================================= displayControlMode ==========================================================================
 
 void displayControlMode() {
-  lcd.setCursor(6, 0);
+  lcd.setCursor(12, 0);
   if (controlMode == 0) {  // check controlmode. for off, manuel or automatic PID control
     lcd.print F(("OFF"));
   } else if (controlMode == 1) {
     lcd.print F(("MAN"));
   } else if (controlMode == 2) {
-    //lcd.print F(("PID"));
+    lcd.print F(("V vl"));
   } else if (controlMode == 3) {
-    lcd.setCursor(0, 1);
-    lcd.print("HOMING");
+    lcd.print F(("Home"));
+  } else if (controlMode == 4) {
+    lcd.print F(("Bal"));
+  } else if (controlMode == 5) {
+    lcd.print F(("A vl"));
   }
 }
 
@@ -622,9 +621,9 @@ void startupMenu() {
   lcd.setCursor(9, 1);
   lcd.print F(("4:HOME"));
   lcd.setCursor(0, 2);
-  lcd.print F(("5:A vl"));
+  lcd.print F(("5:Balans"));
   lcd.setCursor(9, 2);
-  lcd.print F(("6:balans"));
+  lcd.print F(("6:A vl"));
 
   while (buttonAll == 0) {
     buttonPressDetection();  // wait until button press
@@ -646,10 +645,14 @@ void startupMenu() {
   if (button2) {
     controlMode = 1;  // contolMode Manuel
   } else if (button3) {
-    controlMode = 2;  // contolMode voorvleugel
+    controlMode = 2;  // contolMode V vl
   } else if (button4) {
-    controlMode = 3;  // contolMode HOME
-  } else if (button_encoder_1)
+    controlMode = 3;  // contolMode Home
+  } else if (button_encoder_1) {
+    controlMode = 4;  // controlMode Balans
+  } else if (button_encoder_2) {
+    controlMode = 5;  // controMode A vl
+  }
 
   lcd.setCursor(1, 0);
   lcd.print F(("Release button"));  //  as feedback for menue selection
@@ -688,6 +691,6 @@ can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3, uint1
     ret.data[i] = bytes[i];
   }
   ret.can_id = can_id;
-  ret.can_dlc = sizeof(int16_t)*3;
+  ret.can_dlc = sizeof(int16_t) * 3;
   return ret;
 }
