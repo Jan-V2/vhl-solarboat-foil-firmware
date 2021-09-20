@@ -16,14 +16,16 @@ const uint8_t buttonPin_encoder_1 = ENC_1_BTN;
 const uint8_t buttonPin_encoder_2 = ENC_2_BTN;
 const uint8_t pollTimeSensor = 89;  // How many milliseconds between sensor polls (the PID runs at the same speed)
 //const uint16_t   soundSpeed              = 343;              // Speed of sound in m/s (choos one soundspeed)
-const float soundSpeed = 58.309038;                // speed of sound in micosecond/cm (29,15*2=58.3 want heen en terug)  (choos one soundspeed)
-const uint16_t refreshDistanceDisplay = 399;  // How many milliseconds between display updates
-const uint8_t pollTimeButtons = 24;           // How many milliseconds between button polls
-const uint8_t buttonCompompute = 49;          // How many milliseconds between button compute. less mili is faster long press
-const uint16_t maxPulseEncoder = 19500;       // the maximum amount of pulses for the front foil motor encoder
+const float soundSpeed = 58.309038;                                  // speed of sound in micosecond/cm (29,15*2=58.3 want heen en terug)  (choos one soundspeed)
+const uint16_t refreshDistanceDisplay = 399;                         // How many milliseconds between display updates
+const uint8_t pollTimeButtons = 24;                                  // How many milliseconds between button polls
+const uint8_t buttonCompompute = 49;                                 // How many milliseconds between button compute. less mili is faster long press
+const uint16_t maxPulseEncoder = 13000;                              // the maximum amount of pulses for the front foil motor encoder
+const uint16_t maxAfstandEncoder = 200;                              // de afstand in mm die de voor linieare motor kan uit schuiven
+const uint16_t pulsen_per_mm = maxPulseEncoder / maxAfstandEncoder;  // pulsen per mm van de linieare motor
 
 volatile uint32_t travelTime = 0;     // the time it takes the sound to comback to the sensor in micoseconds
-int16_t distance = 0;                // distance from de ultrasoic sensor in cm
+int16_t distance = 0;                 // distance from de ultrasoic sensor in cm
 volatile bool newMesurement = false;  // is true when the interupt is triggerd to indicate a new mesurement
 uint8_t controlMode = 0;              // 0 = off, 1 = manuel, 2 = PID en 3 = HOME
 uint8_t cursorPlace = 0;              // is used to select the parameter that you want to change when in PID controlmode
@@ -93,7 +95,6 @@ void setup() {
   pinMode(buttonPin4, INPUT_PULLUP);
   pinMode(buttonPin_encoder_1, INPUT_PULLUP);
 
-
   // Attach function call_INT0 to pin 2 when it CHANGEs state
   attachInterrupt(digitalPinToInterrupt(echoPin), call_INT0, CHANGE);  // Pin 2 -> INT0
 
@@ -118,6 +119,7 @@ void setup() {
 
 void loop() {
   digitalWrite(LED_BUILTIN, HIGH);
+
   //================================================================== main loop poll sensor ==========================================================================
 
   static uint32_t lastPollSensor = 0;
@@ -207,7 +209,6 @@ void read_CAN_data() {
     } else if (canMsg.can_id == 0x33) {
       PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]);  //byte 0-1 is int16_t PWM achter
       overcurrent_achter = canMsg.data[2];                          //byte 2 is uint8_t overcurrent achter uint8_t
-
       Serial.println(PWM_achter);
     }
   }
@@ -397,9 +398,9 @@ void computeButtonPress() {
 void computeDistance() {
   static int16_t distance_sensor;
   distance_sensor = (travelTime + (0.5 * soundSpeed)) / soundSpeed;  // afstand in cm. because int are rounded down we add 0,5 cm or 29 micoseconds
-  static float pitch_rad; // arduino werkt in radians.
-pitch_rad = pitch * M_PI / 180.0; // degees to radians
-distance = distance_sensor - (270 * tan(pitch_rad)) + 0.5; // afstand van het dek tot het water onder de vleugel door rekening te houden met de hoek van de boot. because int are rounded down we add 0,5
+  static float pitch_rad;                                            // arduino werkt in radians.
+  pitch_rad = pitch * M_PI / 180.0;                                  // degees to radians
+  distance = distance_sensor - (270 * tan(pitch_rad)) - 40 + 0.5;    // afstand van de onderkant van de boot (-40) tot het water onder de vleugel door rekening te houden met de hoek van de boot(-270*tan(pitch_rad). because int are rounded down we add 0,5
 }
 
 //======================================================================= computePid ==========================================================================
@@ -420,6 +421,8 @@ void computePid_Vvl() {
   static int32_t rightAcutatorPos;
   static int16_t pidLoopTime_ms = 0;
   static float pidLoopTime_s = 0;
+  static float hoek_voor_vleugel = 0;
+  static uint16_t pulsen_liniear
 
   pidTime = millis();
   pidLoopTime_ms = pidTime - lastPidTime;
@@ -428,11 +431,11 @@ void computePid_Vvl() {
   error = float(setDistance) - float(distance);
   diffError = error - oldError;
   oldError = error;
-  diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3; // filter om te voorkomen dat de D te aggrasief reageert op ruis.
+  diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
 
-  P = float(kp) * error / 100.0; // delen door 100 om komma te besparen op het display.
+  P = float(kp) * error / 100.0;  // delen door 100 om komma te besparen op het display.
   if ((abs(PWM_links) + abs(PWM_rechts)) != 800) {
-  I = I + (float(ki) * error * pidLoopTime_s / 100.0);
+    I = I + (float(ki) * error * pidLoopTime_s / 100.0);
   }
   D = (float(kd) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
 
@@ -441,23 +444,17 @@ void computePid_Vvl() {
   D = constrain(D, -12.0, 12.0);
 
   if (ki == 0) {
-    I = 0;
+    I = 0.0;
   }
-
-  pidVvlTotal = P + I + D; // PID wordt berekend in graden
+  pidVvlTotal = P + I + D;  // PID wordt berekend in graden
   Serial.println(pidVvlTotal);
 
-  //pidOffset = pidVvlTotal - oldPidTotal;
+  pidVvlTotal = constrain(pidVvlTotal, -12.0, 12.0);
 
-  pidVvlTotal = constrain(pidVvlTotal, -2600, 1300);
-
-  pidOffset = pidVvlTotal;
-
-  leftAcutatorStroke = leftAcutatorStroke2 + (pidOffset / 65);  // afstand in mm
-  rightAcutatorStroke = rightAcutatorStroke2 + (pidOffset / 65);
-
-  leftAcutatorPos = (leftAcutatorStroke2 * 65) + pidOffset;  // afstand in pulsen
-  rightAcutatorPos = (rightAcutatorStroke2 * 65) + pidOffset;
+  hoek_voor_vleugel = pidVvlTotal - pitch;
+  afstand_liniear = sqrt(43.2*43.2 + 13.4*13.4 - 2 * 43.2 * 13.4 * cos((hoek_voor_vleugel + 90.0 - 22.49831) * M_PI / 180.0));// lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel))
+  pulsen_liniear = afstand_liniear * pulsen_per_mm * 1;                                                                               // pulsen naar voorvleugel = afstand in cm maal pulsen per cm
+  CAN_pulsen_voor = pulsen_liniear;
 }
 
 //======================================================================= displayDistance ==========================================================================
@@ -649,10 +646,11 @@ void startupMenu() {
   if (button2) {
     controlMode = 1;  // contolMode Manuel
   } else if (button3) {
-    controlMode = 2;  // contolMode PID
+    controlMode = 2;  // contolMode voorvleugel
   } else if (button4) {
     controlMode = 3;  // contolMode HOME
-  }
+  } else if (button_encoder_1)
+
   lcd.setCursor(1, 0);
   lcd.print F(("Release button"));  //  as feedback for menue selection
 
@@ -689,4 +687,7 @@ can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3, uint1
   for (uint8_t i = 0; i < sizeof(int16_t) * 3; i++) {
     ret.data[i] = bytes[i];
   }
+  ret.can_id = can_id;
+  ret.can_dlc = sizeof(int16_t)*3;
+  return ret;
 }
