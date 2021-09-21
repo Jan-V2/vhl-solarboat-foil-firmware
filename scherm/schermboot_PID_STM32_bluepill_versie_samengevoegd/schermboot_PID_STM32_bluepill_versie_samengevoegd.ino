@@ -61,6 +61,7 @@ bool buttonStateChange2 = false;       // is true if a button is recently change
 bool buttonStateChange3 = false;       // is true if a button is recently changed its state
 bool buttonStateChange4 = false;       // is true if a button is recently changed its state
 bool buttonStateChange = false;        // is true if one of of the buttons has a state change. can be used as a flag to update the screen once before the refreshDisplay counter
+bool pid_actief = false; // PID staat uit wanneer false. kan aangepast worden in OFF controlmode 0
 
 // data van CAN
 float pitch;
@@ -158,10 +159,12 @@ void loop() {
     }
   }
   static uint16_t lastPidChangeDetection = 1;
-  if (((newMesurement || (pidChangeDetection != lastPidChangeDetection)) && controlMode == 2)) {
+  if (((newMesurement || (pidChangeDetection != lastPidChangeDetection)) && pid_actief)) {
     newMesurement = false;
     computeDistance();
     computePid_Vvl();
+    computePid_Avl();
+    computePid_balans();
 
   }
 
@@ -176,7 +179,7 @@ void loop() {
   static int16_t lastLeftAcutatorStroke = 0;
   static int16_t lastRightAcutatorStroke = 0;
 
-  if ((pidChangeDetection != lastPidChangeDetection) && controlMode == 2) {  // wanneer de PID ingesteld word
+  if ((pidChangeDetection != lastPidChangeDetection) && pid_actief) {  // wanneer de PID ingesteld word
     lastPidChangeDetection = pidChangeDetection;
     pidDisplay();
   }
@@ -256,16 +259,42 @@ void pidDisplay() {
     lcd.setCursor(6, 0);
     lcd.print F(("S"));
   }
-  if (cursorPlace == 1) {  // if 1 change the differnce between left and right actuatorStroke parameter
-    lcd.setCursor(12, 0);
-    lcd.print F((">"));
+  if (cursorPlace == 1) {  // if 1 change the setRoll parameter
     lcd.setCursor(12, 1);
     lcd.print F((">"));
+    if (setRoll < 0){
+      if (setRoll > -10){
+      lcd.print F((" "));
+      }
+    } else {
+      lcd.print F((" ")); // spatie want geen negatief getal
+    if (setRoll < 10){
+      lcd.print F((" "));
+    }
+    }
+    lcd.print (setRoll);
   } else {
-    lcd.setCursor(12, 0);
-    lcd.print F(("L"));
     lcd.setCursor(12, 1);
-    lcd.print F(("R"));
+    lcd.print F((" "));
+  }  
+  if (cursorPlace == 5) {  // if 5 change the pitch hoek
+    lcd.setCursor(7, 3);
+    lcd.print F((">"));
+    lcd.print(char(224));
+    lcd.print(setPitch);
+    if (setPitch < 10) {
+      lcd.print F((" "));
+    }
+//===========================================
+
+  } else {
+    lcd.setCursor(7, 3);
+    lcd.print F(("S"));
+    lcd.print(char(224));
+    lcd.print(setPitch);
+    if (setPitch < 10) {
+      lcd.print F((" "));
+    }
   }
   if (cursorPlace == 2) {  // if 2 change the P from the PID parameter
     lcd.setCursor(0, 1);
@@ -321,23 +350,6 @@ void pidDisplay() {
     if (kd_Vvl < 10) {
       lcd.print F(("  "));
     } else if (kd_Vvl < 100) {
-      lcd.print F((" "));
-    }
-  }
-  if (cursorPlace == 5) {  // if 5 change the pitch hoek
-    lcd.setCursor(7, 3);
-    lcd.print F((">"));
-    lcd.print(char(224));
-    lcd.print(setPitch);
-    if (setPitch < 10) {
-      lcd.print F((" "));
-    }
-  } else {
-    lcd.setCursor(7, 3);
-    lcd.print F(("S"));
-    lcd.print(char(224));
-    lcd.print(setPitch);
-    if (setPitch < 10) {
       lcd.print F((" "));
     }
   }
@@ -416,15 +428,89 @@ void computeButtonPress() {
       kd_Vvl--;
     } else if ((button4 == HIGH) && (cursorPlace == 4)) {
       kd_Vvl++;
+    } else if ((button3 == HIGH) && (cursorPlace == 5)) {  // if cursor place is at 5 change the pitch van de boot
+      setPitch--;
+    } else if ((button4 == HIGH) && (cursorPlace == 5)) {
+      setPitch++;
     }
-    pidChangeDetection = setDistance + cursorPlace + kp_Vvl + ki_Vvl + kd_Vvl ;
+    pidChangeDetection = setDistance + cursorPlace + kp_Vvl + ki_Vvl + kd_Vvl + setPitch;
+
+  } else if ((buttonAll == 1) && (controlMode == 4)) {  // works only when in 4 balans mode
+    if ((button1 == HIGH) && (buttonStateChange1)) {
+      cursorPlace--;
+    } else if ((button2 == HIGH) && (buttonStateChange2)) {
+      cursorPlace++;
+      if (cursorPlace == 6) {
+        cursorPlace = 0;
+      }
+    } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 0)) {  // if cursor place is at 0 change setDistance
+      setDistance--;
+    } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 0)) {
+      setDistance++;
+    } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 1)) {  // if cursor place is at 1 change roll setpoint
+      setRoll++;
+    } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1)) {
+      setRoll--;
+    } else if ((button3 == HIGH) && (cursorPlace == 2)) {  // if cursor place is at 2 change the P from PID
+      kp_balans--;
+    } else if ((button4 == HIGH) && (cursorPlace == 2)) {
+      kp_balans++;
+    } else if ((button3 == HIGH) && (cursorPlace == 3)) {  // if cursor place is at 3 change the I from PID
+      ki_balans--;
+    } else if ((button4 == HIGH) && (cursorPlace == 3)) {
+      ki_balans++;
+    } else if ((button3 == HIGH) && (cursorPlace == 4)) {  // if cursor place is at 4 change the D from PID
+      kd_balans--;
+    } else if ((button4 == HIGH) && (cursorPlace == 4)) {
+      kd_balans++;
+    } else if ((button3 == HIGH) && (cursorPlace == 5)) {  // if cursor place is at 5 change the ptich van de boot
+          setPitch--;
+    } else if ((button4 == HIGH) && (cursorPlace == 5)) {
+      setPitch++;
+    }
+    pidChangeDetection = setDistance + cursorPlace + kp_balans + ki_balans + kd_balans + setPitch;
+
+  } else if ((buttonAll == 1) && (controlMode == 5)) {  // works only when in 5 achtervleugel mode
+    if ((button1 == HIGH) && (buttonStateChange1)) {
+      cursorPlace--;
+    } else if ((button2 == HIGH) && (buttonStateChange2)) {
+      cursorPlace++;
+      if (cursorPlace == 6) {
+        cursorPlace = 0;
+      }
+    } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 0)) {  // if cursor place is at 0 change setDistance
+      setDistance--;
+    } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 0)) {
+      setDistance++;
+    } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 1)) {  // if cursor place is at 1 change roll setpoint
+      setRoll++;
+    } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1)) {
+      setRoll--;
+    } else if ((button3 == HIGH) && (cursorPlace == 2)) {  // if cursor place is at 2 change the P from PID
+      kp_Avl--;
+    } else if ((button4 == HIGH) && (cursorPlace == 2)) {
+      kp_Avl++;
+    } else if ((button3 == HIGH) && (cursorPlace == 3)) {  // if cursor place is at 3 change the I from PID
+      ki_Avl--;
+    } else if ((button4 == HIGH) && (cursorPlace == 3)) {
+      ki_Avl++;
+    } else if ((button3 == HIGH) && (cursorPlace == 4)) {  // if cursor place is at 4 change the D from PID
+      kd_Avl--;
+    } else if ((button4 == HIGH) && (cursorPlace == 4)) {
+      kd_Avl++;
+    } else if ((button3 == HIGH) && (cursorPlace == 5)) {  // if cursor place is at 5 change the pitch van de boot
+      setPitch--;
+    } else if ((button4 == HIGH) && (cursorPlace == 5)) {
+      setPitch++;
+    }
+    pidChangeDetection = setDistance + cursorPlace + kp_Vvl + ki_Vvl + kd_Vvl + setPitch;
   }
 
   leftAcutatorStroke = constrain(leftAcutatorStroke, 0, 300);
   rightAcutatorStroke = constrain(rightAcutatorStroke, 0, 300);
   cursorPlace = constrain(cursorPlace, 0, 5);
   controlMode = constrain(controlMode, 0, 5);
-  setDistance = constrain(setDistance, 20, 99);
+  setDistance = constrain(setDistance, 0, 99);
   kp_Vvl = constrain(kp_Vvl, 0, 999);
   ki_Vvl = constrain(ki_Vvl, 0, 999);
   kd_Vvl = constrain(kd_Vvl, 0, 999);
@@ -617,44 +703,12 @@ void displayDistance() {
   lcd.print(pitch, 1);
 }
 
-//======================================================================= displayActuatorStroke ==========================================================================
-
-void displayActuatorStroke() {
-  if (controlMode == 2) {
-    lcd.setCursor(13, 0);  // set cursor for left acutator distance in mm
-  } else {
-    lcd.setCursor(10, 0);  // set cursor for left acutator distance in mm
-    lcd.print F(("L"));
-  }
-  if (leftAcutatorStroke < 10) {
-    lcd.print F(("  "));
-  } else if (leftAcutatorStroke < 100) {
-    lcd.print F((" "));
-  }
-  lcd.print(leftAcutatorStroke);  // print distance right acutator
-  lcd.print F(("mm"));            // print unit mm for acutator distance
-
-  if (controlMode == 2) {
-    lcd.setCursor(13, 1);  // set cursor for left acutator distance in mm
-  } else {
-    lcd.setCursor(10, 1);  // set cursor for left acutator distance in mm
-    lcd.print F(("R"));
-  }
-  if (rightAcutatorStroke < 10) {
-    lcd.print F(("  "));
-  } else if (rightAcutatorStroke < 100) {
-    lcd.print F((" "));
-  }
-  lcd.print(rightAcutatorStroke);  // print distance right acutator
-  lcd.print F(("mm"));             // print unit mm for acutator distance
-}
-
 //======================================================================= displayControlMode ==========================================================================
 
 void displayControlMode() {
   lcd.setCursor(12, 0);
   if (controlMode == 0) {  // check controlmode. for off, manuel or automatic PID control
-    lcd.print F(("OFF "));
+    lcd.print F((" OFF"));
   } else if (controlMode == 1) {
     lcd.print F(("MAN "));
   } else if (controlMode == 2) {
@@ -669,16 +723,17 @@ void displayControlMode() {
 }
 
 void OFF() {
-  if (controlMode == 0){
+  if (controlMode == 0) {
     if (button_encoder_1 && buttonStateChange_enc_1) {
-    pid_actief = ! pid_actief);
-      if (pid_actief) {
-       lcd.print ("pid actief")
-      } else {
-        lcd.print("pid niet actief")
-      }
+    pid_actief = ! pid_actief;
     }
+      lcd.setCursor(12, 0);
+          if (pid_actief) {
+       lcd.print ("!");
+      } else {
+        lcd.print (" ");
   }
+}
 }
 
 //======================================================================== buttonPressDetection =========================================================================
