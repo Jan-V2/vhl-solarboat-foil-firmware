@@ -575,9 +575,9 @@ void computePid_ballans() {
   }
   D = (float(kd_Avl) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
 
-  P = constrain(P, hoek_home, 12.0);
-  I = constrain(I, hoek_home, 12.0);
-  D = constrain(D, hoek_home, 12.0);
+  P = constrain(P, -5, 5);
+  I = constrain(I, -5, 5;
+  D = constrain(D, -5, 5);
 
   if (ki_Avl == 0) {
     I = 0.0;
