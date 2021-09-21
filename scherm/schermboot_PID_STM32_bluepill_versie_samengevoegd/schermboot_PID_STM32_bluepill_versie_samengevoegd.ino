@@ -297,8 +297,6 @@ void pidDisplay() {
     if (setPitch < 10) {
       lcd.print F((" "));
     }
-//===========================================
-
   } else {
     lcd.setCursor(7, 3);
     lcd.print F(("S"));
@@ -308,6 +306,8 @@ void pidDisplay() {
       lcd.print F((" "));
     }
   }
+  //===========================================
+  if(controlMode == 2) { // voor vleugel
   if (cursorPlace == 2) {  // if 2 change the P from the PID parameter
     lcd.setCursor(0, 1);
     lcd.print F((">"));
@@ -366,7 +366,125 @@ void pidDisplay() {
     }
   }
   } 
- 
+  if(controlMode == 4) { // balans 
+  if (cursorPlace == 2) {  // if 2 change the P from the PID parameter
+    lcd.setCursor(0, 1);
+    lcd.print F((">"));
+    lcd.print(kp_balans);
+    if (kp_balans < 10) {
+      lcd.print F(("  "));
+    } else if (kp_balans < 100) {
+      lcd.print F((" "));
+    }
+  } else {
+    lcd.setCursor(0, 1);
+    lcd.print F(("P"));
+    lcd.print(kp_balans);
+    if (kp_balans < 10) {
+      lcd.print F(("  "));
+    } else if (kp_balans < 100) {
+      lcd.print F((" "));
+    }
+  }
+  if (cursorPlace == 3) {  // if 3 change the I from the PID parameter
+    lcd.setCursor(4, 1);
+    lcd.print F((">"));
+    lcd.print(ki_balans);
+    if (ki_balans < 10) {
+      lcd.print F(("  "));
+    } else if (ki_balans < 100) {
+      lcd.print F((" "));
+    }
+  } else {
+    lcd.setCursor(4, 1);
+    lcd.print F(("I"));
+    lcd.print(ki_balans);
+    if (ki_balans < 10) {
+      lcd.print F(("  "));
+    } else if (ki_balans < 100) {
+      lcd.print F((" "));
+    }
+  }
+  if (cursorPlace == 4) {  // if 4 change the D from the PID parameter
+    lcd.setCursor(8, 1);
+    lcd.print F((">"));
+    lcd.print(kd_balans);
+    if (kd_balans < 10) {
+      lcd.print F(("  "));
+    } else if (kd_balans < 100) {
+      lcd.print F((" "));
+    }
+  } else {
+    lcd.setCursor(8, 1);
+    lcd.print F(("D"));
+    lcd.print(kd_balans);
+    if (kd_balans < 10) {
+      lcd.print F(("  "));
+    } else if (kd_balans < 100) {
+      lcd.print F((" "));
+    }
+  }
+  } 
+  if(controlMode == 5) { // achtervleugel
+  if (cursorPlace == 2) {  // if 2 change the P from the PID parameter
+    lcd.setCursor(0, 1);
+    lcd.print F((">"));
+    lcd.print(kp_Avl);
+    if (kp_Avl < 10) {
+      lcd.print F(("  "));
+    } else if (kp_Avl < 100) {
+      lcd.print F((" "));
+    }
+  } else {
+    lcd.setCursor(0, 1);
+    lcd.print F(("P"));
+    lcd.print(kp_Avl);
+    if (kp_Avl < 10) {
+      lcd.print F(("  "));
+    } else if (kp_Avl < 100) {
+      lcd.print F((" "));
+    }
+  }
+  if (cursorPlace == 3) {  // if 3 change the I from the PID parameter
+    lcd.setCursor(4, 1);
+    lcd.print F((">"));
+    lcd.print(ki_Avl);
+    if (ki_Avl < 10) {
+      lcd.print F(("  "));
+    } else if (ki_Avl < 100) {
+      lcd.print F((" "));
+    }
+  } else {
+    lcd.setCursor(4, 1);
+    lcd.print F(("I"));
+    lcd.print(ki_Avl);
+    if (ki_Avl < 10) {
+      lcd.print F(("  "));
+    } else if (ki_Avl < 100) {
+      lcd.print F((" "));
+    }
+  }
+  if (cursorPlace == 4) {  // if 4 change the D from the PID parameter
+    lcd.setCursor(8, 1);
+    lcd.print F((">"));
+    lcd.print(kd_Avl);
+    if (kd_Avl < 10) {
+      lcd.print F(("  "));
+    } else if (kd_Avl < 100) {
+      lcd.print F((" "));
+    }
+  } else {
+    lcd.setCursor(8, 1);
+    lcd.print F(("D"));
+    lcd.print(kd_Avl);
+    if (kd_Avl < 10) {
+      lcd.print F(("  "));
+    } else if (kd_Avl < 100) {
+      lcd.print F((" "));
+    }
+  }
+  }     
+}
 
 //===================================================================== computeButtonPress =========================================================================
 
@@ -517,17 +635,15 @@ void computeButtonPress() {
     } else if ((button4 == HIGH) && (cursorPlace == 5)) {
       setPitch++;
     }
-    pidChangeDetection = setDistance + cursorPlace + kp_Vvl + ki_Vvl + kd_Vvl + setPitch + setRoll;
+    pidChangeDetection = setDistance + cursorPlace + kp_Avl + ki_Avl + kd_Avl + setPitch + setRoll;
   }
 
-  leftAcutatorStroke = constrain(leftAcutatorStroke, 0, 300);
-  rightAcutatorStroke = constrain(rightAcutatorStroke, 0, 300);
   cursorPlace = constrain(cursorPlace, 0, 5);
   controlMode = constrain(controlMode, 0, 5);
   setDistance = constrain(setDistance, 0, 99);
-  kp_Vvl = constrain(kp_Vvl, 0, 999);
-  ki_Vvl = constrain(ki_Vvl, 0, 999);
-  kd_Vvl = constrain(kd_Vvl, 0, 999);
+  kp_Avl = constrain(kp_Avl, 0, 999);
+  ki_Avl = constrain(ki_Avl, 0, 999);
+  kd_Avl = constrain(kd_Avl, 0, 999);
 }
 
 //======================================================================= computeDistance ==========================================================================
