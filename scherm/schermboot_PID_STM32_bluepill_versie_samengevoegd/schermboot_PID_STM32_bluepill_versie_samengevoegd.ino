@@ -571,9 +571,9 @@ void computePid_balans() {
 
   P = float(kp_balans) * error / 100.0;  // delen door 100 om komma te besparen op het display.
   if (abs(PWM_) != 400) {
-    I = I + (float(ki_Avl) * error * pidLoopTime_s / 100.0);
+    I = I + (float(ki_balans) * error * pidLoopTime_s / 100.0);
   }
-  D = (float(kd_Avl) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
+  D = (float(kd_balans) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
 
   P = constrain(P, -5, 5);
   I = constrain(I, -5, 5;
