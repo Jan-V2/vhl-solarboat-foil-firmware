@@ -544,7 +544,7 @@ void computePid_Avl() {
 
 //======================================================================== PID offset ===========================================================================
 
-void computePid_ballans() {
+void computePid_balans() {
   static float error = 0;
   static float diffError = 0;
   static float diffErrorFilter = 0;
@@ -579,11 +579,11 @@ void computePid_ballans() {
   I = constrain(I, -5, 5;
   D = constrain(D, -5, 5);
 
-  if (ki_Avl == 0) {
+  if (ki_balans == 0) {
     I = 0.0;
   }
   pidVvlTotal = P + I + D;  // PID wordt berekend in graden
-  Serial.println(pidAvlTotal);
+  Serial.println(pidBalansTotal);
 
   pidAvlTotal = constrain(pidAvlTotal, -12.0, 12.0);
 
