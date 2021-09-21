@@ -39,6 +39,18 @@ int16_t kd_Avl = 0;                   // D parameter from the PID voorvleugel
 int16_t kp_balans = 0;                // P parameter from the PID voorvleugel
 int16_t ki_balans = 0;                // I parameter from the PID voorvleugel
 int16_t kd_balans = 0;                // D parameter from the PID voorvleugel
+float   P_Vvl;
+float  I_Vvl;
+float D_Vvl;
+float P_Avl;
+float I_Avl;
+float D_Avl;
+float P_Balans;
+float I_Balans;
+float D_Balans;
+float pidVvlTotal = 0;
+float pidAvlTotal = 0;
+float pidBalansTotal = 0;
 uint8_t setDistance = 20;             // target distance in cm that the PID will try to reach, this value can be changed on de
 int8_t setRoll = 0;                   // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
 uint8_t setPitch = 0;                 // target pitch in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
@@ -174,7 +186,7 @@ void loop() {
   if (millis() - lastRefreshDistanceDisplay > refreshDistanceDisplay) {
     lastRefreshDistanceDisplay = millis();
     computeDistance(); 
-    displayDistance();
+    displayData();
   }
   static int16_t lastLeftAcutatorStroke = 0;
   static int16_t lastRightAcutatorStroke = 0;
@@ -275,7 +287,7 @@ void pidDisplay() {
     lcd.print (setRoll);
   } else {
     lcd.setCursor(12, 1);
-    lcd.print F((" "));
+    lcd.print F(("R"));
   }  
   if (cursorPlace == 5) {  // if 5 change the pitch hoek
     lcd.setCursor(7, 3);
@@ -353,7 +365,8 @@ void pidDisplay() {
       lcd.print F((" "));
     }
   }
-}
+  } 
+ 
 
 //===================================================================== computeButtonPress =========================================================================
 
@@ -413,9 +426,9 @@ void computeButtonPress() {
     } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 0)) {
       setDistance++;
     } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 1)) {  // if cursor place is at 1 change roll setpoint
-      setRoll++;
-    } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1)) {
       setRoll--;
+    } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1)) {
+      setRoll++;
     } else if ((button3 == HIGH) && (cursorPlace == 2)) {  // if cursor place is at 2 change the P from PID
       kp_Vvl--;
     } else if ((button4 == HIGH) && (cursorPlace == 2)) {
@@ -433,7 +446,8 @@ void computeButtonPress() {
     } else if ((button4 == HIGH) && (cursorPlace == 5)) {
       setPitch++;
     }
-    pidChangeDetection = setDistance + cursorPlace + kp_Vvl + ki_Vvl + kd_Vvl + setPitch;
+    pidChangeDetection = setDistance + cursorPlace + kp_Vvl + ki_Vvl + kd_Vvl + setPitch + setRoll
+    ;
 
   } else if ((buttonAll == 1) && (controlMode == 4)) {  // works only when in 4 balans mode
     if ((button1 == HIGH) && (buttonStateChange1)) {
@@ -448,9 +462,9 @@ void computeButtonPress() {
     } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 0)) {
       setDistance++;
     } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 1)) {  // if cursor place is at 1 change roll setpoint
-      setRoll++;
-    } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1)) {
       setRoll--;
+    } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1)) {
+      setRoll++;
     } else if ((button3 == HIGH) && (cursorPlace == 2)) {  // if cursor place is at 2 change the P from PID
       kp_balans--;
     } else if ((button4 == HIGH) && (cursorPlace == 2)) {
@@ -468,7 +482,7 @@ void computeButtonPress() {
     } else if ((button4 == HIGH) && (cursorPlace == 5)) {
       setPitch++;
     }
-    pidChangeDetection = setDistance + cursorPlace + kp_balans + ki_balans + kd_balans + setPitch;
+    pidChangeDetection = setDistance + cursorPlace + kp_balans + ki_balans + kd_balans + setPitch + setRoll;
 
   } else if ((buttonAll == 1) && (controlMode == 5)) {  // works only when in 5 achtervleugel mode
     if ((button1 == HIGH) && (buttonStateChange1)) {
@@ -483,9 +497,9 @@ void computeButtonPress() {
     } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 0)) {
       setDistance++;
     } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 1)) {  // if cursor place is at 1 change roll setpoint
-      setRoll++;
-    } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1)) {
       setRoll--;
+    } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1)) {
+      setRoll++;
     } else if ((button3 == HIGH) && (cursorPlace == 2)) {  // if cursor place is at 2 change the P from PID
       kp_Avl--;
     } else if ((button4 == HIGH) && (cursorPlace == 2)) {
@@ -503,7 +517,7 @@ void computeButtonPress() {
     } else if ((button4 == HIGH) && (cursorPlace == 5)) {
       setPitch++;
     }
-    pidChangeDetection = setDistance + cursorPlace + kp_Vvl + ki_Vvl + kd_Vvl + setPitch;
+    pidChangeDetection = setDistance + cursorPlace + kp_Vvl + ki_Vvl + kd_Vvl + setPitch + setRoll;
   }
 
   leftAcutatorStroke = constrain(leftAcutatorStroke, 0, 300);
@@ -523,7 +537,7 @@ void computeDistance() {
   distance_sensor = (travelTime + (0.5 * soundSpeed)) / soundSpeed;  // afstand in cm. because int are rounded down we add 0,5 cm or 29 micoseconds
   static float pitch_rad;                                            // arduino werkt in radians.
   pitch_rad = pitch * M_PI / 180.0;                                  // degees to radians
-  distance = distance_sensor - (270 * tan(pitch_rad)) - 40 + 0.5;    // afstand van de onderkant van de boot (-40) tot het water onder de vleugel door rekening te houden met de hoek van de boot(-270*tan(pitch_rad). because int are rounded down we add 0,5
+  distance = distance_sensor - (270 * tan(pitch_rad)) - 40.0 + 0.5;    // afstand van de onderkant van de boot (-40) tot het water onder de vleugel door rekening te houden met de hoek van de boot(-270*tan(pitch_rad). because int are rounded down we add 0,5
 }
 
 //======================================================================= compute pid voorvleugel ==========================================================================
@@ -533,14 +547,8 @@ void computePid_Vvl() {
   static float diffError = 0;
   static float diffErrorFilter = 0;
   static float oldError = 0;
-  static float P = 0;
-  static float I = 0;
-  static float D = 0;
-  static float pidVvlTotal = 0;
   static uint32_t lastPidTime = 0;
   static uint32_t pidTime = 0;
-  static int32_t leftAcutatorPos;
-  static int32_t rightAcutatorPos;
   static int16_t pidLoopTime_ms = 0;
   static float pidLoopTime_s = 0;
   static float hoek_voor_vleugel = 0;
@@ -556,23 +564,23 @@ void computePid_Vvl() {
   oldError = error;
   diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
 
-  P = float(kp_Vvl) * error / 100.0;  // delen door 100 om komma te besparen op het display.
+  P_Vvl = float(kp_Vvl) * error / 100.0;  // delen door 100 om komma te besparen op het display.
   if ((abs(PWM_links) + abs(PWM_rechts)) != 800) {
-    I = I + (float(ki_Vvl) * error * pidLoopTime_s / 100.0);
+    I_Vvl = I_Vvl + (float(ki_Vvl) * error * pidLoopTime_s / 100.0);
   }
-  D = (float(kd_Vvl) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
+  D_Vvl = (float(kd_Vvl) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
 
-  P = constrain(P, -12.0, 12.0);
-  I = constrain(I, -12.0, 12.0);
-  D = constrain(D, -12.0, 12.0);
+  P_Vvl = constrain(P_Vvl, -9.9, 9.9);
+  I_Vvl = constrain(I_Vvl, -9.9, 9.9);
+  D_Vvl = constrain(D_Vvl, -9.9, 9.9);
 
   if (ki_Vvl == 0) {
-    I = 0.0;
+    I_Vvl = 0.0;
   }
-  pidVvlTotal = P + I + D;  // PID wordt berekend in graden
+  pidVvlTotal = P_Vvl + I_Vvl + D_Avl;  // PID wordt berekend in graden
   Serial.println(pidVvlTotal);
 
-  pidVvlTotal = constrain(pidVvlTotal, -12.0, 12.0);
+  pidVvlTotal = constrain(pidVvlTotal, -9.9, 12.0);
 
   hoek_voor_vleugel = pidVvlTotal - pitch;
   afstand_liniear = sqrt(43.2 * 43.2 + 13.4 * 13.4 - 2 * 43.2 * 13.4 * cos((hoek_voor_vleugel + 90.0 - 22.49831 - 3) * M_PI / 180.0));  // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel)) wanneer vleugel 0 graden is staat deze haaks op de boot dus 90graden. -22.5 omdat de liniere motor niet recht zit. -3 omdat de vleugel hoger gemonteerd zit dan de linieare motor.
@@ -587,10 +595,6 @@ void computePid_Avl() {
   static float diffError = 0;
   static float diffErrorFilter = 0;
   static float oldError = 0;
-  static float P = 0;
-  static float I = 0;
-  static float D = 0;
-  static float pidAvlTotal = 0;
   static uint32_t lastPidTime = 0;
   static uint32_t pidTime = 0;
   static int16_t pidLoopTime_ms = 0;
@@ -609,20 +613,20 @@ void computePid_Avl() {
   oldError = error;
   diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
 
-  P = float(kp_Avl) * error / 100.0;  // delen door 100 om komma te besparen op het display.
+  P_Avl = float(kp_Avl) * error / 100.0;  // delen door 100 om komma te besparen op het display.
   if (abs(PWM_achter) != 400) {
-    I = I + (float(ki_Avl) * error * pidLoopTime_s / 100.0);
+    I_Avl = I_Avl + (float(ki_Avl) * error * pidLoopTime_s / 100.0);
   }
-  D = (float(kd_Avl) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
+  D_Avl = (float(kd_Avl) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
 
-  P = constrain(P, hoek_home, 12.0);
-  I = constrain(I, hoek_home, 12.0);
-  D = constrain(D, hoek_home, 12.0);
+  P_Avl = constrain(P_Avl, hoek_home, 9.9);
+  I_Avl = constrain(I_Avl, hoek_home, 9.9);
+  D_Avl = constrain(D_Avl, hoek_home, 9.9);
 
   if (ki_Avl == 0) {
-    I = 0.0;
+    I_Avl = 0.0;
   }
-  pidAvlTotal = P + I + D;  // PID wordt berekend in graden
+  pidAvlTotal = P_Avl + I_Avl + D_Avl;  // PID wordt berekend in graden
   Serial.println(pidAvlTotal);
 
   pidAvlTotal = constrain(pidAvlTotal, hoek_home, 12.0);
@@ -639,10 +643,6 @@ void computePid_balans() {
   static float diffError = 0;
   static float diffErrorFilter = 0;
   static float oldError = 0;
-  static float P = 0;
-  static float I = 0;
-  static float D = 0;
-  static float pidBalansTotal = 0;
   static uint32_t lastPidTime = 0;
   static uint32_t pidTime = 0;
   static int16_t pidLoopTime_ms = 0;
@@ -659,20 +659,20 @@ void computePid_balans() {
   oldError = error;
   diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
 
-  P = float(kp_balans) * error / 100.0;  // delen door 100 om komma te besparen op het display.
+  P_Balans = float(kp_balans) * error / 100.0;  // delen door 100 om komma te besparen op het display.
   if ((abs(PWM_links) + abs(PWM_rechts)) != 800) {
-    I = I + (float(ki_balans) * error * pidLoopTime_s / 100.0);
+    I_Balans = I_Balans + (float(ki_balans) * error * pidLoopTime_s / 100.0);
   }
-  D = (float(kd_balans) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
+  D_Balans = (float(kd_balans) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
 
-  P = constrain(P, -5, 5);
-  I = constrain(I, -5, 5);
-  D = constrain(D, -5, 5);
+  P_Balans = constrain(P_Balans, -5, 5);
+  I_Balans = constrain(I_Balans, -5, 5);
+  D_Balans = constrain(D_Balans, -5, 5);
 
   if (ki_balans == 0) {
-    I = 0.0;
+    I_Balans = 0.0;
   }
-  pidBalansTotal = P + I + D;  // PID wordt berekend in graden
+  pidBalansTotal = P_Balans + I_Balans + D_Balans;  // PID wordt berekend in graden
   Serial.println(pidBalansTotal);
 
   pidBalansTotal = constrain(pidBalansTotal, -5, 5); // max 10mm offset
@@ -682,9 +682,9 @@ void computePid_balans() {
   CAN_pulsen_offset = pulsen_liniear;
 }
 
-//======================================================================= displayDistance ==========================================================================
+//======================================================================= displayData ==========================================================================
 
-void displayDistance() {
+void displayData() {
   lcd.setCursor(0, 0);  // set curser at distantce place
   int x constrain(distance, 0, 99);
   if (x == 0) {              // check for error
@@ -701,6 +701,161 @@ void displayDistance() {
   lcd.setCursor(12, 3);
   lcd.print(char(224));
   lcd.print(pitch, 1);
+
+  if (controlMode == 2) { // controlMode voorvleugel
+   lcd.setCursor(0, 2);  // print P_Vvl
+  lcd.print("P");
+  if(P_Vvl >= 0){
+  lcd.print F((" "));
+  if(P_Vvl < 1){
+    lcd.print(" ");
+  }
+  } else if(P_Vvl > -1.0 ) {
+lcd.print(" ");
+  }
+  lcd.print(P_Vvl * 10.0, 0);
+
+  lcd.setCursor(4, 2);  // print I_Vvl
+  lcd.print(" I");
+  if(I_Vvl >= 0){
+  lcd.print F((" "));
+  if(I_Vvl < 1){
+    lcd.print(" ");
+  }
+  } else if(I_Vvl > -1.0 ) {
+lcd.print(" ");
+  }
+  lcd.print(I_Vvl * 10.0, 0);
+
+  lcd.setCursor(9, 2);  // print D_Vvl
+  lcd.print(" D");
+  if(D_Vvl >= 0.0){
+  lcd.print F((" "));
+  if(D_Vvl < 1.0){
+    lcd.print(" ");
+  }
+  } else if(D_Vvl > -1.0 ) {
+lcd.print(" ");
+  }
+  lcd.print(D_Vvl * 10.0, 0);
+  
+  lcd.setCursor(0, 3);  // print PID_Vvl
+  lcd.print("PID");
+  if((pidVvlTotal < 10.0) && (pidVvlTotal >= 0.0)){
+    lcd.print(" ");
+    if(pidVvlTotal < 1){
+      lcd.print(" ");
+    }
+  }
+  if(pidVvlTotal < 0.0 && pidVvlTotal > -1.0){
+    lcd.print(" ");
+  }
+  lcd.print(pidVvlTotal * 10.0, 0);
+  lcd.print(' ');
+  } 
+  if (controlMode == 5) { // controlMode achtervleugel
+   lcd.setCursor(0, 2);  // print P_Avl
+  lcd.print("P");
+  if(P_Avl >= 0){
+  lcd.print F((" "));
+  if(P_Avl < 1){
+    lcd.print(" ");
+  }
+  } else if(P_Avl > -1.0 ) {
+lcd.print(" ");
+  }
+  lcd.print(P_Avl * 10.0, 0);
+
+  lcd.setCursor(4, 2);  // print I_Avl
+  lcd.print(" I");
+  if(I_Avl >= 0){
+  lcd.print F((" "));
+  if(I_Avl < 1){
+    lcd.print(" ");
+  }
+  } else if(I_Avl > -1.0 ) {
+lcd.print(" ");
+  }
+  lcd.print(I_Avl * 10.0, 0);
+
+  lcd.setCursor(9, 2);  // print D_Avl
+  lcd.print(" D");
+  if(D_Avl >= 0.0){
+  lcd.print F((" "));
+  if(D_Avl < 1.0){
+    lcd.print(" ");
+  }
+  } else if(D_Avl > -1.0 ) {
+lcd.print(" ");
+  }
+  lcd.print(D_Avl * 10.0, 0);
+  
+  lcd.setCursor(0, 3);  // print PID_Avl
+  lcd.print("PID");
+  if((pidAvlTotal < 10.0) && (pidAvlTotal >= 0.0)){
+    lcd.print(" ");
+    if(pidAvlTotal < 1){
+      lcd.print(" ");
+    }
+  }
+  if(pidAvlTotal < 0.0 && pidAvlTotal > -1.0){
+    lcd.print(" ");
+  }
+  lcd.print(pidAvlTotal * 10.0, 0);
+  lcd.print(' ');
+  } 
+  if (controlMode == 4) { // controlMode balansvleugel
+   lcd.setCursor(0, 2);  // print P_Vvl
+  lcd.print("P");
+  if(P_Balans >= 0){
+  lcd.print F((" "));
+  if(P_Balans < 1){
+    lcd.print(" ");
+  }
+  } else if(P_Balans > -1.0 ) {
+lcd.print(" ");
+  }
+  lcd.print(P_Balans * 10.0, 0);
+
+  lcd.setCursor(4, 2);  // print I_Vvl
+  lcd.print(" I");
+  if(I_Balans >= 0){
+  lcd.print F((" "));
+  if(I_Balans < 1){
+    lcd.print(" ");
+  }
+  } else if(I_Balans > -1.0 ) {
+lcd.print(" ");
+  }
+  lcd.print(I_Balans * 10.0, 0);
+
+  lcd.setCursor(9, 2);  // print D_Balans
+  lcd.print(" D");
+  if(D_Balans
+   >= 0.0){
+  lcd.print F((" "));
+  if(D_Balans < 1.0){
+    lcd.print(" ");
+  }
+  } else if(D_Balans > -1.0 ) {
+lcd.print(" ");
+  }
+  lcd.print(D_Balans * 10.0, 0);
+  
+  lcd.setCursor(0, 3);  // print PID_Vvl
+  lcd.print("PID");
+  if((pidBalansTotal < 10.0) && (pidBalansTotal >= 0.0)){
+    lcd.print(" ");
+    if(pidBalansTotal < 1){
+      lcd.print(" ");
+    }
+  }
+  if(pidBalansTotal < 0.0 && pidBalansTotal > -1.0){
+    lcd.print(" ");
+  }
+  lcd.print(pidBalansTotal * 10.0, 0);
+  lcd.print(' ');
+  } 
 }
 
 //======================================================================= displayControlMode ==========================================================================
