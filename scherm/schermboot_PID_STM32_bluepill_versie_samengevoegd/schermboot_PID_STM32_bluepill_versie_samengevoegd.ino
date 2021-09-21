@@ -557,7 +557,7 @@ void computePid_balans() {
   static uint32_t pidTime = 0;
   static int16_t pidLoopTime_ms = 0;
   static float pidLoopTime_s = 0;
-  static float offset_voorvleugel = 0; 
+  static float offset_voor_vleugel = 0; 
   static uint16_t pulsen_liniear;
 
   pidTime = millis();
@@ -585,9 +585,9 @@ void computePid_balans() {
   pidBalansTotal = P + I + D;  // PID wordt berekend in graden
   Serial.println(pidBalansTotal);
 
-  pidAvlTotal = constrain(pidAvlTotal, -12.0, 12.0);
+  pidbalansTotal = constrain(pidBalansTotal, -12.0, 12.0);
 
-  hoek_achter_vleugel = pidAvlTotal - pitch;
+  offset_achter_vleugel = pidAvlTotal - pitch;
   pulsen_liniear = (hoek_achter_vleugel - hoek_home) * 105.595
   CAN_pulsen_achter = pulsen_liniear;
 }
