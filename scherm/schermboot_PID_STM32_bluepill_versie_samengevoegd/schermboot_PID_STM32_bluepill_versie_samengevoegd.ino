@@ -162,6 +162,7 @@ void loop() {
     newMesurement = false;
     computeDistance();
     computePid_Vvl();
+
   }
 
   //================================================================== main loop display data ==========================================================================
@@ -169,7 +170,7 @@ void loop() {
   static uint32_t lastRefreshDistanceDisplay = 0;
   if (millis() - lastRefreshDistanceDisplay > refreshDistanceDisplay) {
     lastRefreshDistanceDisplay = millis();
-    computeDistance();  // can stay in display data instead off compute date because it is only uesed here
+    computeDistance(); 
     displayDistance();
   }
   static int16_t lastLeftAcutatorStroke = 0;
@@ -184,6 +185,9 @@ void loop() {
   if (controlMode != lastControlMode) {
     lastControlMode = controlMode;
     displayControlMode();
+  }
+  if (controlMode == 0){
+    OFF();
   }
 
   read_CAN_data();
@@ -413,7 +417,7 @@ void computeButtonPress() {
     } else if ((button4 == HIGH) && (cursorPlace == 4)) {
       kd_Vvl++;
     }
-    pidChangeDetection = setDistance + cursorPlace + kp_Vvl + ki_Vvl + kd_Vvl;
+    pidChangeDetection = setDistance + cursorPlace + kp_Vvl + ki_Vvl + kd_Vvl ;
   }
 
   leftAcutatorStroke = constrain(leftAcutatorStroke, 0, 300);
@@ -535,7 +539,7 @@ void computePid_Avl() {
   pidAvlTotal = P + I + D;  // PID wordt berekend in graden
   Serial.println(pidAvlTotal);
 
-  pidAvlTotal = constrain(pidAvlTotal, -12.0, 12.0);
+  pidAvlTotal = constrain(pidAvlTotal, hoek_home, 12.0);
 
   hoek_achter_vleugel = pidAvlTotal - pitch;
   pulsen_liniear = (hoek_achter_vleugel - hoek_home) * 105.595;
@@ -585,10 +589,10 @@ void computePid_balans() {
   pidBalansTotal = P + I + D;  // PID wordt berekend in graden
   Serial.println(pidBalansTotal);
 
-  pidBalansTotal = constrain(pidBalansTotal, -5, 5);
+  pidBalansTotal = constrain(pidBalansTotal, -5, 5); // max 10mm offset
 
-  offset_voor_vleugel = pidBalansTotal;
-  pulsen_liniear = offset_voor_vleugel * pulsen_per_mm;
+  offset_voor_vleugel = pidBalansTotal; // offset is in mm
+  pulsen_liniear = offset_voor_vleugel * pulsen_per_mm; // mm naar pulsen
   CAN_pulsen_offset = pulsen_liniear;
 }
 
@@ -661,6 +665,19 @@ void displayControlMode() {
     lcd.print F(("Ball"));
   } else if (controlMode == 5) {
     lcd.print F(("A vl"));
+  }
+}
+
+void OFF() {
+  if (controlMode == 0){
+    if (button_encoder_1 && buttonStateChange_enc_1) {
+    pid_actief = ! pid_actief);
+      if (pid_actief) {
+       lcd.print ("pid actief")
+      } else {
+        lcd.print("pid niet actief")
+      }
+    }
   }
 }
 
