@@ -520,12 +520,12 @@ void computePid_Avl() {
   diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
 
   P = float(kp_Avl) * error / 100.0;  // delen door 100 om komma te besparen op het display.
-  if ((abs(PWM_links) + abs(PWM_rechts)) != 800) {
-    I = I + (float(ki_balans) * error * pidLoopTime_s / 100.0);
+  if (abs(PWM_achter) != 400) {
+    I = I + (float(ki_achter) * error * pidLoopTime_s / 100.0);
   }
   D = (float(kd_balans) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
 
-  P = constrain(P, , 12.0);
+  P = constrain(P, hoek_home, 12.0);
   I = constrain(I, hoek_home, 12.0);
   D = constrain(D, hoek_home, 12.0);
 
