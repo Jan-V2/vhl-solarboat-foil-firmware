@@ -27,13 +27,22 @@ const uint16_t pulsen_per_mm = maxPulseEncoder / maxAfstandEncoder;  // pulsen p
 volatile uint32_t travelTime = 0;     // the time it takes the sound to comback to the sensor in micoseconds
 int16_t distance = 0;                 // distance from de ultrasoic sensor in cm
 volatile bool newMesurement = false;  // is true when the interupt is triggerd to indicate a new mesurement
-uint8_t controlMode = 0;              // 0 = off, 1 = manuel, 2 = PID en 3 = HOME
+uint8_t controlMode = 0;              // 0 = off, 1 = manuel, 2 = Vvl, 3 = HOME, 4 = balans en 5 = Avl
 uint8_t cursorPlace = 0;              // is used to select the parameter that you want to change when in PID controlmode
 uint16_t pidChangeDetection = 0;      // is used to see if there are changes in the PID setting
-int16_t kp = 0;                       // P parameter from the PID
-int16_t ki = 0;                       // I parameter from the PID
-int16_t kd = 0;                       // D parameter from the PID
-uint8_t setDistance = 65;             // target distance in cm that the PID will try to reach, this value can be changed on de
+int16_t kp_Vvl = 0;                       // P parameter from the PID voorvleugel
+int16_t ki_Vvl = 0;                       // I parameter from the PID voorvleugel
+int16_t kd_Vvl = 0;                       // D parameter from the PID voorvleugel
+int16_t kp_Avl = 0;                       // P parameter from the PID voorvleugel
+int16_t ki_Avl = 0;                       // I parameter from the PID voorvleugel
+int16_t kd_Avl = 0;                       // D parameter from the PID voorvleugel
+int16_t kp_balans = 0;                       // P parameter from the PID voorvleugel
+int16_t ki_balans = 0;                       // I parameter from the PID voorvleugel
+int16_t kd_balans = 0;                       // D parameter from the PID voorvleugel
+uint8_t setDistance = 20;             // target distance in cm that the PID will try to reach, this value can be changed on de
+int8_t setRoll = 0;             // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
+uint8_t setPitch = 0;             // target pitch in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
+int16_t pulsen_offset = 0;            // berekende pulsen offset
 int16_t leftAcutatorStroke = 150;     // amount of mm the actuator is extened. value is 150 so you dont have to press the button 1000x. the vlalue will only be send when the controllmode is != OFF
 int16_t rightAcutatorStroke = 150;    // amount of mm the actuator is extened. value is 150 so you dont have to press the button 1000x. the vlalue will only be send when the controllmode is != OFF
 int16_t leftAcutatorStroke2 = 150;
@@ -261,57 +270,57 @@ void pidDisplay() {
   if (cursorPlace == 2) {  // if 2 change the P from the PID parameter
     lcd.setCursor(0, 1);
     lcd.print F((">"));
-    lcd.print(kp);
-    if (kp < 10) {
+    lcd.print(kp_Vvl);
+    if (kp_Vvl < 10) {
       lcd.print F(("  "));
-    } else if (kp < 100) {
+    } else if (kp_Vvl < 100) {
       lcd.print F((" "));
     }
   } else {
     lcd.setCursor(0, 1);
     lcd.print F(("P"));
-    lcd.print(kp);
-    if (kp < 10) {
+    lcd.print(kp_Vvl);
+    if (kp_Vvl < 10) {
       lcd.print F(("  "));
-    } else if (kp < 100) {
+    } else if (kp_Vvl < 100) {
       lcd.print F((" "));
     }
   }
   if (cursorPlace == 3) {  // if 3 change the I from the PID parameter
     lcd.setCursor(4, 1);
     lcd.print F((">"));
-    lcd.print(ki);
-    if (ki < 10) {
+    lcd.print(ki_Vvl);
+    if (ki_Vvl < 10) {
       lcd.print F(("  "));
-    } else if (ki < 100) {
+    } else if (ki_Vvl < 100) {
       lcd.print F((" "));
     }
   } else {
     lcd.setCursor(4, 1);
     lcd.print F(("I"));
-    lcd.print(ki);
-    if (ki < 10) {
+    lcd.print(ki_Vvl);
+    if (ki_Vvl < 10) {
       lcd.print F(("  "));
-    } else if (ki < 100) {
+    } else if (ki_Vvl < 100) {
       lcd.print F((" "));
     }
   }
   if (cursorPlace == 4) {  // if 4 change the D from the PID parameter
     lcd.setCursor(8, 1);
     lcd.print F((">"));
-    lcd.print(kd);
-    if (kd < 10) {
+    lcd.print(kd_Vvl);
+    if (kd_Vvl < 10) {
       lcd.print F(("  "));
-    } else if (kd < 100) {
+    } else if (kd_Vvl < 100) {
       lcd.print F((" "));
     }
   } else {
     lcd.setCursor(8, 1);
     lcd.print F(("D"));
-    lcd.print(kd);
-    if (kd < 10) {
+    lcd.print(kd_Vvl);
+    if (kd_Vvl < 10) {
       lcd.print F(("  "));
-    } else if (kd < 100) {
+    } else if (kd_Vvl < 100) {
       lcd.print F((" "));
     }
   }
@@ -321,8 +330,26 @@ void pidDisplay() {
 
 void computeButtonPress() {
   static int8_t differnce = 0;
+  static int prev_enc_1_pulses;
+  static int prev_enc_2_pulses;
   differnce = leftAcutatorStroke - rightAcutatorStroke;
 
+  if (enc_1_pulses < prev_enc_1_pulses) {
+    controlMode--;
+  } else if (enc_1_pulses > prev_enc_1_pulses) {
+    controlMode++;
+  } 
+  if (enc_2_pulses < prev_enc_2_pulses) {
+    cursorPlace--;
+  } else if (enc_2_pulses > prev_enc_2_pulses) {
+    cursorPlace++;
+  }
+        if (cursorPlace == 5) {
+        cursorPlace = 0;
+      }
+if (controlMode == 6) {
+        controlMode = 0;
+      }
   if ((buttonAll == 1) && (controlMode == 1)) {  // works only in manuel
     if (button1 == HIGH) {
       leftAcutatorStroke++;
@@ -341,7 +368,7 @@ void computeButtonPress() {
         rightAcutatorStroke++;
       }
     }
-  } else if ((buttonAll == 1) && (controlMode == 2)) {  // works only when in PID_voor mode
+  } else if ((buttonAll == 1) && (controlMode == 2)) {  // works only when in V vl mode
     if ((button1 == HIGH) && (buttonStateChange1)) {
       cursorPlace--;
     } else if ((button2 == HIGH) && (buttonStateChange2)) {
@@ -353,39 +380,34 @@ void computeButtonPress() {
       setDistance--;
     } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 0)) {
       setDistance++;
-    } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 1)) {  // if cursor place is at 1 change left and right acutatorStroke
-      if (differnce < 9) {
-        leftAcutatorStroke2++;
-        rightAcutatorStroke2--;
-      }
+    } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 1)) {  // if cursor place is at 1 change roll setpoint
+        setRoll++;
     } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1)) {
-      if (differnce > -9) {
-        leftAcutatorStroke2--;
-        rightAcutatorStroke2++;
-      }
+        setRoll--;
     } else if ((button3 == HIGH) && (cursorPlace == 2)) {  // if cursor place is at 2 change the P from PID
-      kp--;
+      kp_Vvl--;
     } else if ((button4 == HIGH) && (cursorPlace == 2)) {
-      kp++;
+      kp_Vvl++;
     } else if ((button3 == HIGH) && (cursorPlace == 3)) {  // if cursor place is at 3 change the I from PID
-      ki--;
+      ki_Vvl--;
     } else if ((button4 == HIGH) && (cursorPlace == 3)) {
-      ki++;
+      ki_Vvl++;
     } else if ((button3 == HIGH) && (cursorPlace == 4)) {  // if cursor place is at 4 change the D from PID
-      kd--;
+      kd_Vvl--;
     } else if ((button4 == HIGH) && (cursorPlace == 4)) {
-      kd++;
+      kd_Vvl++;
     }
-    pidChangeDetection = setDistance + cursorPlace + kp + ki + kd;
+    pidChangeDetection = setDistance + cursorPlace + kp_Vvl + ki_Vvl + kd_Vvl;
   }
 
   leftAcutatorStroke = constrain(leftAcutatorStroke, 0, 300);
   rightAcutatorStroke = constrain(rightAcutatorStroke, 0, 300);
   cursorPlace = constrain(cursorPlace, 0, 4);
+  controlMode = constrain(controlMode, 0, 5);
   setDistance = constrain(setDistance, 20, 99);
-  kp = constrain(kp, 0, 999);
-  ki = constrain(ki, 0, 999);
-  kd = constrain(kd, 0, 999);
+  kp_Vvl = constrain(kp_Vvl, 0, 999);
+  ki_Vvl = constrain(ki_Vvl, 0, 999);
+  kd_Vvl = constrain(kd_Vvl, 0, 999);
 }
 
 //======================================================================= computeDistance ==========================================================================
@@ -429,17 +451,17 @@ void computePid_Vvl() {
   oldError = error;
   diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
 
-  P = float(kp) * error / 100.0;  // delen door 100 om komma te besparen op het display.
+  P = float(kp_Vvl) * error / 100.0;  // delen door 100 om komma te besparen op het display.
   if ((abs(PWM_links) + abs(PWM_rechts)) != 800) {
-    I = I + (float(ki) * error * pidLoopTime_s / 100.0);
+    I = I + (float(ki_Vvl) * error * pidLoopTime_s / 100.0);
   }
-  D = (float(kd) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
+  D = (float(kd_Vvl) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
 
   P = constrain(P, -12.0, 12.0);
   I = constrain(I, -12.0, 12.0);
   D = constrain(D, -12.0, 12.0);
 
-  if (ki == 0) {
+  if (ki_Vvl == 0) {
     I = 0.0;
   }
   pidVvlTotal = P + I + D;  // PID wordt berekend in graden
