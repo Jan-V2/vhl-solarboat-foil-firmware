@@ -585,10 +585,10 @@ void computePid_balans() {
   pidBalansTotal = P + I + D;  // PID wordt berekend in graden
   Serial.println(pidBalansTotal);
 
-  pidbalansTotal = constrain(pidBalansTotal, -12.0, 12.0);
+  pidbalansTotal = constrain(pidBalansTotal, -5, 5);
 
-  offset_achter_vleugel = pidbalansTotal;
-  pulsen_liniear = 
+  offset_achter_vleugel = pidBalansTotal ;
+  pulsen_liniear = offset_achter_vleugel * pulsen_per_mm
   CAN_pulsen_achter = pulsen_liniear;
 }
 
