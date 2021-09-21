@@ -589,7 +589,7 @@ void computePid_balans() {
 
   offset_achter_vleugel = pidBalansTotal ;
   pulsen_liniear = offset_achter_vleugel * pulsen_per_mm
-  CAN_pulsen_achter = pulsen_liniear;
+  CAN_pulsen_offset = pulsen_liniear;
 }
 
 //======================================================================= displayDistance ==========================================================================
