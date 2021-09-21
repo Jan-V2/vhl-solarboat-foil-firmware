@@ -82,7 +82,7 @@ LiquidCrystal lcd(RS, E, D4, D5, D6, D7);
 //RunningMedian travelTimeMedian = RunningMedian(medianSize);
 
 void setup() {
-  Serial.begin(250000);
+  Serial.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT);
   setup_buttons_and_encoders();
 
@@ -160,6 +160,7 @@ void loop() {
   static uint16_t lastPidChangeDetection = 1;
   if (((newMesurement || (pidChangeDetection != lastPidChangeDetection)) && controlMode == 2)) {
     newMesurement = false;
+    computeDistance();
     computePid_Vvl();
   }
 
@@ -174,11 +175,6 @@ void loop() {
   static int16_t lastLeftAcutatorStroke = 0;
   static int16_t lastRightAcutatorStroke = 0;
 
-  if ((leftAcutatorStroke != lastLeftAcutatorStroke) || (rightAcutatorStroke != lastRightAcutatorStroke)) {
-    lastLeftAcutatorStroke = leftAcutatorStroke;
-    lastRightAcutatorStroke = rightAcutatorStroke;
-    displayActuatorStroke();
-  }
   if ((pidChangeDetection != lastPidChangeDetection) && controlMode == 2) {  // wanneer de PID ingesteld word
     lastPidChangeDetection = pidChangeDetection;
     pidDisplay();
@@ -324,7 +320,25 @@ void pidDisplay() {
       lcd.print F((" "));
     }
   }
-}
+    if (cursorPlace == 5) {  // if 5 change the pitch hoek
+    lcd.setCursor(7, 3);
+    lcd.print F((">"));
+    lcd.print (char(224));
+    lcd.print(setPitch);
+    if (setPitch < 10) {
+      lcd.print F((" "));
+    }
+  } else {
+    lcd.setCursor(7, 3);
+    lcd.print F(("S"));
+    lcd.print (char(224));
+    lcd.print (setPitch);
+    if (setPitch < 10) {
+      lcd.print F((" "));
+  }
+
+    }
+    }
 
 //===================================================================== computeButtonPress =========================================================================
 
@@ -344,9 +358,9 @@ void computeButtonPress() {
     cursorPlace--;
   } else if (enc_2_pulses > prev_enc_2_pulses) {
     cursorPlace++;
-  }
+  } Serial.print(enc_2_pulses);
   prev_enc_2_pulses = enc_2_pulses;
-        if (cursorPlace == 5) {
+        if (cursorPlace == 6) {
         cursorPlace = 0;
       }
 if (controlMode == 6) {
@@ -375,7 +389,7 @@ if (controlMode == 6) {
       cursorPlace--;
     } else if ((button2 == HIGH) && (buttonStateChange2)) {
       cursorPlace++;
-      if (cursorPlace == 5) {
+      if (cursorPlace == 6) {
         cursorPlace = 0;
       }
     } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 0)) {  // if cursor place is at 0 change setDistance
@@ -404,7 +418,7 @@ if (controlMode == 6) {
 
   leftAcutatorStroke = constrain(leftAcutatorStroke, 0, 300);
   rightAcutatorStroke = constrain(rightAcutatorStroke, 0, 300);
-  cursorPlace = constrain(cursorPlace, 0, 4);
+  cursorPlace = constrain(cursorPlace, 0, 5);
   controlMode = constrain(controlMode, 0, 5);
   setDistance = constrain(setDistance, 20, 99);
   kp_Vvl = constrain(kp_Vvl, 0, 999);
@@ -422,7 +436,7 @@ void computeDistance() {
   distance = distance_sensor - (270 * tan(pitch_rad)) - 40 + 0.5;    // afstand van de onderkant van de boot (-40) tot het water onder de vleugel door rekening te houden met de hoek van de boot(-270*tan(pitch_rad). because int are rounded down we add 0,5
 }
 
-//======================================================================= computePid ==========================================================================
+//======================================================================= compute pid voorvleugel ==========================================================================
 
 void computePid_Vvl() {
   static float error = 0;
@@ -433,7 +447,6 @@ void computePid_Vvl() {
   static float I = 0;
   static float D = 0;
   static float pidVvlTotal = 0;
-  static int16_t pidOffset = 0;
   static uint32_t lastPidTime = 0;
   static uint32_t pidTime = 0;
   static int32_t leftAcutatorPos;
@@ -472,9 +485,111 @@ void computePid_Vvl() {
   pidVvlTotal = constrain(pidVvlTotal, -12.0, 12.0);
 
   hoek_voor_vleugel = pidVvlTotal - pitch;
-  afstand_liniear = sqrt(43.2 * 43.2 + 13.4 * 13.4 - 2 * 43.2 * 13.4 * cos((hoek_voor_vleugel + 90.0 - 22.49831) * M_PI / 180.0));  // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel))
+  afstand_liniear = sqrt(43.2 * 43.2 + 13.4 * 13.4 - 2 * 43.2 * 13.4 * cos((hoek_voor_vleugel + 90.0 - 22.49831 - 3) * M_PI / 180.0));  // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel)) wanneer vleugel 0 graden is staat deze haaks op de boot dus 90graden. -22.5 omdat de liniere motor niet recht zit. -3 omdat de vleugel hoger gemonteerd zit dan de linieare motor.
   pulsen_liniear = afstand_liniear * pulsen_per_mm * 10;                                                                            // pulsen naar voorvleugel = afstand in cm maal pulsen per cm
   CAN_pulsen_voor = pulsen_liniear;
+}
+
+//============================================================================== compute pid achtervleugel========================================================================
+
+void computePid_Avl() {
+  static float error = 0;
+  static float diffError = 0;
+  static float diffErrorFilter = 0;
+  static float oldError = 0;
+  static float P = 0;
+  static float I = 0;
+  static float D = 0;
+  static float pidAvlTotal = 0;
+  static uint32_t lastPidTime = 0;
+  static uint32_t pidTime = 0;
+  static int16_t pidLoopTime_ms = 0;
+  static float pidLoopTime_s = 0;
+  static float hoek_achter_vleugel = 0;
+  static uint16_t pulsen_liniear;
+  static float afstand_liniear;
+  static float hoek_home = -2.8; 
+
+  pidTime = millis();
+  pidLoopTime_ms = pidTime - lastPidTime;
+  lastPidTime = pidTime;
+  pidLoopTime_s = float(pidLoopTime_ms) / 1000.0;
+  error = float(setPitch)/10f - pitch; // f is het zelfde als .0
+  diffError = error - oldError;
+  oldError = error;
+  diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
+
+  P = float(kp_Avl) * error / 100.0;  // delen door 100 om komma te besparen op het display.
+  if ((abs(PWM_links) + abs(PWM_rechts)) != 800) {
+    I = I + (float(ki_balans) * error * pidLoopTime_s / 100.0);
+  }
+  D = (float(kd_balans) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
+
+  P = constrain(P, , 12.0);
+  I = constrain(I, hoek_home, 12.0);
+  D = constrain(D, hoek_home, 12.0);
+
+  if (ki_Avl == 0) {
+    I = 0.0;
+  }
+  pidVvlTotal = P + I + D;  // PID wordt berekend in graden
+  Serial.println(pidAvlTotal);
+
+  pidAvlTotal = constrain(pidAvlTotal, -12.0, 12.0);
+
+  hoek_achter_vleugel = pidAvlTotal - pitch;
+  pulsen_liniear = (hoek_achtervleugel - hoek_home) * 105.595
+  CAN_pulsen_achter = pulsen_liniear;
+}
+
+//======================================================================== PID offset ===========================================================================
+
+void computePid_ballans() {
+  static float error = 0;
+  static float diffError = 0;
+  static float diffErrorFilter = 0;
+  static float oldError = 0;
+  static float P = 0;
+  static float I = 0;
+  static float D = 0;
+  static float pidBallansTotal = 0;
+  static uint32_t lastPidTime = 0;
+  static uint32_t pidTime = 0;
+  static int16_t pidLoopTime_ms = 0;
+  static float pidLoopTime_s = 0;
+  static float offset_voorvleugel = 0; 
+  static uint16_t pulsen_liniear;
+
+  pidTime = millis();
+  pidLoopTime_ms = pidTime - lastPidTime;
+  lastPidTime = pidTime;
+  pidLoopTime_s = float(pidLoopTime_ms) / 1000.0;
+  error = float(setRoll)/10f - roll; // f is het zelfde als .0
+  diffError = error - oldError;
+  oldError = error;
+  diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
+
+  P = float(kp_balans) * error / 100.0;  // delen door 100 om komma te besparen op het display.
+  if (abs(PWM_) != 400) {
+    I = I + (float(ki_Avl) * error * pidLoopTime_s / 100.0);
+  }
+  D = (float(kd_Avl) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
+
+  P = constrain(P, hoek_home, 12.0);
+  I = constrain(I, hoek_home, 12.0);
+  D = constrain(D, hoek_home, 12.0);
+
+  if (ki_Avl == 0) {
+    I = 0.0;
+  }
+  pidVvlTotal = P + I + D;  // PID wordt berekend in graden
+  Serial.println(pidAvlTotal);
+
+  pidAvlTotal = constrain(pidAvlTotal, -12.0, 12.0);
+
+  hoek_achter_vleugel = pidAvlTotal - pitch;
+  pulsen_liniear = (hoek_achtervleugel - hoek_home) * 105.595
+  CAN_pulsen_achter = pulsen_liniear;
 }
 
 //======================================================================= displayDistance ==========================================================================
@@ -493,6 +608,9 @@ void displayDistance() {
     lcd.print(x);
     lcd.print F(("cm"));  // print unit cm for distance
   }
+  lcd.setCursor(12,3);
+  lcd.print(char(224));
+  lcd.print(pitch, 1);
 }
 
 //======================================================================= displayActuatorStroke ==========================================================================
@@ -532,15 +650,15 @@ void displayActuatorStroke() {
 void displayControlMode() {
   lcd.setCursor(12, 0);
   if (controlMode == 0) {  // check controlmode. for off, manuel or automatic PID control
-    lcd.print F(("OFF"));
+    lcd.print F(("OFF "));
   } else if (controlMode == 1) {
-    lcd.print F(("MAN"));
+    lcd.print F(("MAN "));
   } else if (controlMode == 2) {
     lcd.print F(("V vl"));
   } else if (controlMode == 3) {
     lcd.print F(("Home"));
   } else if (controlMode == 4) {
-    lcd.print F(("Bal"));
+    lcd.print F(("Ball"));
   } else if (controlMode == 5) {
     lcd.print F(("A vl"));
   }
