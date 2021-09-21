@@ -141,7 +141,7 @@ void loop() {
   if (buttonStateChange) {  // check if button was just pressed
     x = 255;                // delay before longpress starts
   }
-  if ((millis() - lastButtonCompute > x) || (buttonStateChange) || (button_encoder_1 == HIGH)) {  // normal compute delay or longpess delay
+  if ((millis() - lastButtonCompute > x) || (buttonStateChange)) {  // normal compute delay or longpess delay
     lastButtonCompute = millis();
     computeButtonPress();
     if (!buttonStateChange) {  // if no state change the button is still pressed
