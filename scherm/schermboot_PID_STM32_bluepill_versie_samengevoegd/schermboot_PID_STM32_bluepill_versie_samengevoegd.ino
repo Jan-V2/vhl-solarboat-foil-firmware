@@ -570,7 +570,7 @@ void computePid_balans() {
   diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
 
   P = float(kp_balans) * error / 100.0;  // delen door 100 om komma te besparen op het display.
-  if (abs(PWM_) != 400) {
+  if ((abs(PWM_links) + abs(PWM_rechts)) != 800) {
     I = I + (float(ki_balans) * error * pidLoopTime_s / 100.0);
   }
   D = (float(kd_balans) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
