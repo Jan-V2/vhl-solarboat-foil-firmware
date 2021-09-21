@@ -538,7 +538,8 @@ void computePid_Avl() {
   pidAvlTotal = constrain(pidAvlTotal, -12.0, 12.0);
 
   hoek_achter_vleugel = pidAvlTotal - pitch;
-  pulsen_liniear = (hoek_achter_vleugel - hoek_home)* 105.595 CAN_pulsen_achter = pulsen_liniear;
+  pulsen_liniear = (hoek_achter_vleugel - hoek_home) * 105.595;
+  CAN_pulsen_achter = pulsen_liniear;
 }
 
 //======================================================================== PID offset ===========================================================================
