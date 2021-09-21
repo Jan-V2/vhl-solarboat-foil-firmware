@@ -552,7 +552,7 @@ void computePid_balans() {
   static float P = 0;
   static float I = 0;
   static float D = 0;
-  static float pidBallansTotal = 0;
+  static float pidBalansTotal = 0;
   static uint32_t lastPidTime = 0;
   static uint32_t pidTime = 0;
   static int16_t pidLoopTime_ms = 0;
@@ -582,7 +582,7 @@ void computePid_balans() {
   if (ki_balans == 0) {
     I = 0.0;
   }
-  pidVvlTotal = P + I + D;  // PID wordt berekend in graden
+  pidBalansTotal = P + I + D;  // PID wordt berekend in graden
   Serial.println(pidBalansTotal);
 
   pidAvlTotal = constrain(pidAvlTotal, -12.0, 12.0);
