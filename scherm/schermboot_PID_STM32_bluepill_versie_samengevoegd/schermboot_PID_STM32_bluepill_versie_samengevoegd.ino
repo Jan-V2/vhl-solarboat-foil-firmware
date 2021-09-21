@@ -339,11 +339,13 @@ void computeButtonPress() {
   } else if (enc_1_pulses > prev_enc_1_pulses) {
     controlMode++;
   } 
+  prev_enc_1_pulses = enc_1_pulses;
   if (enc_2_pulses < prev_enc_2_pulses) {
     cursorPlace--;
   } else if (enc_2_pulses > prev_enc_2_pulses) {
     cursorPlace++;
   }
+  prev_enc_2_pulses = enc_2_pulses;
         if (cursorPlace == 5) {
         cursorPlace = 0;
       }
