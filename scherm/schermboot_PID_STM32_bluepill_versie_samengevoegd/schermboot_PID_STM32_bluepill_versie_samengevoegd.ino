@@ -523,7 +523,7 @@ void computePid_Avl() {
   if (abs(PWM_achter) != 400) {
     I = I + (float(ki_achter) * error * pidLoopTime_s / 100.0);
   }
-  D = (float(kd_balans) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
+  D = (float(kd_Avl) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
 
   P = constrain(P, hoek_home, 12.0);
   I = constrain(I, hoek_home, 12.0);
@@ -532,13 +532,13 @@ void computePid_Avl() {
   if (ki_Avl == 0) {
     I = 0.0;
   }
-  pidVvlTotal = P + I + D;  // PID wordt berekend in graden
+  pidAvlTotal = P + I + D;  // PID wordt berekend in graden
   Serial.println(pidAvlTotal);
 
   pidAvlTotal = constrain(pidAvlTotal, -12.0, 12.0);
 
   hoek_achter_vleugel = pidAvlTotal - pitch;
-  pulsen_liniear = (hoek_achtervleugel - hoek_home) * 105.595
+  pulsen_liniear = (hoek_achter_vleugel - hoek_home) * 105.595
   CAN_pulsen_achter = pulsen_liniear;
 }
 
@@ -588,7 +588,7 @@ void computePid_ballans() {
   pidAvlTotal = constrain(pidAvlTotal, -12.0, 12.0);
 
   hoek_achter_vleugel = pidAvlTotal - pitch;
-  pulsen_liniear = (hoek_achtervleugel - hoek_home) * 105.595
+  pulsen_liniear = (hoek_achter_vleugel - hoek_home) * 105.595
   CAN_pulsen_achter = pulsen_liniear;
 }
 
