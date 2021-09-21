@@ -576,7 +576,7 @@ void computePid_balans() {
   D = (float(kd_balans) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
 
   P = constrain(P, -5, 5);
-  I = constrain(I, -5, 5;
+  I = constrain(I, -5, 5);
   D = constrain(D, -5, 5);
 
   if (ki_balans == 0) {
@@ -587,8 +587,8 @@ void computePid_balans() {
 
   pidbalansTotal = constrain(pidBalansTotal, -5, 5);
 
-  offset_achter_vleugel = pidBalansTotal ;
-  pulsen_liniear = offset_achter_vleugel * pulsen_per_mm
+  offset_achter_vleugel = pidBalansTotal;
+  pulsen_liniear = offset_achter_vleugel * pulsen_per_mm;
   CAN_pulsen_offset = pulsen_liniear;
 }
 
