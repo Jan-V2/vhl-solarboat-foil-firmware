@@ -30,18 +30,18 @@ volatile bool newMesurement = false;  // is true when the interupt is triggerd t
 uint8_t controlMode = 0;              // 0 = off, 1 = manuel, 2 = Vvl, 3 = HOME, 4 = balans en 5 = Avl
 uint8_t cursorPlace = 0;              // is used to select the parameter that you want to change when in PID controlmode
 uint16_t pidChangeDetection = 0;      // is used to see if there are changes in the PID setting
-int16_t kp_Vvl = 0;                       // P parameter from the PID voorvleugel
-int16_t ki_Vvl = 0;                       // I parameter from the PID voorvleugel
-int16_t kd_Vvl = 0;                       // D parameter from the PID voorvleugel
-int16_t kp_Avl = 0;                       // P parameter from the PID voorvleugel
-int16_t ki_Avl = 0;                       // I parameter from the PID voorvleugel
-int16_t kd_Avl = 0;                       // D parameter from the PID voorvleugel
-int16_t kp_balans = 0;                       // P parameter from the PID voorvleugel
-int16_t ki_balans = 0;                       // I parameter from the PID voorvleugel
-int16_t kd_balans = 0;                       // D parameter from the PID voorvleugel
+int16_t kp_Vvl = 0;                   // P parameter from the PID voorvleugel
+int16_t ki_Vvl = 0;                   // I parameter from the PID voorvleugel
+int16_t kd_Vvl = 0;                   // D parameter from the PID voorvleugel
+int16_t kp_Avl = 0;                   // P parameter from the PID voorvleugel
+int16_t ki_Avl = 0;                   // I parameter from the PID voorvleugel
+int16_t kd_Avl = 0;                   // D parameter from the PID voorvleugel
+int16_t kp_balans = 0;                // P parameter from the PID voorvleugel
+int16_t ki_balans = 0;                // I parameter from the PID voorvleugel
+int16_t kd_balans = 0;                // D parameter from the PID voorvleugel
 uint8_t setDistance = 20;             // target distance in cm that the PID will try to reach, this value can be changed on de
-int8_t setRoll = 0;             // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
-uint8_t setPitch = 0;             // target pitch in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
+int8_t setRoll = 0;                   // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
+uint8_t setPitch = 0;                 // target pitch in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
 int16_t pulsen_offset = 0;            // berekende pulsen offset
 int16_t leftAcutatorStroke = 150;     // amount of mm the actuator is extened. value is 150 so you dont have to press the button 1000x. the vlalue will only be send when the controllmode is != OFF
 int16_t rightAcutatorStroke = 150;    // amount of mm the actuator is extened. value is 150 so you dont have to press the button 1000x. the vlalue will only be send when the controllmode is != OFF
@@ -320,10 +320,10 @@ void pidDisplay() {
       lcd.print F((" "));
     }
   }
-    if (cursorPlace == 5) {  // if 5 change the pitch hoek
+  if (cursorPlace == 5) {  // if 5 change the pitch hoek
     lcd.setCursor(7, 3);
     lcd.print F((">"));
-    lcd.print (char(224));
+    lcd.print(char(224));
     lcd.print(setPitch);
     if (setPitch < 10) {
       lcd.print F((" "));
@@ -331,14 +331,13 @@ void pidDisplay() {
   } else {
     lcd.setCursor(7, 3);
     lcd.print F(("S"));
-    lcd.print (char(224));
-    lcd.print (setPitch);
+    lcd.print(char(224));
+    lcd.print(setPitch);
     if (setPitch < 10) {
       lcd.print F((" "));
+    }
   }
-
-    }
-    }
+}
 
 //===================================================================== computeButtonPress =========================================================================
 
@@ -352,20 +351,21 @@ void computeButtonPress() {
     controlMode--;
   } else if (enc_1_pulses > prev_enc_1_pulses) {
     controlMode++;
-  } 
+  }
   prev_enc_1_pulses = enc_1_pulses;
   if (enc_2_pulses < prev_enc_2_pulses) {
     cursorPlace--;
   } else if (enc_2_pulses > prev_enc_2_pulses) {
     cursorPlace++;
-  } Serial.print(enc_2_pulses);
+  }
+  Serial.print(enc_2_pulses);
   prev_enc_2_pulses = enc_2_pulses;
-        if (cursorPlace == 6) {
-        cursorPlace = 0;
-      }
-if (controlMode == 6) {
-        controlMode = 0;
-      }
+  if (cursorPlace == 6) {
+    cursorPlace = 0;
+  }
+  if (controlMode == 6) {
+    controlMode = 0;
+  }
   if ((buttonAll == 1) && (controlMode == 1)) {  // works only in manuel
     if (button1 == HIGH) {
       leftAcutatorStroke++;
@@ -397,9 +397,9 @@ if (controlMode == 6) {
     } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 0)) {
       setDistance++;
     } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 1)) {  // if cursor place is at 1 change roll setpoint
-        setRoll++;
+      setRoll++;
     } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1)) {
-        setRoll--;
+      setRoll--;
     } else if ((button3 == HIGH) && (cursorPlace == 2)) {  // if cursor place is at 2 change the P from PID
       kp_Vvl--;
     } else if ((button4 == HIGH) && (cursorPlace == 2)) {
@@ -486,7 +486,7 @@ void computePid_Vvl() {
 
   hoek_voor_vleugel = pidVvlTotal - pitch;
   afstand_liniear = sqrt(43.2 * 43.2 + 13.4 * 13.4 - 2 * 43.2 * 13.4 * cos((hoek_voor_vleugel + 90.0 - 22.49831 - 3) * M_PI / 180.0));  // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel)) wanneer vleugel 0 graden is staat deze haaks op de boot dus 90graden. -22.5 omdat de liniere motor niet recht zit. -3 omdat de vleugel hoger gemonteerd zit dan de linieare motor.
-  pulsen_liniear = afstand_liniear * pulsen_per_mm * 10;                                                                            // pulsen naar voorvleugel = afstand in cm maal pulsen per cm
+  pulsen_liniear = afstand_liniear * pulsen_per_mm * 10;                                                                                // pulsen naar voorvleugel = afstand in cm maal pulsen per cm
   CAN_pulsen_voor = pulsen_liniear;
 }
 
@@ -508,20 +508,20 @@ void computePid_Avl() {
   static float hoek_achter_vleugel = 0;
   static uint16_t pulsen_liniear;
   static float afstand_liniear;
-  static float hoek_home = -2.8; 
+  static float hoek_home = -2.8;
 
   pidTime = millis();
   pidLoopTime_ms = pidTime - lastPidTime;
   lastPidTime = pidTime;
   pidLoopTime_s = float(pidLoopTime_ms) / 1000.0;
-  error = float(setPitch)/10f - pitch; // f is het zelfde als .0
+  error = float(setPitch) / 10.0 - pitch;  // f is het zelfde als .0
   diffError = error - oldError;
   oldError = error;
   diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
 
   P = float(kp_Avl) * error / 100.0;  // delen door 100 om komma te besparen op het display.
   if (abs(PWM_achter) != 400) {
-    I = I + (float(ki_achter) * error * pidLoopTime_s / 100.0);
+    I = I + (float(ki_Avl) * error * pidLoopTime_s / 100.0);
   }
   D = (float(kd_Avl) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
 
@@ -538,8 +538,7 @@ void computePid_Avl() {
   pidAvlTotal = constrain(pidAvlTotal, -12.0, 12.0);
 
   hoek_achter_vleugel = pidAvlTotal - pitch;
-  pulsen_liniear = (hoek_achter_vleugel - hoek_home) * 105.595
-  CAN_pulsen_achter = pulsen_liniear;
+  pulsen_liniear = (hoek_achter_vleugel - hoek_home)* 105.595 CAN_pulsen_achter = pulsen_liniear;
 }
 
 //======================================================================== PID offset ===========================================================================
@@ -557,14 +556,14 @@ void computePid_balans() {
   static uint32_t pidTime = 0;
   static int16_t pidLoopTime_ms = 0;
   static float pidLoopTime_s = 0;
-  static float offset_voor_vleugel = 0; 
+  static float offset_voor_vleugel = 0;
   static uint16_t pulsen_liniear;
 
   pidTime = millis();
   pidLoopTime_ms = pidTime - lastPidTime;
   lastPidTime = pidTime;
   pidLoopTime_s = float(pidLoopTime_ms) / 1000.0;
-  error = float(setRoll)/10f - roll; // f is het zelfde als .0
+  error = float(setRoll) / 10.0 - roll;
   diffError = error - oldError;
   oldError = error;
   diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
@@ -608,7 +607,7 @@ void displayDistance() {
     lcd.print(x);
     lcd.print F(("cm"));  // print unit cm for distance
   }
-  lcd.setCursor(12,3);
+  lcd.setCursor(12, 3);
   lcd.print(char(224));
   lcd.print(pitch, 1);
 }
