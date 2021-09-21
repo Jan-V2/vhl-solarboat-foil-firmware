@@ -587,8 +587,8 @@ void computePid_balans() {
 
   pidbalansTotal = constrain(pidBalansTotal, -12.0, 12.0);
 
-  offset_achter_vleugel = pidAvlTotal - pitch;
-  pulsen_liniear = (hoek_achter_vleugel - hoek_home) * 105.595
+  offset_achter_vleugel = pidbalansTotal;
+  pulsen_liniear = 
   CAN_pulsen_achter = pulsen_liniear;
 }
 
