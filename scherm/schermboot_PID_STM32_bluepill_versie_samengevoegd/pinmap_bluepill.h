@@ -23,7 +23,7 @@ MOSI	PA7
 #define ENC_1A PB9
 #define ENC_1B PB8
 #define ENC_2A PB15
-#define ENC_2B PA14
+#define ENC_2B P14
 #define ENC_1_BTN PA8
 #define ENC_2_BTN PB13
 
