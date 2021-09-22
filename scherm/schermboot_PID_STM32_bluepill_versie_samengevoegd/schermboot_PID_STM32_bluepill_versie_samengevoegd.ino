@@ -83,9 +83,9 @@ int16_t PWM_links;
 int16_t PWM_rechts;
 int16_t PWM_achter;
 
-int16_t CAN_pulsen_voor = 123;
-int16_t CAN_pulsen_offset = 456;
-int16_t CAN_pulsen_achter = 789;
+int16_t CAN_pulsen_voor = 0;
+int16_t CAN_pulsen_offset = 0;
+int16_t CAN_pulsen_achter = 0;
 
 uint8_t home_front_foil;
 uint8_t home_rear_foi;
@@ -981,12 +981,18 @@ void displayData() {
 void displayControlMode() {
   lcd.setCursor(12, 0);
   if (controlMode == 0) {  // check controlmode. for off, manuel or automatic PID control
+    lcd.clear();
+    lcd.setCursor(12, 0);
     lcd.print F((" OFF"));
   } else if (controlMode == 1) {
+    lcd.clear();
+    lcd.setCursor(12, 0);
     lcd.print F(("MAN "));
   } else if (controlMode == 2) {
     lcd.print F(("V vl"));
   } else if (controlMode == 3) {
+    lcd.clear();
+    lcd.setCursor(12, 0);
     lcd.print F(("Home"));
   } else if (controlMode == 4) {
     lcd.print F(("Ball"));
