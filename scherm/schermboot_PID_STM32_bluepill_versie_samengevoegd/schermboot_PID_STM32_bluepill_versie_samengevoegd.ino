@@ -39,8 +39,8 @@ int16_t kd_Avl = 0;                   // D parameter from the PID voorvleugel
 int16_t kp_balans = 0;                // P parameter from the PID voorvleugel
 int16_t ki_balans = 0;                // I parameter from the PID voorvleugel
 int16_t kd_balans = 0;                // D parameter from the PID voorvleugel
-float   P_Vvl;
-float  I_Vvl;
+float P_Vvl;
+float I_Vvl;
 float D_Vvl;
 float P_Avl;
 float I_Avl;
@@ -51,12 +51,12 @@ float D_Balans;
 float pidVvlTotal = 0;
 float pidAvlTotal = 0;
 float pidBalansTotal = 0;
-uint8_t setDistance = 20;             // target distance in cm that the PID will try to reach, this value can be changed on de
-int8_t setRoll = 0;                   // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
-uint8_t setPitch = 0;                 // target pitch in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
-int16_t pulsen_offset = 0;            // berekende pulsen offset
-int16_t leftAcutatorStroke = 150;     // amount of mm the actuator is extened. value is 150 so you dont have to press the button 1000x. the vlalue will only be send when the controllmode is != OFF
-int16_t rightAcutatorStroke = 150;    // amount of mm the actuator is extened. value is 150 so you dont have to press the button 1000x. the vlalue will only be send when the controllmode is != OFF
+uint8_t setDistance = 20;           // target distance in cm that the PID will try to reach, this value can be changed on de
+int8_t setRoll = 0;                 // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
+uint8_t setPitch = 0;               // target pitch in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
+int16_t pulsen_offset = 0;          // berekende pulsen offset
+int16_t leftAcutatorStroke = 150;   // amount of mm the actuator is extened. value is 150 so you dont have to press the button 1000x. the vlalue will only be send when the controllmode is != OFF
+int16_t rightAcutatorStroke = 150;  // amount of mm the actuator is extened. value is 150 so you dont have to press the button 1000x. the vlalue will only be send when the controllmode is != OFF
 int16_t leftAcutatorStroke2 = 150;
 int16_t rightAcutatorStroke2 = 150;
 uint8_t button1 = LOW;                 // LOW in rest state and HIGH when pressed
@@ -73,7 +73,7 @@ bool buttonStateChange2 = false;       // is true if a button is recently change
 bool buttonStateChange3 = false;       // is true if a button is recently changed its state
 bool buttonStateChange4 = false;       // is true if a button is recently changed its state
 bool buttonStateChange = false;        // is true if one of of the buttons has a state change. can be used as a flag to update the screen once before the refreshDisplay counter
-bool pid_actief = false; // PID staat uit wanneer false. kan aangepast worden in OFF controlmode 0
+bool pid_actief = false;               // PID staat uit wanneer false. kan aangepast worden in OFF controlmode 0
 
 // data van CAN
 float pitch;
@@ -177,7 +177,6 @@ void loop() {
     computePid_Vvl();
     computePid_Avl();
     computePid_balans();
-
   }
 
   //================================================================== main loop display data ==========================================================================
@@ -185,7 +184,7 @@ void loop() {
   static uint32_t lastRefreshDistanceDisplay = 0;
   if (millis() - lastRefreshDistanceDisplay > refreshDistanceDisplay) {
     lastRefreshDistanceDisplay = millis();
-    computeDistance(); 
+    computeDistance();
     displayData();
   }
   static int16_t lastLeftAcutatorStroke = 0;
@@ -201,7 +200,7 @@ void loop() {
     lastControlMode = controlMode;
     displayControlMode();
   }
-  if (controlMode == 0){
+  if (controlMode == 0) {
     OFF();
   }
 
@@ -233,7 +232,6 @@ void read_CAN_data() {
     } else if (canMsg.can_id == 0x33) {
       PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]);  //byte 0-1 is int16_t PWM achter
       overcurrent_achter = canMsg.data[2];                          //byte 2 is uint8_t overcurrent achter uint8_t
-      Serial.println(PWM_achter);
     }
   }
 }
@@ -274,21 +272,21 @@ void pidDisplay() {
   if (cursorPlace == 1) {  // if 1 change the setRoll parameter
     lcd.setCursor(12, 1);
     lcd.print F((">"));
-    if (setRoll < 0){
-      if (setRoll > -10){
-      lcd.print F((" "));
+    if (setRoll < 0) {
+      if (setRoll > -10) {
+        lcd.print F((" "));
       }
     } else {
-      lcd.print F((" ")); // spatie want geen negatief getal
-    if (setRoll < 10){
-      lcd.print F((" "));
+      lcd.print F((" "));  // spatie want geen negatief getal
+      if (setRoll < 10) {
+        lcd.print F((" "));
+      }
     }
-    }
-    lcd.print (setRoll);
+    lcd.print(setRoll);
   } else {
     lcd.setCursor(12, 1);
     lcd.print F(("R"));
-  }  
+  }
   if (cursorPlace == 5) {  // if 5 change the pitch hoek
     lcd.setCursor(7, 3);
     lcd.print F((">"));
@@ -307,183 +305,183 @@ void pidDisplay() {
     }
   }
   //===========================================
-  if(controlMode == 2) { // voor vleugel
-  if (cursorPlace == 2) {  // if 2 change the P from the PID parameter
-    lcd.setCursor(0, 1);
-    lcd.print F((">"));
-    lcd.print(kp_Vvl);
-    if (kp_Vvl < 10) {
-      lcd.print F(("  "));
-    } else if (kp_Vvl < 100) {
-      lcd.print F((" "));
+  if (controlMode == 2) {    // voor vleugel
+    if (cursorPlace == 2) {  // if 2 change the P from the PID parameter
+      lcd.setCursor(0, 1);
+      lcd.print F((">"));
+      lcd.print(kp_Vvl);
+      if (kp_Vvl < 10) {
+        lcd.print F(("  "));
+      } else if (kp_Vvl < 100) {
+        lcd.print F((" "));
+      }
+    } else {
+      lcd.setCursor(0, 1);
+      lcd.print F(("P"));
+      lcd.print(kp_Vvl);
+      if (kp_Vvl < 10) {
+        lcd.print F(("  "));
+      } else if (kp_Vvl < 100) {
+        lcd.print F((" "));
+      }
     }
-  } else {
-    lcd.setCursor(0, 1);
-    lcd.print F(("P"));
-    lcd.print(kp_Vvl);
-    if (kp_Vvl < 10) {
-      lcd.print F(("  "));
-    } else if (kp_Vvl < 100) {
-      lcd.print F((" "));
+    if (cursorPlace == 3) {  // if 3 change the I from the PID parameter
+      lcd.setCursor(4, 1);
+      lcd.print F((">"));
+      lcd.print(ki_Vvl);
+      if (ki_Vvl < 10) {
+        lcd.print F(("  "));
+      } else if (ki_Vvl < 100) {
+        lcd.print F((" "));
+      }
+    } else {
+      lcd.setCursor(4, 1);
+      lcd.print F(("I"));
+      lcd.print(ki_Vvl);
+      if (ki_Vvl < 10) {
+        lcd.print F(("  "));
+      } else if (ki_Vvl < 100) {
+        lcd.print F((" "));
+      }
     }
-  }
-  if (cursorPlace == 3) {  // if 3 change the I from the PID parameter
-    lcd.setCursor(4, 1);
-    lcd.print F((">"));
-    lcd.print(ki_Vvl);
-    if (ki_Vvl < 10) {
-      lcd.print F(("  "));
-    } else if (ki_Vvl < 100) {
-      lcd.print F((" "));
-    }
-  } else {
-    lcd.setCursor(4, 1);
-    lcd.print F(("I"));
-    lcd.print(ki_Vvl);
-    if (ki_Vvl < 10) {
-      lcd.print F(("  "));
-    } else if (ki_Vvl < 100) {
-      lcd.print F((" "));
-    }
-  }
-  if (cursorPlace == 4) {  // if 4 change the D from the PID parameter
-    lcd.setCursor(8, 1);
-    lcd.print F((">"));
-    lcd.print(kd_Vvl);
-    if (kd_Vvl < 10) {
-      lcd.print F(("  "));
-    } else if (kd_Vvl < 100) {
-      lcd.print F((" "));
-    }
-  } else {
-    lcd.setCursor(8, 1);
-    lcd.print F(("D"));
-    lcd.print(kd_Vvl);
-    if (kd_Vvl < 10) {
-      lcd.print F(("  "));
-    } else if (kd_Vvl < 100) {
-      lcd.print F((" "));
-    }
-  }
-  } 
-  if(controlMode == 4) { // balans 
-  if (cursorPlace == 2) {  // if 2 change the P from the PID parameter
-    lcd.setCursor(0, 1);
-    lcd.print F((">"));
-    lcd.print(kp_balans);
-    if (kp_balans < 10) {
-      lcd.print F(("  "));
-    } else if (kp_balans < 100) {
-      lcd.print F((" "));
-    }
-  } else {
-    lcd.setCursor(0, 1);
-    lcd.print F(("P"));
-    lcd.print(kp_balans);
-    if (kp_balans < 10) {
-      lcd.print F(("  "));
-    } else if (kp_balans < 100) {
-      lcd.print F((" "));
+    if (cursorPlace == 4) {  // if 4 change the D from the PID parameter
+      lcd.setCursor(8, 1);
+      lcd.print F((">"));
+      lcd.print(kd_Vvl);
+      if (kd_Vvl < 10) {
+        lcd.print F(("  "));
+      } else if (kd_Vvl < 100) {
+        lcd.print F((" "));
+      }
+    } else {
+      lcd.setCursor(8, 1);
+      lcd.print F(("D"));
+      lcd.print(kd_Vvl);
+      if (kd_Vvl < 10) {
+        lcd.print F(("  "));
+      } else if (kd_Vvl < 100) {
+        lcd.print F((" "));
+      }
     }
   }
-  if (cursorPlace == 3) {  // if 3 change the I from the PID parameter
-    lcd.setCursor(4, 1);
-    lcd.print F((">"));
-    lcd.print(ki_balans);
-    if (ki_balans < 10) {
-      lcd.print F(("  "));
-    } else if (ki_balans < 100) {
-      lcd.print F((" "));
+  if (controlMode == 4) {    // balans
+    if (cursorPlace == 2) {  // if 2 change the P from the PID parameter
+      lcd.setCursor(0, 1);
+      lcd.print F((">"));
+      lcd.print(kp_balans);
+      if (kp_balans < 10) {
+        lcd.print F(("  "));
+      } else if (kp_balans < 100) {
+        lcd.print F((" "));
+      }
+    } else {
+      lcd.setCursor(0, 1);
+      lcd.print F(("P"));
+      lcd.print(kp_balans);
+      if (kp_balans < 10) {
+        lcd.print F(("  "));
+      } else if (kp_balans < 100) {
+        lcd.print F((" "));
+      }
     }
-  } else {
-    lcd.setCursor(4, 1);
-    lcd.print F(("I"));
-    lcd.print(ki_balans);
-    if (ki_balans < 10) {
-      lcd.print F(("  "));
-    } else if (ki_balans < 100) {
-      lcd.print F((" "));
+    if (cursorPlace == 3) {  // if 3 change the I from the PID parameter
+      lcd.setCursor(4, 1);
+      lcd.print F((">"));
+      lcd.print(ki_balans);
+      if (ki_balans < 10) {
+        lcd.print F(("  "));
+      } else if (ki_balans < 100) {
+        lcd.print F((" "));
+      }
+    } else {
+      lcd.setCursor(4, 1);
+      lcd.print F(("I"));
+      lcd.print(ki_balans);
+      if (ki_balans < 10) {
+        lcd.print F(("  "));
+      } else if (ki_balans < 100) {
+        lcd.print F((" "));
+      }
     }
-  }
-  if (cursorPlace == 4) {  // if 4 change the D from the PID parameter
-    lcd.setCursor(8, 1);
-    lcd.print F((">"));
-    lcd.print(kd_balans);
-    if (kd_balans < 10) {
-      lcd.print F(("  "));
-    } else if (kd_balans < 100) {
-      lcd.print F((" "));
-    }
-  } else {
-    lcd.setCursor(8, 1);
-    lcd.print F(("D"));
-    lcd.print(kd_balans);
-    if (kd_balans < 10) {
-      lcd.print F(("  "));
-    } else if (kd_balans < 100) {
-      lcd.print F((" "));
-    }
-  }
-  } 
-  if(controlMode == 5) { // achtervleugel
-  if (cursorPlace == 2) {  // if 2 change the P from the PID parameter
-    lcd.setCursor(0, 1);
-    lcd.print F((">"));
-    lcd.print(kp_Avl);
-    if (kp_Avl < 10) {
-      lcd.print F(("  "));
-    } else if (kp_Avl < 100) {
-      lcd.print F((" "));
-    }
-  } else {
-    lcd.setCursor(0, 1);
-    lcd.print F(("P"));
-    lcd.print(kp_Avl);
-    if (kp_Avl < 10) {
-      lcd.print F(("  "));
-    } else if (kp_Avl < 100) {
-      lcd.print F((" "));
-    }
-  }
-  if (cursorPlace == 3) {  // if 3 change the I from the PID parameter
-    lcd.setCursor(4, 1);
-    lcd.print F((">"));
-    lcd.print(ki_Avl);
-    if (ki_Avl < 10) {
-      lcd.print F(("  "));
-    } else if (ki_Avl < 100) {
-      lcd.print F((" "));
-    }
-  } else {
-    lcd.setCursor(4, 1);
-    lcd.print F(("I"));
-    lcd.print(ki_Avl);
-    if (ki_Avl < 10) {
-      lcd.print F(("  "));
-    } else if (ki_Avl < 100) {
-      lcd.print F((" "));
+    if (cursorPlace == 4) {  // if 4 change the D from the PID parameter
+      lcd.setCursor(8, 1);
+      lcd.print F((">"));
+      lcd.print(kd_balans);
+      if (kd_balans < 10) {
+        lcd.print F(("  "));
+      } else if (kd_balans < 100) {
+        lcd.print F((" "));
+      }
+    } else {
+      lcd.setCursor(8, 1);
+      lcd.print F(("D"));
+      lcd.print(kd_balans);
+      if (kd_balans < 10) {
+        lcd.print F(("  "));
+      } else if (kd_balans < 100) {
+        lcd.print F((" "));
+      }
     }
   }
-  if (cursorPlace == 4) {  // if 4 change the D from the PID parameter
-    lcd.setCursor(8, 1);
-    lcd.print F((">"));
-    lcd.print(kd_Avl);
-    if (kd_Avl < 10) {
-      lcd.print F(("  "));
-    } else if (kd_Avl < 100) {
-      lcd.print F((" "));
+  if (controlMode == 5) {    // achtervleugel
+    if (cursorPlace == 2) {  // if 2 change the P from the PID parameter
+      lcd.setCursor(0, 1);
+      lcd.print F((">"));
+      lcd.print(kp_Avl);
+      if (kp_Avl < 10) {
+        lcd.print F(("  "));
+      } else if (kp_Avl < 100) {
+        lcd.print F((" "));
+      }
+    } else {
+      lcd.setCursor(0, 1);
+      lcd.print F(("P"));
+      lcd.print(kp_Avl);
+      if (kp_Avl < 10) {
+        lcd.print F(("  "));
+      } else if (kp_Avl < 100) {
+        lcd.print F((" "));
+      }
     }
-  } else {
-    lcd.setCursor(8, 1);
-    lcd.print F(("D"));
-    lcd.print(kd_Avl);
-    if (kd_Avl < 10) {
-      lcd.print F(("  "));
-    } else if (kd_Avl < 100) {
-      lcd.print F((" "));
+    if (cursorPlace == 3) {  // if 3 change the I from the PID parameter
+      lcd.setCursor(4, 1);
+      lcd.print F((">"));
+      lcd.print(ki_Avl);
+      if (ki_Avl < 10) {
+        lcd.print F(("  "));
+      } else if (ki_Avl < 100) {
+        lcd.print F((" "));
+      }
+    } else {
+      lcd.setCursor(4, 1);
+      lcd.print F(("I"));
+      lcd.print(ki_Avl);
+      if (ki_Avl < 10) {
+        lcd.print F(("  "));
+      } else if (ki_Avl < 100) {
+        lcd.print F((" "));
+      }
+    }
+    if (cursorPlace == 4) {  // if 4 change the D from the PID parameter
+      lcd.setCursor(8, 1);
+      lcd.print F((">"));
+      lcd.print(kd_Avl);
+      if (kd_Avl < 10) {
+        lcd.print F(("  "));
+      } else if (kd_Avl < 100) {
+        lcd.print F((" "));
+      }
+    } else {
+      lcd.setCursor(8, 1);
+      lcd.print F(("D"));
+      lcd.print(kd_Avl);
+      if (kd_Avl < 10) {
+        lcd.print F(("  "));
+      } else if (kd_Avl < 100) {
+        lcd.print F((" "));
+      }
     }
   }
-  }     
 }
 
 //===================================================================== computeButtonPress =========================================================================
@@ -564,8 +562,7 @@ void computeButtonPress() {
     } else if ((button4 == HIGH) && (cursorPlace == 5)) {
       setPitch++;
     }
-    pidChangeDetection = setDistance + cursorPlace + kp_Vvl + ki_Vvl + kd_Vvl + setPitch + setRoll
-    ;
+    pidChangeDetection = setDistance + cursorPlace + kp_Vvl + ki_Vvl + kd_Vvl + setPitch + setRoll;
 
   } else if ((buttonAll == 1) && (controlMode == 4)) {  // works only when in 4 balans mode
     if ((button1 == HIGH) && (buttonStateChange1)) {
@@ -596,7 +593,7 @@ void computeButtonPress() {
     } else if ((button4 == HIGH) && (cursorPlace == 4)) {
       kd_balans++;
     } else if ((button3 == HIGH) && (cursorPlace == 5)) {  // if cursor place is at 5 change the ptich van de boot
-          setPitch--;
+      setPitch--;
     } else if ((button4 == HIGH) && (cursorPlace == 5)) {
       setPitch++;
     }
@@ -637,13 +634,21 @@ void computeButtonPress() {
     }
     pidChangeDetection = setDistance + cursorPlace + kp_Avl + ki_Avl + kd_Avl + setPitch + setRoll;
   }
-
   cursorPlace = constrain(cursorPlace, 0, 5);
   controlMode = constrain(controlMode, 0, 5);
   setDistance = constrain(setDistance, 0, 99);
+
+  kp_Vvl = constrain(kp_Vvl, 0, 999);
+  ki_Vvl = constrain(ki_Vvl, 0, 999);
+  kd_Vvl = constrain(kd_Vvl, 0, 999);
+
   kp_Avl = constrain(kp_Avl, 0, 999);
   ki_Avl = constrain(ki_Avl, 0, 999);
   kd_Avl = constrain(kd_Avl, 0, 999);
+
+  kp_balans = constrain(kp_balans, 0, 999);
+  ki_balans = constrain(ki_balans, 0, 999);
+  kd_balans = constrain(kd_balans, 0, 999);
 }
 
 //======================================================================= computeDistance ==========================================================================
@@ -653,7 +658,7 @@ void computeDistance() {
   distance_sensor = (travelTime + (0.5 * soundSpeed)) / soundSpeed;  // afstand in cm. because int are rounded down we add 0,5 cm or 29 micoseconds
   static float pitch_rad;                                            // arduino werkt in radians.
   pitch_rad = pitch * M_PI / 180.0;                                  // degees to radians
-  distance = distance_sensor - (270 * tan(pitch_rad)) - 40.0 + 0.5;    // afstand van de onderkant van de boot (-40) tot het water onder de vleugel door rekening te houden met de hoek van de boot(-270*tan(pitch_rad). because int are rounded down we add 0,5
+  distance = distance_sensor - (270 * tan(pitch_rad)) - 40.0 + 0.5;  // afstand van de onderkant van de boot (-40) tot het water onder de vleugel door rekening te houden met de hoek van de boot(-270*tan(pitch_rad). because int are rounded down we add 0,5
 }
 
 //======================================================================= compute pid voorvleugel ==========================================================================
@@ -694,7 +699,6 @@ void computePid_Vvl() {
     I_Vvl = 0.0;
   }
   pidVvlTotal = P_Vvl + I_Vvl + D_Avl;  // PID wordt berekend in graden
-  Serial.println(pidVvlTotal);
 
   pidVvlTotal = constrain(pidVvlTotal, -9.9, 12.0);
 
@@ -743,7 +747,6 @@ void computePid_Avl() {
     I_Avl = 0.0;
   }
   pidAvlTotal = P_Avl + I_Avl + D_Avl;  // PID wordt berekend in graden
-  Serial.println(pidAvlTotal);
 
   pidAvlTotal = constrain(pidAvlTotal, hoek_home, 12.0);
 
@@ -789,12 +792,11 @@ void computePid_balans() {
     I_Balans = 0.0;
   }
   pidBalansTotal = P_Balans + I_Balans + D_Balans;  // PID wordt berekend in graden
-  Serial.println(pidBalansTotal);
 
-  pidBalansTotal = constrain(pidBalansTotal, -5, 5); // max 10mm offset
+  pidBalansTotal = constrain(pidBalansTotal, -5, 5);  // max 10mm offset
 
-  offset_voor_vleugel = pidBalansTotal; // offset is in mm
-  pulsen_liniear = offset_voor_vleugel * pulsen_per_mm; // mm naar pulsen
+  offset_voor_vleugel = pidBalansTotal;                  // offset is in mm
+  pulsen_liniear = offset_voor_vleugel * pulsen_per_mm;  // mm naar pulsen
   CAN_pulsen_offset = pulsen_liniear;
 }
 
@@ -818,160 +820,160 @@ void displayData() {
   lcd.print(char(224));
   lcd.print(pitch, 1);
 
-  if (controlMode == 2) { // controlMode voorvleugel
-   lcd.setCursor(0, 2);  // print P_Vvl
-  lcd.print("P");
-  if(P_Vvl >= 0){
-  lcd.print F((" "));
-  if(P_Vvl < 1){
-    lcd.print(" ");
-  }
-  } else if(P_Vvl > -1.0 ) {
-lcd.print(" ");
-  }
-  lcd.print(P_Vvl * 10.0, 0);
-
-  lcd.setCursor(4, 2);  // print I_Vvl
-  lcd.print(" I");
-  if(I_Vvl >= 0){
-  lcd.print F((" "));
-  if(I_Vvl < 1){
-    lcd.print(" ");
-  }
-  } else if(I_Vvl > -1.0 ) {
-lcd.print(" ");
-  }
-  lcd.print(I_Vvl * 10.0, 0);
-
-  lcd.setCursor(9, 2);  // print D_Vvl
-  lcd.print(" D");
-  if(D_Vvl >= 0.0){
-  lcd.print F((" "));
-  if(D_Vvl < 1.0){
-    lcd.print(" ");
-  }
-  } else if(D_Vvl > -1.0 ) {
-lcd.print(" ");
-  }
-  lcd.print(D_Vvl * 10.0, 0);
-  
-  lcd.setCursor(0, 3);  // print PID_Vvl
-  lcd.print("PID");
-  if((pidVvlTotal < 10.0) && (pidVvlTotal >= 0.0)){
-    lcd.print(" ");
-    if(pidVvlTotal < 1){
+  if (controlMode == 2) {  // controlMode voorvleugel
+    lcd.setCursor(0, 2);   // print P_Vvl
+    lcd.print("P");
+    if (P_Vvl >= 0) {
+      lcd.print F((" "));
+      if (P_Vvl < 1) {
+        lcd.print(" ");
+      }
+    } else if (P_Vvl > -1.0) {
       lcd.print(" ");
     }
-  }
-  if(pidVvlTotal < 0.0 && pidVvlTotal > -1.0){
-    lcd.print(" ");
-  }
-  lcd.print(pidVvlTotal * 10.0, 0);
-  lcd.print(' ');
-  } 
-  if (controlMode == 5) { // controlMode achtervleugel
-   lcd.setCursor(0, 2);  // print P_Avl
-  lcd.print("P");
-  if(P_Avl >= 0){
-  lcd.print F((" "));
-  if(P_Avl < 1){
-    lcd.print(" ");
-  }
-  } else if(P_Avl > -1.0 ) {
-lcd.print(" ");
-  }
-  lcd.print(P_Avl * 10.0, 0);
+    lcd.print(P_Vvl * 10.0, 0);
 
-  lcd.setCursor(4, 2);  // print I_Avl
-  lcd.print(" I");
-  if(I_Avl >= 0){
-  lcd.print F((" "));
-  if(I_Avl < 1){
-    lcd.print(" ");
-  }
-  } else if(I_Avl > -1.0 ) {
-lcd.print(" ");
-  }
-  lcd.print(I_Avl * 10.0, 0);
-
-  lcd.setCursor(9, 2);  // print D_Avl
-  lcd.print(" D");
-  if(D_Avl >= 0.0){
-  lcd.print F((" "));
-  if(D_Avl < 1.0){
-    lcd.print(" ");
-  }
-  } else if(D_Avl > -1.0 ) {
-lcd.print(" ");
-  }
-  lcd.print(D_Avl * 10.0, 0);
-  
-  lcd.setCursor(0, 3);  // print PID_Avl
-  lcd.print("PID");
-  if((pidAvlTotal < 10.0) && (pidAvlTotal >= 0.0)){
-    lcd.print(" ");
-    if(pidAvlTotal < 1){
+    lcd.setCursor(4, 2);  // print I_Vvl
+    lcd.print(" I");
+    if (I_Vvl >= 0) {
+      lcd.print F((" "));
+      if (I_Vvl < 1) {
+        lcd.print(" ");
+      }
+    } else if (I_Vvl > -1.0) {
       lcd.print(" ");
     }
-  }
-  if(pidAvlTotal < 0.0 && pidAvlTotal > -1.0){
-    lcd.print(" ");
-  }
-  lcd.print(pidAvlTotal * 10.0, 0);
-  lcd.print(' ');
-  } 
-  if (controlMode == 4) { // controlMode balansvleugel
-   lcd.setCursor(0, 2);  // print P_Vvl
-  lcd.print("P");
-  if(P_Balans >= 0){
-  lcd.print F((" "));
-  if(P_Balans < 1){
-    lcd.print(" ");
-  }
-  } else if(P_Balans > -1.0 ) {
-lcd.print(" ");
-  }
-  lcd.print(P_Balans * 10.0, 0);
+    lcd.print(I_Vvl * 10.0, 0);
 
-  lcd.setCursor(4, 2);  // print I_Vvl
-  lcd.print(" I");
-  if(I_Balans >= 0){
-  lcd.print F((" "));
-  if(I_Balans < 1){
-    lcd.print(" ");
-  }
-  } else if(I_Balans > -1.0 ) {
-lcd.print(" ");
-  }
-  lcd.print(I_Balans * 10.0, 0);
-
-  lcd.setCursor(9, 2);  // print D_Balans
-  lcd.print(" D");
-  if(D_Balans
-   >= 0.0){
-  lcd.print F((" "));
-  if(D_Balans < 1.0){
-    lcd.print(" ");
-  }
-  } else if(D_Balans > -1.0 ) {
-lcd.print(" ");
-  }
-  lcd.print(D_Balans * 10.0, 0);
-  
-  lcd.setCursor(0, 3);  // print PID_Vvl
-  lcd.print("PID");
-  if((pidBalansTotal < 10.0) && (pidBalansTotal >= 0.0)){
-    lcd.print(" ");
-    if(pidBalansTotal < 1){
+    lcd.setCursor(9, 2);  // print D_Vvl
+    lcd.print(" D");
+    if (D_Vvl >= 0.0) {
+      lcd.print F((" "));
+      if (D_Vvl < 1.0) {
+        lcd.print(" ");
+      }
+    } else if (D_Vvl > -1.0) {
       lcd.print(" ");
     }
+    lcd.print(D_Vvl * 10.0, 0);
+
+    lcd.setCursor(0, 3);  // print PID_Vvl
+    lcd.print("PID");
+    if ((pidVvlTotal < 10.0) && (pidVvlTotal >= 0.0)) {
+      lcd.print(" ");
+      if (pidVvlTotal < 1) {
+        lcd.print(" ");
+      }
+    }
+    if (pidVvlTotal < 0.0 && pidVvlTotal > -1.0) {
+      lcd.print(" ");
+    }
+    lcd.print(pidVvlTotal * 10.0, 0);
+    lcd.print(' ');
   }
-  if(pidBalansTotal < 0.0 && pidBalansTotal > -1.0){
-    lcd.print(" ");
+  if (controlMode == 5) {  // controlMode achtervleugel
+    lcd.setCursor(0, 2);   // print P_Avl
+    lcd.print("P");
+    if (P_Avl >= 0) {
+      lcd.print F((" "));
+      if (P_Avl < 1) {
+        lcd.print(" ");
+      }
+    } else if (P_Avl > -1.0) {
+      lcd.print(" ");
+    }
+    lcd.print(P_Avl * 10.0, 0);
+
+    lcd.setCursor(4, 2);  // print I_Avl
+    lcd.print(" I");
+    if (I_Avl >= 0) {
+      lcd.print F((" "));
+      if (I_Avl < 1) {
+        lcd.print(" ");
+      }
+    } else if (I_Avl > -1.0) {
+      lcd.print(" ");
+    }
+    lcd.print(I_Avl * 10.0, 0);
+
+    lcd.setCursor(9, 2);  // print D_Avl
+    lcd.print(" D");
+    if (D_Avl >= 0.0) {
+      lcd.print F((" "));
+      if (D_Avl < 1.0) {
+        lcd.print(" ");
+      }
+    } else if (D_Avl > -1.0) {
+      lcd.print(" ");
+    }
+    lcd.print(D_Avl * 10.0, 0);
+
+    lcd.setCursor(0, 3);  // print PID_Avl
+    lcd.print("PID");
+    if ((pidAvlTotal < 10.0) && (pidAvlTotal >= 0.0)) {
+      lcd.print(" ");
+      if (pidAvlTotal < 1) {
+        lcd.print(" ");
+      }
+    }
+    if (pidAvlTotal < 0.0 && pidAvlTotal > -1.0) {
+      lcd.print(" ");
+    }
+    lcd.print(pidAvlTotal * 10.0, 0);
+    lcd.print(' ');
   }
-  lcd.print(pidBalansTotal * 10.0, 0);
-  lcd.print(' ');
-  } 
+  if (controlMode == 4) {  // controlMode balansvleugel
+    lcd.setCursor(0, 2);   // print P_Vvl
+    lcd.print("P");
+    if (P_Balans >= 0) {
+      lcd.print F((" "));
+      if (P_Balans < 1) {
+        lcd.print(" ");
+      }
+    } else if (P_Balans > -1.0) {
+      lcd.print(" ");
+    }
+    lcd.print(P_Balans * 10.0, 0);
+
+    lcd.setCursor(4, 2);  // print I_Vvl
+    lcd.print(" I");
+    if (I_Balans >= 0) {
+      lcd.print F((" "));
+      if (I_Balans < 1) {
+        lcd.print(" ");
+      }
+    } else if (I_Balans > -1.0) {
+      lcd.print(" ");
+    }
+    lcd.print(I_Balans * 10.0, 0);
+
+    lcd.setCursor(9, 2);  // print D_Balans
+    lcd.print(" D");
+    if (D_Balans
+        >= 0.0) {
+      lcd.print F((" "));
+      if (D_Balans < 1.0) {
+        lcd.print(" ");
+      }
+    } else if (D_Balans > -1.0) {
+      lcd.print(" ");
+    }
+    lcd.print(D_Balans * 10.0, 0);
+
+    lcd.setCursor(0, 3);  // print PID_Vvl
+    lcd.print("PID");
+    if ((pidBalansTotal < 10.0) && (pidBalansTotal >= 0.0)) {
+      lcd.print(" ");
+      if (pidBalansTotal < 1) {
+        lcd.print(" ");
+      }
+    }
+    if (pidBalansTotal < 0.0 && pidBalansTotal > -1.0) {
+      lcd.print(" ");
+    }
+    lcd.print(pidBalansTotal * 10.0, 0);
+    lcd.print(' ');
+  }
 }
 
 //======================================================================= displayControlMode ==========================================================================
@@ -996,15 +998,15 @@ void displayControlMode() {
 void OFF() {
   if (controlMode == 0) {
     if (button_encoder_1 && buttonStateChange_enc_1) {
-    pid_actief = ! pid_actief;
+      pid_actief = !pid_actief;
     }
-      lcd.setCursor(12, 0);
-          if (pid_actief) {
-       lcd.print ("!");
-      } else {
-        lcd.print (" ");
+    lcd.setCursor(12, 0);
+    if (pid_actief) {
+      lcd.print("!");
+    } else {
+      lcd.print(" ");
+    }
   }
-}
 }
 
 //======================================================================== buttonPressDetection =========================================================================
@@ -1075,8 +1077,6 @@ void call_INT0() {
     // If pin state has changed to LOW -> calculate time passed (in µs)
     travelTime = currentTime - startTime;
     newMesurement = true;
-
-    //Serial.print(newMesurement);
 
     //=========================================================================== out of range detection =========================================================================
 
