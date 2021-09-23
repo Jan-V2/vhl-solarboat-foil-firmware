@@ -88,7 +88,7 @@ int16_t CAN_pulsen_offset = 0;
 int16_t CAN_pulsen_achter = 0;
 
 uint8_t home_front_foil;
-uint8_t home_rear_foi;
+uint8_t home_rear_foil;
 
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(RS, E, D4, D5, D6, D7);
@@ -240,6 +240,13 @@ void read_CAN_data() {
 
 void send_CAN_data() {
   int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200);
+
+  if (home_front_foil) {
+    bool_to_frame(home_front_foil, ); // TODO can ID toevoegen
+  }
+  if (home_rear_foil) { 
+    bool_to_frame(home_rear_foil, );  // TODO can ID toevoegen
+  }
 }
 
 //========================================================================= doMeasurement =====================================================================
@@ -1015,6 +1022,25 @@ void OFF() {
   }
 }
 
+void home() {
+  if (contolMode == 3) {
+    if (button_encoder_1 && buttonStateChange_enc_1) {
+      lcd.setCursor(0, 1);
+      lcd.print("Home voor");
+      home_front_foil = true;
+    } else {
+      home_front_foil = false;
+    }
+    if (button_encoder_2 && buttonStateChange_enc_2) {
+      lcd.setCursor(0, 2);
+      lcd.print("Home achter");
+      home_rear_foil = true;
+    } else {
+      home_rear_foil = false;
+    }
+  }
+}
+
 //======================================================================== buttonPressDetection =========================================================================
 
 void buttonPressDetection() {
@@ -1183,5 +1209,17 @@ can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3, uint1
   }
   ret.can_id = can_id;
   ret.can_dlc = sizeof(int16_t) * 3;
+  return ret;
+}
+
+can_frame bool_to_frame(bool b, uint16_t can_id) {
+  byte bytes[sizeof(bool);
+  memcpy(bytes, &b, sizeof(bool));
+  can_frame ret;
+  for (uint8_t i = 0; i < sizeof(bool); i++) {
+    ret.data[i] = bytes[i];
+  }
+  ret.can_id = can_id;
+  ret.can_dlc = sizeof(bool);
   return ret;
 }
