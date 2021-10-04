@@ -252,10 +252,10 @@ void send_CAN_data() {
   int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200);
   
   if (home_front_foil) {
-   bool_to_frame(home_front_foil, 20);  // TODO can ID toevoegen
+   bool_to_frame(home_front_foil, 301);  // TODO can ID toevoegen
   }
   if (home_rear_foil) {
-    bool_to_frame(home_rear_foil, 21);  // TODO can ID toevoegen
+    bool_to_frame(home_rear_foil, 300);  // TODO can ID toevoegen
   }
 }
 
@@ -509,6 +509,7 @@ void computeButtonPress() {
   static int prev_enc_1_pulses;
   static int prev_enc_2_pulses;
   differnce = leftAcutatorStroke - rightAcutatorStroke;
+Serial.print(enc_1_pulses);
 
   if (enc_1_pulses < prev_enc_1_pulses) {
     controlMode--;
