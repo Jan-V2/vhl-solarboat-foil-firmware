@@ -20,7 +20,7 @@ const float soundSpeed = 58.309038;                                  // speed of
 const uint16_t refreshDistanceDisplay = 399;                         // How many milliseconds between display updates
 const uint8_t pollTimeButtons = 24;                                  // How many milliseconds between button polls
 const uint8_t buttonCompompute = 49;                                 // How many milliseconds between button compute. less mili is faster long press
-const uint8_t sendCanTime = 10;                                      //How many milliseconds between sending CAN frames
+const uint8_t sendCanTime = 10;                                      // How many milliseconds between sending CAN frames
 const uint16_t maxPulseEncoder = 13000;                              // the maximum amount of pulses for the front foil motor encoder
 const uint16_t maxAfstandEncoder = 200;                              // de afstand in mm die de voor linieare motor kan uit schuiven
 const uint16_t pulsen_per_mm = maxPulseEncoder / maxAfstandEncoder;  // pulsen per mm van de linieare motor
@@ -119,7 +119,7 @@ void setup() {
   pinMode(buttonPin_encoder_1, INPUT_PULLUP);
 
   // Attach function call_INT0 to pin 2 when it CHANGEs state
-  attachInterrupt(digitalPinToInterrupt(echoPin), call_INT0, CHANGE);  // Pin 2 -> INT0
+ // attachInterrupt(digitalPinToInterrupt(echoPin), call_INT0, CHANGE);  // Pin 2 -> INT0
 
   delay(25);
   while (buttonAll == 0) {
@@ -250,15 +250,16 @@ void read_CAN_data() {
 
 void send_CAN_data() {
   int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200);
-  Serial.print(CAN_pulsen_achter);
-
+  
   if (home_front_foil) {
-    bool_to_frame(home_front_foil, 301);
+   bool_to_frame(home_front_foil, 301);  // TODO can ID toevoegen
   }
   if (home_rear_foil) {
-    bool_to_frame(home_rear_foil, 300);
+    bool_to_frame(home_rear_foil, 300);  // TODO can ID toevoegen
   }
 }
+
+
 //========================================================================= doMeasurement =====================================================================
 
 void doMeasurement() {
@@ -508,6 +509,7 @@ void computeButtonPress() {
   static int prev_enc_1_pulses;
   static int prev_enc_2_pulses;
   differnce = leftAcutatorStroke - rightAcutatorStroke;
+Serial.print(enc_1_pulses);
 
   if (enc_1_pulses < prev_enc_1_pulses) {
     controlMode--;
@@ -520,7 +522,6 @@ void computeButtonPress() {
   } else if (enc_2_pulses > prev_enc_2_pulses) {
     cursorPlace++;
   }
-  Serial.print(enc_2_pulses);
   prev_enc_2_pulses = enc_2_pulses;
   if (cursorPlace == 6) {
     cursorPlace = 0;
@@ -720,7 +721,7 @@ void computePid_Vvl() {
   pidVvlTotal = constrain(pidVvlTotal, -9.9, 12.0);
 
   hoek_voor_vleugel = pidVvlTotal - pitch;
-  afstand_liniear = sqrt(43.2 * 43.2 + 13.4 * 13.4 - 2 * 43.2 * 13.4 * cos((hoek_voor_vleugel + 90.0 - 22.49831 - 3) * M_PI / 180.0));  // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel)) wanneer vleugel 0 graden is staat deze haaks op de boot dus 90graden. -22.5 omdat de liniere motor niet recht zit. -3 omdat de vleugel hoger gemonteerd zit dan de linieare motor.
+  afstand_liniear = sqrt(43.2 * 43.2 + 18.2 * 18.2 - 2 * 43.2 * 18.2 * cos((hoek_voor_vleugel + 90.0 - 3) * M_PI / 180.0));  // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel)) wanneer vleugel 0 graden is staat deze haaks op de boot dus 90graden. -3 omdat de vleugel hoger gemonteerd zit dan de linieare motor.
   pulsen_liniear = afstand_liniear * pulsen_per_mm * 10;                                                                                // pulsen naar voorvleugel = afstand in cm maal pulsen per cm
   CAN_pulsen_voor = pulsen_liniear;
 }
@@ -770,7 +771,6 @@ void computePid_Avl() {
   hoek_achter_vleugel = pidAvlTotal - pitch;
   pulsen_liniear = (hoek_achter_vleugel - hoek_home) * 105.595;
   CAN_pulsen_achter = pulsen_liniear;
-
 }
 
 //======================================================================== PID offset ===========================================================================
@@ -1220,6 +1220,7 @@ can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3, uint1
   }
   ret.can_id = can_id;
   ret.can_dlc = sizeof(int16_t) * 3;
+  mcp2515.sendMessage(&ret);
   return ret;
 }
 
@@ -1232,5 +1233,6 @@ can_frame bool_to_frame(bool b, uint16_t can_id) {
   }
   ret.can_id = can_id;
   ret.can_dlc = sizeof(bool);
+  mcp2515.sendMessage(&ret);
   return ret;
 }
