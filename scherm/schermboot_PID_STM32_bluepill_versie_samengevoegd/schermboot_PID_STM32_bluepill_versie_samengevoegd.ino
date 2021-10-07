@@ -21,6 +21,7 @@ const uint16_t refreshDistanceDisplay = 399;                         // How many
 const uint8_t pollTimeButtons = 24;                                  // How many milliseconds between button polls
 const uint8_t buttonCompompute = 49;                                 // How many milliseconds between button compute. less mili is faster long press
 const uint8_t sendCanTime = 10;                                      // How many milliseconds between sending CAN frames
+const uint16_t PID_compute_time = 250;                               // How many milliseconds between PID compute.
 const uint16_t maxPulseEncoder = 13000;                              // the maximum amount of pulses for the front foil motor encoder
 const uint16_t maxAfstandEncoder = 200;                              // de afstand in mm die de voor linieare motor kan uit schuiven
 const uint16_t pulsen_per_mm = maxPulseEncoder / maxAfstandEncoder;  // pulsen per mm van de linieare motor
@@ -119,7 +120,7 @@ void setup() {
   pinMode(buttonPin_encoder_1, INPUT_PULLUP);
 
   // Attach function call_INT0 to pin 2 when it CHANGEs state
- // attachInterrupt(digitalPinToInterrupt(echoPin), call_INT0, CHANGE);  // Pin 2 -> INT0
+  // attachInterrupt(digitalPinToInterrupt(echoPin), call_INT0, CHANGE);  // Pin 2 -> INT0
 
   delay(25);
   while (buttonAll == 0) {
@@ -142,7 +143,20 @@ void setup() {
 
 void loop() {
   digitalWrite(LED_BUILTIN, HIGH);
+/*
+  // ================================ code van youtbe ===========================
+  // Has rotary encoder moved?
+  if (rotaryEncoder) {
+    // Get the movement (if valid)
+    int8_t rotationValue = checkRotaryEncoder();
 
+    // If valid movement, do something
+    if (rotationValue != 0) {
+      enc_1_pulses += rotationValue;
+    }
+  }
+  // =============================== einde code youtube ============================
+*/
   //================================================================== main loop poll sensor ==========================================================================
 
   static uint32_t lastPollSensor = 0;
@@ -171,8 +185,10 @@ void loop() {
       x = buttonCompompute;    // reset delay to (longpress) normal delay
     }
   }
+  static uint32_t last_PID_compute_time = 0;
   static uint16_t lastPidChangeDetection = 1;
-  if (((newMesurement || (pidChangeDetection != lastPidChangeDetection)) && pid_actief)) {
+  if ((((millis() - last_PID_compute_time > PID_compute_time) || newMesurement || (pidChangeDetection != lastPidChangeDetection)) && pid_actief)) {
+    last_PID_compute_time = millis();
     newMesurement = false;
     computeDistance();
     computePid_Vvl();
@@ -234,6 +250,7 @@ void read_CAN_data() {
     if (canMsg.can_id == 0x64) {
       pitch = float_from_can(0);  // byte 0-3 is float pitch
       roll = float_from_can(4);   // byte 4-7 is float roll
+      newMesurement = true;       // er is een nieuwe meting voor de PID compute
 
     } else if (canMsg.can_id == 0x32) {
       PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]);   //byte 0-1 is int16_t PWM links
@@ -249,16 +266,16 @@ void read_CAN_data() {
 //========================================================================= send_CAN_data ==================================================================
 
 void send_CAN_data() {
-  int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200);
-  
+  if (! home_front_foil || ! home_rear_foil) {
+    int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200);
+  }
   if (home_front_foil) {
-   bool_to_frame(home_front_foil, 301);  // TODO can ID toevoegen
+    bool_to_frame(home_front_foil, 301);  // TODO can ID toevoegen
   }
   if (home_rear_foil) {
     bool_to_frame(home_rear_foil, 300);  // TODO can ID toevoegen
   }
 }
-
 
 //========================================================================= doMeasurement =====================================================================
 
@@ -509,18 +526,20 @@ void computeButtonPress() {
   static int prev_enc_1_pulses;
   static int prev_enc_2_pulses;
   differnce = leftAcutatorStroke - rightAcutatorStroke;
-Serial.print(enc_1_pulses);
-
+  //Serial.print(enc_1_pulses);
+/*
   if (enc_1_pulses < prev_enc_1_pulses) {
     controlMode--;
   } else if (enc_1_pulses > prev_enc_1_pulses) {
     controlMode++;
   }
+  */
   prev_enc_1_pulses = enc_1_pulses;
+  
   if (enc_2_pulses < prev_enc_2_pulses) {
-    cursorPlace--;
+   controlMode--; //cursorPlace--;
   } else if (enc_2_pulses > prev_enc_2_pulses) {
-    cursorPlace++;
+   controlMode++; //cursorPlace++;
   }
   prev_enc_2_pulses = enc_2_pulses;
   if (cursorPlace == 6) {
@@ -1034,19 +1053,33 @@ void OFF() {
 }
 
 void home() {
+  const static uint8_t min_home_time = 1000;
+  static uint32_t last_home_time = millis();
+
+int16_t CAN_pulsen_voor = 0;
+int16_t CAN_pulsen_offset = 0;
+int16_t CAN_pulsen_achter = 0;
+
   if (controlMode == 3) {
     if (button_encoder_1 && buttonStateChange_enc_1) {
       lcd.setCursor(0, 1);
       lcd.print("Home voor");
       home_front_foil = true;
-    } else {
+      pid_actief = false;
+      CAN_pulsen_voor = 0;
+      CAN_pulsen_offset = 0;
+      last_home_time = millis();
+    } else if (millis() - last_home_time > min_home_time) {
       home_front_foil = false;
     }
     if (button_encoder_2 && buttonStateChange_enc_2) {
       lcd.setCursor(0, 2);
       lcd.print("Home achter");
       home_rear_foil = true;
-    } else {
+      pid_actief = false;
+      CAN_pulsen_achter = 0;
+      last_home_time = millis();
+    } else if (millis() - last_home_time > min_home_time) {
       home_rear_foil = false;
     }
   }

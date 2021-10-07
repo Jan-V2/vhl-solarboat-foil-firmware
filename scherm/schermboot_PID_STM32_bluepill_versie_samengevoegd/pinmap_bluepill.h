@@ -2,11 +2,11 @@
 
 //SPI 1 //KLOPT
 /*
-CS CAN1 PA4 motor
-CS CAN2 PB0 telemety
-CLK	PA5
-MISO	PA6
-MOSI	PA7
+  CS CAN1 PA4 motor
+  CS CAN2 PB0 telemety
+  CLK	PA5
+  MISO	PA6
+  MOSI	PA7
 */
 
 // LED's //KLOPT
@@ -44,36 +44,96 @@ MOSI	PA7
 int enc_1_pulses = 0;
 int enc_2_pulses = 0;
 
-void encoder1_ISR(){
-  if (digitalRead(ENC_1B)){
+// Flag from interrupt routine (moved=true)
+///volatile bool rotaryEncoder = false; // youtube
+
+// Interrupt routine just sets a flag when rotation is detected
+//void rotary() { // youtube
+//  rotaryEncoder = true; // youtube
+// }
+
+void encoder1_ISR() {
+  Serial.println("Rotary 1");
+  if (digitalRead(ENC_1B)) {
     enc_1_pulses++;
-  }else{
+  } else {
     enc_1_pulses--;
   }
 }
 
-
-void encoder2_ISR(){
-  if (digitalRead(ENC_2B)){
+void encoder2_ISR() {
+  Serial.println("Rotary 2");
+  if (digitalRead(ENC_2B)) {
     enc_2_pulses++;
-  }else{
+  } else {
     enc_2_pulses--;
   }
 }
 
+void setup_buttons_and_encoders() {
 
-void setup_buttons_and_encoders(){    
-    pinMode(LED_GREEN, OUTPUT);
-//    pinMode(LED_ORANGE, OUTPUT);
-//    pinMode(LED_RED, OUTPUT);
-    pinMode(BUTTON_1, INPUT_PULLUP);
-    pinMode(BUTTON_2, INPUT_PULLUP);
-    pinMode(BUTTON_3, INPUT_PULLUP);
-    pinMode(BUTTON_4, INPUT_PULLUP);
-  
-    pinMode(ENC_1_BTN, INPUT_PULLUP);  
-    pinMode(ENC_2_BTN, INPUT_PULLUP);
-    
-    attachInterrupt(digitalPinToInterrupt(ENC_1A), encoder1_ISR, FALLING);
-    attachInterrupt(digitalPinToInterrupt(ENC_2A), encoder2_ISR, FALLING);
+  // The module already has pullup resistors on board
+  // pinMode(ENC_1A, INPUT_PULLUP); // youtube
+  // pinMode(ENC_1B, INPUT_PULLUP); // youtube
+
+  pinMode(LED_GREEN, OUTPUT);
+  // pinMode(LED_ORANGE, OUTPUT);
+  // pinMode(LED_RED, OUTPUT);
+
+  pinMode(BUTTON_1, INPUT_PULLUP);
+  pinMode(BUTTON_2, INPUT_PULLUP);
+  pinMode(BUTTON_3, INPUT_PULLUP);
+  pinMode(BUTTON_4, INPUT_PULLUP);
+
+  pinMode(ENC_1_BTN, INPUT_PULLUP);
+  pinMode(ENC_2_BTN, INPUT_PULLUP);
+
+  // We need to monitor both pins, rising and falling for all states
+  // attachInterrupt(digitalPinToInterrupt(ENC_1A), rotary, CHANGE); // youtube
+  // attachInterrupt(digitalPinToInterrupt(ENC_1B), rotary, CHANGE); // youtube
+  attachInterrupt(digitalPinToInterrupt(ENC_2A), encoder2_ISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(ENC_1A), encoder1_ISR, FALLING);
 }
+
+// ======================================= code van youtube =============================
+/*
+  // Rotary encoder has moved (interrupt tells us) but what happened?
+  // See https://www.pinteric.com/rotary.html
+  int8_t checkRotaryEncoder() {
+  // Reset the flag that brought us here (from ISR)
+  rotaryEncoder = false;
+
+  static uint8_t lrmem = 3;
+  static int lrsum = 0;
+  static int8_t TRANS[] = {0, -1, 1, 14, 1, 0, 14, -1, -1, 14, 0, 1, 14, 1, -1, 0};
+
+  // Read BOTH pin states to deterimine validity of rotation (ie not just switch bounce)
+  int8_t l = digitalRead(ENC_1A);
+  int8_t r = digitalRead(ENC_2B);
+
+  // Move previous value 2 bits to the left and add in our new values
+  lrmem = ((lrmem & 0x03) << 2) + 2 * l + r;
+
+  // Convert the bit pattern to a movement indicator (14 = impossible, ie switch bounce)
+  lrsum += TRANS[lrmem];
+
+  /* encoder not in the neutral (detent) state */
+/* if (lrsum % 4 != 0) {
+   return 0;
+  }
+  /* encoder in the neutral state - clockwise rotation*/
+/* if (lrsum == 4) {
+   lrsum = 0;
+   return 1;
+  }
+  /* encoder in the neutral state - anti-clockwise rotation*/
+/* if (lrsum == -4) {
+   lrsum = 0;
+   return -1;
+  }
+  // An impossible rotation has been detected - ignore the movement
+  lrsum = 0;
+  return 0;
+  }
+*/
+// ====================================== einde code youtube =============================
