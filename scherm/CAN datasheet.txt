@@ -2,11 +2,12 @@ CAN ID'S
 
 ID  HEX  BYTE DATA  TYPE  BYTE DATA TYPE
 100 0X64 0-3  Pitch Float 4-7  Roll Float
-50  0X32 0-1  Left  INT16 2-3  Roll INT16
+50  0X32 0-1  Left  INT16 2-3  RightINT16
 51  0X33 0-1  Rear  INT16 
+200      0-1  pulsvoor 2-3 pulsoffset 4-5 pulsachter
 250	 0-1  amps achter
-300      0    home achter
-301	 0    home voor  
+300      0    home achter bool
+301	 0    home voor   bool
 
 
 100 is used to transmit gyro data
