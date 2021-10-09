@@ -143,20 +143,20 @@ void setup() {
 
 void loop() {
   digitalWrite(LED_BUILTIN, HIGH);
-/*
-  // ================================ code van youtbe ===========================
-  // Has rotary encoder moved?
-  if (rotaryEncoder) {
-    // Get the movement (if valid)
-    int8_t rotationValue = checkRotaryEncoder();
+  /*
+    // ================================ code van youtbe ===========================
+    // Has rotary encoder moved?
+    if (rotaryEncoder) {
+      // Get the movement (if valid)
+      int8_t rotationValue = checkRotaryEncoder();
 
-    // If valid movement, do something
-    if (rotationValue != 0) {
-      enc_1_pulses += rotationValue;
+      // If valid movement, do something
+      if (rotationValue != 0) {
+        enc_1_pulses += rotationValue;
+      }
     }
-  }
-  // =============================== einde code youtube ============================
-*/
+    // =============================== einde code youtube ============================
+  */
   //================================================================== main loop poll sensor ==========================================================================
 
   static uint32_t lastPollSensor = 0;
@@ -266,7 +266,7 @@ void read_CAN_data() {
 //========================================================================= send_CAN_data ==================================================================
 
 void send_CAN_data() {
-  if (! home_front_foil && ! home_rear_foil) {
+  if (! home_front_foil && ! home_rear_foil && ! pid_actief) {
     int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200);
   }
   if (home_front_foil) {
@@ -527,19 +527,19 @@ void computeButtonPress() {
   static int prev_enc_2_pulses;
   differnce = leftAcutatorStroke - rightAcutatorStroke;
   //Serial.print(enc_1_pulses);
-/*
-  if (enc_1_pulses < prev_enc_1_pulses) {
-    controlMode--;
-  } else if (enc_1_pulses > prev_enc_1_pulses) {
-    controlMode++;
-  }
+  /*
+    if (enc_1_pulses < prev_enc_1_pulses) {
+      controlMode--;
+    } else if (enc_1_pulses > prev_enc_1_pulses) {
+      controlMode++;
+    }
   */
   prev_enc_1_pulses = enc_1_pulses;
-  
+
   if (enc_2_pulses < prev_enc_2_pulses) {
-   controlMode--; //cursorPlace--;
+    controlMode--; //cursorPlace--;
   } else if (enc_2_pulses > prev_enc_2_pulses) {
-   controlMode++; //cursorPlace++;
+    controlMode++; //cursorPlace++;
   }
   prev_enc_2_pulses = enc_2_pulses;
   if (cursorPlace == 6) {
@@ -1056,9 +1056,9 @@ void home() {
   const static uint16_t min_home_time = 5000;
   static uint32_t last_home_time = millis();
 
-int16_t CAN_pulsen_voor = 0;
-int16_t CAN_pulsen_offset = 0;
-int16_t CAN_pulsen_achter = 0;
+  int16_t CAN_pulsen_voor = 0;
+  int16_t CAN_pulsen_offset = 0;
+  int16_t CAN_pulsen_achter = 0;
 
   if (controlMode == 3) {
     if (button_encoder_1 && buttonStateChange_enc_1) {
