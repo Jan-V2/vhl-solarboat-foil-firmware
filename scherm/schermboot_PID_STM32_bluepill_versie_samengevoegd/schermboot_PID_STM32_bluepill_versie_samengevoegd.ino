@@ -266,7 +266,7 @@ void read_CAN_data() {
 //========================================================================= send_CAN_data ==================================================================
 
 void send_CAN_data() {
-  if (! home_front_foil || ! home_rear_foil) {
+  if (! home_front_foil && ! home_rear_foil) {
     int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200);
   }
   if (home_front_foil) {
@@ -1053,7 +1053,7 @@ void OFF() {
 }
 
 void home() {
-  const static uint8_t min_home_time = 1000;
+  const static uint16_t min_home_time = 5000;
   static uint32_t last_home_time = millis();
 
 int16_t CAN_pulsen_voor = 0;
