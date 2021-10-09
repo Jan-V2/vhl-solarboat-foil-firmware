@@ -55,7 +55,7 @@ float pidAvlTotal = 0;
 float pidBalansTotal = 0;
 uint8_t setDistance = 20;           // target distance in cm that the PID will try to reach, this value can be changed on de
 int8_t setRoll = 0;                 // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
-uint8_t setPitch = 0;               // target pitch in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
+int16_t setPitch = 0;               // target pitch in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
 int16_t pulsen_offset = 0;          // berekende pulsen offset
 int16_t leftAcutatorStroke = 150;   // amount of mm the actuator is extened. value is 150 so you dont have to press the button 1000x. the vlalue will only be send when the controllmode is != OFF
 int16_t rightAcutatorStroke = 150;  // amount of mm the actuator is extened. value is 150 so you dont have to press the button 1000x. the vlalue will only be send when the controllmode is != OFF
@@ -266,7 +266,7 @@ void read_CAN_data() {
 //========================================================================= send_CAN_data ==================================================================
 
 void send_CAN_data() {
-  if (! home_front_foil && ! home_rear_foil && ! pid_actief) {
+  if (! home_front_foil && ! home_rear_foil && pid_actief) {
     int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200);
   }
   if (home_front_foil) {
@@ -327,7 +327,10 @@ void pidDisplay() {
     lcd.print F((">"));
     lcd.print(char(224));
     lcd.print(setPitch);
-    if (setPitch < 10) {
+    if (setPitch < 10 && setPitch > -10) {
+      lcd.print F((" "));
+    }
+    if (setPitch < 100 && setPitch >= 10) {
       lcd.print F((" "));
     }
   } else {
@@ -686,6 +689,8 @@ void computeButtonPress() {
   kp_balans = constrain(kp_balans, 0, 999);
   ki_balans = constrain(ki_balans, 0, 999);
   kd_balans = constrain(kd_balans, 0, 999);
+
+  setPitch = constrain(setPitch, -99, 999);
 }
 
 //======================================================================= computeDistance ==========================================================================
@@ -765,7 +770,7 @@ void computePid_Avl() {
   pidLoopTime_ms = pidTime - lastPidTime;
   lastPidTime = pidTime;
   pidLoopTime_s = float(pidLoopTime_ms) / 1000.0;
-  error = float(setPitch) / 10.0 - pitch;  // f is het zelfde als .0
+  error = pitch - float(setPitch) / 10.0;  // f is het zelfde als .0
   diffError = error - oldError;
   oldError = error;
   diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
@@ -787,7 +792,7 @@ void computePid_Avl() {
 
   pidAvlTotal = constrain(pidAvlTotal, hoek_home, 12.0);
 
-  hoek_achter_vleugel = pidAvlTotal - pitch;
+  hoek_achter_vleugel = pitch - pidAvlTotal ;
   pulsen_liniear = (hoek_achter_vleugel - hoek_home) * 105.595;
   CAN_pulsen_achter = pulsen_liniear;
 }
@@ -854,8 +859,16 @@ void displayData() {
     lcd.print F(("cm"));  // print unit cm for distance
   }
   lcd.setCursor(12, 3);
-  lcd.print(char(224));
-  lcd.print(pitch, 1);
+  lcd.print (char(224));
+  if (pitch > -1 && pitch < 10) {
+    lcd.print F((" "));
+    if (pitch > 0 && pitch < 0.1) {
+      lcd.print F((" "));
+    }
+  }
+  float pitch_display = pitch * 10 ;
+  pitch_display = constrain(pitch_display, -99, 999);
+  lcd.print (pitch_display, 0);
 
   if (controlMode == 2) {  // controlMode voorvleugel
     lcd.setCursor(0, 2);   // print P_Vvl
