@@ -251,7 +251,7 @@ void read_CAN_data() {
       pitch = float_from_can(0);  // byte 0-3 is float pitch
       roll = float_from_can(4);   // byte 4-7 is float roll
       newMesurement = true;       // er is een nieuwe meting voor de PID compute
-
+Serial.println(pitch);
     } else if (canMsg.can_id == 0x32) {
       PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]);   //byte 0-1 is int16_t PWM links
       PWM_rechts = int16_from_can(canMsg.data[2], canMsg.data[3]);  //byte 0-1 is int16_t PWM rechts
@@ -539,10 +539,13 @@ void computeButtonPress() {
   */
   prev_enc_1_pulses = enc_1_pulses;
 
-  if (enc_2_pulses < prev_enc_2_pulses) {
+  /*if (enc_2_pulses < prev_enc_2_pulses) {
     controlMode--; //cursorPlace--;
   } else if (enc_2_pulses > prev_enc_2_pulses) {
     controlMode++; //cursorPlace++;
+  }*/
+  if (button_encoder_2 && buttonStateChange_enc_2){
+    controlMode++;
   }
   prev_enc_2_pulses = enc_2_pulses;
   if (cursorPlace == 6) {
@@ -1085,7 +1088,7 @@ void home() {
     } else if (millis() - last_home_time > min_home_time) {
       home_front_foil = false;
     }
-    if (button_encoder_2 && buttonStateChange_enc_2) {
+    if (button_encoder_1 && buttonStateChange_enc_1) {
       lcd.setCursor(0, 2);
       lcd.print("Home achter");
       home_rear_foil = true;
