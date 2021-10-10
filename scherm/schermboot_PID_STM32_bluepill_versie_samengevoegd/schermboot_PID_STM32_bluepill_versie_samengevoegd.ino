@@ -1159,6 +1159,7 @@ void call_INT0() {
   unsigned long currentTime = micros();  // Get current time (in µs)
   static volatile uint32_t startTime;
   static volatile uint32_t oldTravelTime = 0;
+  Serial.println("Interrrupt");
   if (pinRead) {
     // If pin state has changed to HIGH -> remember start time (in µs)
     startTime = currentTime;
