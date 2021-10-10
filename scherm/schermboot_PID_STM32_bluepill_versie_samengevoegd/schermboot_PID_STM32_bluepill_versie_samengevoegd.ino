@@ -1165,6 +1165,7 @@ void call_INT0() {
   } else {
     // If pin state has changed to LOW -> calculate time passed (in µs)
     travelTime = currentTime - startTime;
+    Serial.print(travelTime/58.3)
     newMesurement = true;
 
     //=========================================================================== out of range detection =========================================================================
