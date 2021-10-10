@@ -22,8 +22,8 @@ const uint8_t pollTimeButtons = 24;                                  // How many
 const uint8_t buttonCompompute = 49;                                 // How many milliseconds between button compute. less mili is faster long press
 const uint8_t sendCanTime = 10;                                      // How many milliseconds between sending CAN frames
 const uint16_t PID_compute_time = 250;                               // How many milliseconds between PID compute.
-const uint16_t maxPulseEncoder = 13000;                              // the maximum amount of pulses for the front foil motor encoder
-const uint16_t maxAfstandEncoder = 200;                              // de afstand in mm die de voor linieare motor kan uit schuiven
+const uint16_t maxPulseEncoder = 17008;                              // the maximum amount of pulses for the front foil motor encoder
+const uint16_t maxAfstandEncoder = 203;                              // de afstand in mm die de voor linieare motor kan uit schuiven
 const uint16_t pulsen_per_mm = maxPulseEncoder / maxAfstandEncoder;  // pulsen per mm van de linieare motor
 
 volatile uint32_t travelTime = 0;     // the time it takes the sound to comback to the sensor in micoseconds
