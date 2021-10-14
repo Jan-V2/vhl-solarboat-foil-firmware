@@ -251,7 +251,7 @@ void read_CAN_data() {
       pitch = float_from_can(0);  // byte 0-3 is float pitch
       roll = float_from_can(4);   // byte 4-7 is float roll
       newMesurement = true;       // er is een nieuwe meting voor de PID compute
-     // Serial.println(pitch);
+      // Serial.println(pitch);
     } else if (canMsg.can_id == 0x32) {
       PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]);   //byte 0-1 is int16_t PWM links
       PWM_rechts = int16_from_can(canMsg.data[2], canMsg.data[3]);  //byte 0-1 is int16_t PWM rechts
@@ -268,7 +268,7 @@ void read_CAN_data() {
 void send_CAN_data() {
   if (! home_front_foil && ! home_rear_foil && pid_actief) {
     int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200);
-  //  Serial.println(CAN_pulsen_voor);
+    //  Serial.println(CAN_pulsen_voor);
   }
   if (home_front_foil) {
     bool_to_frame(home_front_foil, 301);  // TODO can ID toevoegen
@@ -747,17 +747,17 @@ void computePid_Vvl() {
   pidVvlTotal = P_Vvl + I_Vvl + D_Avl;  // PID wordt berekend in graden
 
   pidVvlTotal = constrain(pidVvlTotal, -9.9, 12.0);
-  Serial.print("pidVvlTotal: ");
-  Serial.println(pidVvlTotal);
+  //Serial.print("pidVvlTotal: ");
+  //Serial.println(pidVvlTotal);
   hoek_voor_vleugel = pidVvlTotal - pitch;
-  Serial.print("hoek_voor_vleugel: ");
-  Serial.println(hoek_voor_vleugel);
-  afstand_liniear = (sqrt(43.2 * 43.2 + 18.2 * 18.2 - 2 * 43.2 * 18.2 * cos((hoek_voor_vleugel + 90.0 - 3) * M_PI / 180.0))) -30.55;  // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel)) wanneer vleugel 0 graden is staat deze haaks op de boot dus 90graden. -3 omdat de vleugel hoger gemonteerd zit dan de linieare motor.
-  Serial.print("afstand_liniear: ");
-  Serial.println(afstand_liniear);
+  //Serial.print("hoek_voor_vleugel: ");
+  //Serial.println(hoek_voor_vleugel);
+  afstand_liniear = (sqrt(43.2 * 43.2 + 17.2 * 17.2 - 2 * 43.2 * 17.2 * cos((hoek_voor_vleugel + 90.0 - 3) * M_PI / 180.0))) - 30.55; // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel)) wanneer vleugel 0 graden is staat deze haaks op de boot dus 90graden. -3 omdat de vleugel hoger gemonteerd zit dan de linieare motor.
+  //Serial.print("afstand_liniear: ");
+  //Serial.println(afstand_liniear);
   pulsen_liniear = afstand_liniear * pulsen_per_mm * 10;                                                                                // pulsen naar voorvleugel = afstand in cm maal pulsen per cm
-  Serial.print("pulsen_liniear: ");
-  Serial.println(pulsen_liniear);
+  //Serial.print("pulsen_liniear: ");
+  //Serial.println(pulsen_liniear);
   CAN_pulsen_voor = pulsen_liniear;
 }
 
@@ -873,7 +873,7 @@ void displayData() {
   lcd.print (char(224));
   if (pitch > -1 && pitch < 10) {
     lcd.print F((" "));
-    if (pitch > 0 && pitch < 0.1) {
+    if (pitch >= 0 && pitch < 1) {
       lcd.print F((" "));
     }
   }
@@ -1176,7 +1176,7 @@ void call_INT0() {
   } else {
     // If pin state has changed to LOW -> calculate time passed (in µs)
     travelTime = currentTime - startTime;
-   // Serial.println(travelTime / 58.3);
+    // Serial.println(travelTime / 58.3);
     newMesurement = true;
 
     //=========================================================================== out of range detection =========================================================================
