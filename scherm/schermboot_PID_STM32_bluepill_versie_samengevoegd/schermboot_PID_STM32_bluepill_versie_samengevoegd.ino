@@ -857,13 +857,16 @@ void computePid_balans() {
 
 void displayData() {
   lcd.setCursor(0, 0);  // set curser at distantce place
-  int x constrain(distance, 0, 99);
+  int x constrain(distance, -99, 999);
   if (x == 0) {              // check for error
     lcd.print F(("ERROR"));  // print error
   } else {                   // if no error print the distance
-    if (x < 10) {
+    if ( x >= 0) {
       lcd.print F(("  "));
-    } else if (x < 100) {
+      if (x < 10) {
+        lcd.print F((" "));
+      }
+    } else if ( x > -10)) {
       lcd.print F((" "));
     }
     lcd.print(x);
