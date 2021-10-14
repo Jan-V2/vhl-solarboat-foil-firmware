@@ -193,7 +193,7 @@ void loop() {
     computeDistance();
     computePid_Vvl();
     computePid_Avl();
-    computePid_balans();//
+    computePid_balans();
   }
 
   //================================================================== main loop display data ==========================================================================
@@ -737,14 +737,14 @@ void computePid_Vvl() {
   }
   D_Vvl = (float(kd_Vvl) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
 
-  P_Vvl = constrain(P_Vvl, -9.9, 9.9);
-  I_Vvl = constrain(I_Vvl, -9.9, 9.9);
+  P_Vvl = constrain(P_Vvl, -9.9, 12.0);
+  I_Vvl = constrain(I_Vvl, -9.9, 12.0);
   D_Vvl = constrain(D_Vvl, -9.9, 9.9);
 
   if (ki_Vvl == 0) {
     I_Vvl = 0.0;
   }
-  pidVvlTotal = P_Vvl + I_Vvl + D_Avl;  // PID wordt berekend in graden
+  pidVvlTotal = P_Vvl + I_Vvl + D_Vvl;  // PID wordt berekend in graden
 
   pidVvlTotal = constrain(pidVvlTotal, -9.9, 12.0);
   //Serial.print("pidVvlTotal: ");
