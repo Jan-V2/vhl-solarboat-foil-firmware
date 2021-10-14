@@ -792,8 +792,8 @@ void computePid_Avl() {
   }
   D_Avl = (float(kd_Avl) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
 
-  P_Avl = constrain(P_Avl, hoek_home, 9.9);
-  I_Avl = constrain(I_Avl, hoek_home, 9.9);
+  P_Avl = constrain(P_Avl, hoek_home, 12.0);
+  I_Avl = constrain(I_Avl, hoek_home, 12.0);
   D_Avl = constrain(D_Avl, hoek_home, 9.9);
 
   if (ki_Avl == 0) {
