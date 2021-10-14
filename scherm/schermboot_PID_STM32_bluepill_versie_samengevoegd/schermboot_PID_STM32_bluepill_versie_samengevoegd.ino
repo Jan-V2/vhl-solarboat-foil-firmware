@@ -204,8 +204,6 @@ void loop() {
     computeDistance();
     displayData();
   }
-  static int16_t lastLeftAcutatorStroke = 0;
-  static int16_t lastRightAcutatorStroke = 0;
 
   if ((pidChangeDetection != lastPidChangeDetection) && pid_actief) {  // wanneer de PID ingesteld word
     lastPidChangeDetection = pidChangeDetection;
@@ -866,7 +864,7 @@ void displayData() {
       if (x < 10) {
         lcd.print F((" "));
       }
-    } else if ( x > -10)) {
+    } else if ( x > -10) {
       lcd.print F((" "));
     }
     lcd.print(x);
@@ -1043,6 +1041,7 @@ void displayData() {
 //======================================================================= displayControlMode ==========================================================================
 
 void displayControlMode() {
+  pidChangeDetection++;
   lcd.setCursor(12, 0);
   if (controlMode == 0) {  // check controlmode. for off, manuel or automatic PID control
     lcd.clear();
