@@ -204,17 +204,21 @@ void loop() {
     lastRefreshDistanceDisplay = millis();
     computeDistance();
     displayData();
+    blink_cursor();
   }
 
   if ((pidChangeDetection != lastPidChangeDetection) && pid_actief) {  // wanneer de PID ingesteld word
     lastPidChangeDetection = pidChangeDetection;
     pidDisplay();
+    blink_cursor();
   }
+
   static uint8_t lastControlMode = 255;  // use 255 so that it runs at least ones to display the data
 
   if (controlMode != lastControlMode) {
     lastControlMode = controlMode;
     displayControlMode();
+    blink_cursor();
   }
   if (controlMode == 0) {
     OFF();
@@ -860,11 +864,11 @@ void computePid_balans() {
 void displayData() {
   lcd.setCursor(0, 0);  // set curser at distantce place
   int x constrain(distance, -99, 999);
-  if (x == 0) {              // check for error
-    lcd.print F(("ERROR"));  // print error
+  if (x == -39) {              // check for error
+    lcd.print F(("ERROR "));  // print error
   } else {                   // if no error print the distance
-    if ( x >= 0) {
-      lcd.print F(("  "));
+    if ( (x >= 0) && x < 100) {
+      lcd.print F((" "));
       if (x < 10) {
         lcd.print F((" "));
       }
@@ -1199,6 +1203,38 @@ void call_INT0() {
     } else {
       oldTravelTime = travelTime;  // save a new mesurement as old mesurment
       i = 0;                       // reset out of range counter
+    }
+  }
+}
+
+void blink_cursor() {
+  static bool blinkCursor = false;
+  static bool prevBlinkCursor = blinkCursor;
+
+  if (((controlMode == 2) || (controlMode == 4) || (controlMode == 5)) && (pid_actief == true)) {
+    if (cursorPlace == 0) {
+      lcd.setCursor(6, 0);
+    } else if (cursorPlace == 1) {
+      lcd.setCursor(12, 1);
+    } else if (cursorPlace == 2) {
+      lcd.setCursor(0, 1);
+    } else if (cursorPlace == 3) {
+      lcd.setCursor(4, 1);
+    } else if (cursorPlace == 4) {
+      lcd.setCursor(8, 1);
+    } else if (cursorPlace == 5) {
+      lcd.setCursor(7, 3);
+    }
+    blinkCursor = true;
+  } else {
+    blinkCursor = false;
+  }
+  if (blinkCursor != prevBlinkCursor) {
+    prevBlinkCursor = blinkCursor;
+    if (blinkCursor) {
+      lcd.blink();
+    } else {
+      lcd.noBlink();
     }
   }
 }
