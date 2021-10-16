@@ -1,4 +1,5 @@
 #include "DualVNH5019MotorShield.h"
+#include "Arduino.h"
 
 
 DualVNH5019MotorShield motor_shield;
@@ -21,6 +22,8 @@ struct Motor {
     int offset = 0;
     int offset_fixed;
 
+    ulong last_cycle = 0;
+
     int pwm_min = 40;
     float out_min = -360, out_max = 360;
 
@@ -36,7 +39,7 @@ struct Motor {
 };
 
 
-enum Motor_Num {M0, M1};
+enum Motor_Num {M_LINKS, M_RECHTS};
 
 
 void set_m0_speed(int speed){motor_shield.setM1Speed(speed);}
@@ -47,12 +50,12 @@ int get_m1_current(){return motor_shield.getM2CurrentMilliamps();}
 
 Motor get_motor(Motor_Num m){
     Motor result;
-    if (m == M0){
+    if (m == M_LINKS){
         result.offset_fixed = -1 * offset_fixed_global;
         result.current_offset = 0;
         result.set_speed = &set_m0_speed;
         result.get_current = &get_m0_current;
-    }else if (m == M1){
+    }else if (m == M_RECHTS){
         result.offset_fixed = offset_fixed_global;
         result.current_offset = 408;
         result.set_speed = &set_m1_speed;
