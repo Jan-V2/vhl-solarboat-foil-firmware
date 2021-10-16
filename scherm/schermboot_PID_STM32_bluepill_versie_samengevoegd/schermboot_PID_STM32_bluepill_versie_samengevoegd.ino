@@ -24,11 +24,12 @@ const uint8_t sendCanTime = 10;                                      // How many
 const uint16_t PID_compute_time = 250;                               // How many milliseconds between PID compute.
 const uint16_t maxPulseEncoder = 17008;                              // the maximum amount of pulses for the front foil motor encoder
 const uint16_t maxAfstandEncoder = 203;                              // de afstand in mm die de voor linieare motor kan uit schuiven
-const uint16_t pulsen_per_mm = maxPulseEncoder / maxAfstandEncoder;  // pulsen per mm van de linieare motor
+const uint16_t pulsen_per_mm = maxPulseEncoder  / maxAfstandEncoder;  // pulsen per mm van de linieare motor
 
 volatile uint32_t travelTime = 0;     // the time it takes the sound to comback to the sensor in micoseconds
 int16_t distance = 0;                 // distance from de ultrasoic sensor in cm
-volatile bool newMesurement = false;  // is true when the interupt is triggerd to indicate a new mesurement
+volatile bool newMesurement = false;  // is true when the interupt is triggerd to indicate a new mesurement of een nieuwe gyro meting.
+volatile bool newHightMesurement = false;
 uint8_t controlMode = 0;              // 0 = off, 1 = manuel, 2 = Vvl, 3 = HOME, 4 = balans en 5 = Avl
 uint8_t cursorPlace = 0;              // is used to select the parameter that you want to change when in PID controlmode
 uint16_t pidChangeDetection = 0;      // is used to see if there are changes in the PID setting
@@ -53,7 +54,7 @@ float D_Balans;
 float pidVvlTotal = 0;
 float pidAvlTotal = 0;
 float pidBalansTotal = 0;
-uint8_t setDistance = 20;           // target distance in cm that the PID will try to reach, this value can be changed on de
+uint8_t setDistance = 10;           // target distance in cm that the PID will try to reach, this value can be changed on de
 int8_t setRoll = 0;                 // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
 int16_t setPitch = 0;               // target pitch in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
 int16_t pulsen_offset = 0;          // berekende pulsen offset
@@ -727,22 +728,26 @@ void computePid_Vvl() {
   error = float(setDistance) - float(distance);
   diffError = error - oldError;
   oldError = error;
-  diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
 
-  P_Vvl = float(kp_Vvl) * error / 100.0;  // delen door 100 om komma te besparen op het display.
-  if ((abs(PWM_links) + abs(PWM_rechts)) != 800) {
-    I_Vvl = I_Vvl + (float(ki_Vvl) * error * pidLoopTime_s / 100.0);
+  if (newHightMesurement) {
+    newHightMesurement = false;
+    diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
+
+    P_Vvl = float(kp_Vvl) * error / 100.0;  // delen door 100 om komma te besparen op het display.
+    if ((abs(PWM_links) + abs(PWM_rechts)) != 800) {
+      I_Vvl = I_Vvl + (float(ki_Vvl) * error * pidLoopTime_s / 100.0);
+    }
+    D_Vvl = (float(kd_Vvl) * diffErrorFilter / pidLoopTime_s) / 100.0;
+
+    P_Vvl = constrain(P_Vvl, -9.9, 12.0);
+    I_Vvl = constrain(I_Vvl, -9.9, 12.0);
+    D_Vvl = constrain(D_Vvl, -9.9, 9.9);
+
+    if (ki_Vvl == 0) {
+      I_Vvl = 0.0;
+    }
+    pidVvlTotal = P_Vvl + I_Vvl + D_Vvl;  // PID wordt berekend in graden
   }
-  D_Vvl = (float(kd_Vvl) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
-
-  P_Vvl = constrain(P_Vvl, -9.9, 12.0);
-  I_Vvl = constrain(I_Vvl, -9.9, 12.0);
-  D_Vvl = constrain(D_Vvl, -9.9, 9.9);
-
-  if (ki_Vvl == 0) {
-    I_Vvl = 0.0;
-  }
-  pidVvlTotal = P_Vvl + I_Vvl + D_Vvl;  // PID wordt berekend in graden
 
   pidVvlTotal = constrain(pidVvlTotal, -9.9, 12.0);
   //Serial.print("pidVvlTotal: ");
@@ -771,8 +776,7 @@ void computePid_Avl() {
   static int16_t pidLoopTime_ms = 0;
   static float pidLoopTime_s = 0;
   static float hoek_achter_vleugel = 0;
-  static uint16_t pulsen_liniear;
-  static float afstand_liniear;
+  static uint16_t pulsen_liniear = 0;
   static float hoek_home = -2.8;
 
   pidTime = millis();
@@ -1079,12 +1083,12 @@ void OFF() {
 }
 
 void home() {
-  const static uint16_t min_home_time = 5000;
+  const static uint16_t min_home_time = 3000;
   static uint32_t last_home_time = millis();
 
-  int16_t CAN_pulsen_voor = 0;
-  int16_t CAN_pulsen_offset = 0;
-  int16_t CAN_pulsen_achter = 0;
+  CAN_pulsen_voor = 0;
+  CAN_pulsen_offset = 0;
+  CAN_pulsen_achter = 0;
 
   if (controlMode == 3) {
     if (button_encoder_1 && buttonStateChange_enc_1) {
@@ -1180,6 +1184,7 @@ void call_INT0() {
     travelTime = currentTime - startTime;
     // Serial.println(travelTime / 58.3);
     newMesurement = true;
+    newHightMesurement = true;
 
     //=========================================================================== out of range detection =========================================================================
 
@@ -1272,7 +1277,7 @@ int16_t int16_from_can(uint8_t b1, uint8_t b2) {
 can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3, uint16_t can_id) {
   byte bytes[sizeof(int16_t) * 3];
   memcpy(bytes, &i16_1, sizeof(int16_t));
-  memcpy(bytes + sizeof(int16_t), &i16_1, sizeof(int16_t));
+  memcpy(bytes + sizeof(int16_t), &i16_2, sizeof(int16_t));
   memcpy(bytes + sizeof(int16_t) * 2, &i16_3, sizeof(int16_t));
   can_frame ret;
   for (uint8_t i = 0; i < sizeof(int16_t) * 3; i++) {
