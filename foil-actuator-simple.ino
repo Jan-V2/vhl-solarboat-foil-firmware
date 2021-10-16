@@ -12,7 +12,7 @@
 #define us_in_second 1000000
 
 // todo change pwm frequency
-// todo add build flags like -Wno-unused-variables
+// todo add build flags like -Wno-unused-variables 
 // todo move cmd done acknowledge
 
 int delay_time = 100;
