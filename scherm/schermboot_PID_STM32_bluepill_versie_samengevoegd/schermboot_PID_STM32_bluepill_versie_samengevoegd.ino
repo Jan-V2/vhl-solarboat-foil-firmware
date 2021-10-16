@@ -867,12 +867,12 @@ void displayData() {
   if (x == -39) {              // check for error
     lcd.print F(("ERROR "));  // print error
   } else {                   // if no error print the distance
-    if ( (x >= 0) && x < 100) {
+    if ( (x >= 0) && (x < 100)) {
       lcd.print F((" "));
       if (x < 10) {
         lcd.print F((" "));
       }
-    } else if ( x > -10) {
+    } else if ( (x > -10) && (x < 0)) {
       lcd.print F((" "));
     }
     lcd.print(x);
