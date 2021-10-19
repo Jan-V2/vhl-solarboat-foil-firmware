@@ -725,21 +725,23 @@ void computePid_Vvl() {
   static uint16_t pulsen_liniear;
   static float afstand_liniear;
 
-  pidTime = millis();
-  pidLoopTime_ms = pidTime - lastPidTime;
-  lastPidTime = pidTime;
-  pidLoopTime_s = float(pidLoopTime_ms) / 1000.0;
-  error = float(setDistance) - float(distance);
-  diffError = error - oldError;
-  oldError = error;
-
-  if (newHightMesurement) {
+  if (newHightMesurement == true) {
     newHightMesurement = false;
+    pidTime = millis();
+    pidLoopTime_ms = pidTime - lastPidTime;
+    lastPidTime = pidTime;
+    pidLoopTime_s = float(pidLoopTime_ms) / 1000.0;
+    error = float(setDistance) - float(distance);
+    diffError = error - oldError;
+    oldError = error;
+    
     diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
 
     P_Vvl = float(kp_Vvl) * error / 100.0;  // delen door 100 om komma te besparen op het display.
     if ((abs(PWM_links) + abs(PWM_rechts)) != 800) {
-      I_Vvl = I_Vvl + (float(ki_Vvl) * error * pidLoopTime_s / 100.0);
+      static float I_Vvl_new = 0;
+      (float(ki_Vvl) * error * pidLoopTime_s / 100.0);
+      I_Vvl = I_Vvl + constrain(I_Vvl_new, -max_I_Vvl_new, max_I_Vvl_new);
     }
     D_Vvl = (float(kd_Vvl) * diffErrorFilter / pidLoopTime_s) / 100.0;
 
@@ -1089,10 +1091,6 @@ void OFF() {
 void home() {
   const static uint16_t min_home_time = 3000;
   static uint32_t last_home_time = millis();
-
-  CAN_pulsen_voor = 0;
-  CAN_pulsen_offset = 0;
-  CAN_pulsen_achter = 0;
 
   if (controlMode == 3) {
     if (button_encoder_1 && buttonStateChange_enc_1) {
