@@ -722,8 +722,9 @@ void computePid_Vvl() {
   static int16_t pidLoopTime_ms = 0;
   static float pidLoopTime_s = 0;
   static float hoek_voor_vleugel = 0;
-  static uint16_t pulsen_liniear;
-  static float afstand_liniear;
+  static uint16_t pulsen_liniear = 0;
+  static float afstand_liniear = 0;
+  static float max_I_Vvl_new = 5.0 * 0.090; // de motor kan de vleugel maxiaal met 4,89 (5 in formule) graden per seconden verstellen en iedere 90ms wordt de pid opnieuw berekend
 
   if (newHightMesurement == true) {
     newHightMesurement = false;
