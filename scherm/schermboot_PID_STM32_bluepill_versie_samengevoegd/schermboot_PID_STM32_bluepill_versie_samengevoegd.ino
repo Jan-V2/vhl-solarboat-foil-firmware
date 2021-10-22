@@ -24,7 +24,9 @@ const uint8_t sendCanTime = 10;                                      // How many
 const uint16_t PID_compute_time = 250;                               // How many milliseconds between PID compute.
 const uint16_t maxPulseEncoder = 17008;                              // the maximum amount of pulses for the front foil motor encoder
 const uint16_t maxAfstandEncoder = 203;                              // de afstand in mm die de voor linieare motor kan uit schuiven
-const uint16_t pulsen_per_mm = maxPulseEncoder  / maxAfstandEncoder;  // pulsen per mm van de linieare motor
+const uint16_t pulsen_per_mm = maxPulseEncoder / maxAfstandEncoder;  // pulsen per mm van de linieare motor
+const int16_t minDistance = 5; // als de boot onder de minimale hoogte komt dan wordt de hoek van de vleugel aggresiever.
+const int16_t maxDistance = 30; // als de boot boven de maximale hoogte komt dan wordt de hoek van de vleugel minder aggresief.
 
 volatile uint32_t travelTime = 0;     // the time it takes the sound to comback to the sensor in micoseconds
 int16_t distance = 0;                 // distance from de ultrasoic sensor in cm
@@ -724,7 +726,10 @@ void computePid_Vvl() {
   static float hoek_voor_vleugel = 0;
   static uint16_t pulsen_liniear = 0;
   static float afstand_liniear = 0;
-  static float max_I_Vvl_new = 5.0 * 0.090; // de motor kan de vleugel maxiaal met 4,89 (5 in formule) graden per seconden verstellen en iedere 90ms wordt de pid opnieuw berekend
+  static float max_I_Vvl_new = 5.0 * 0.090; // de motor kan de vleugel maximaal met 4,89 (5 in formule) graden per seconden verstellen en iedere 90ms wordt de pid opnieuw berekend
+  static float min_I_Vvl = 0;
+  static float max_I_Vvl = 0;
+
 
   if (newHightMesurement == true) {
     newHightMesurement = false;
@@ -735,16 +740,21 @@ void computePid_Vvl() {
     error = float(setDistance) - float(distance);
     diffError = error - oldError;
     oldError = error;
-    
+
     diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
 
     P_Vvl = float(kp_Vvl) * error / 100.0;  // delen door 100 om komma te besparen op het display.
     if ((abs(PWM_links) + abs(PWM_rechts)) != 800) {
       static float I_Vvl_new = 0;
       (float(ki_Vvl) * error * pidLoopTime_s / 100.0);
+
       I_Vvl = I_Vvl + constrain(I_Vvl_new, -max_I_Vvl_new, max_I_Vvl_new);
     }
     D_Vvl = (float(kd_Vvl) * diffErrorFilter / pidLoopTime_s) / 100.0;
+
+    min_I_Vvl = -9, 9 - P_Vvl;
+    max_I_Vvl = 12 - P_Vvl;
+    I_Vvl = constrain(I_Vvl, min_I_Vvl, max_I_Vvl);
 
     P_Vvl = constrain(P_Vvl, -9.9, 12.0);
     I_Vvl = constrain(I_Vvl, -9.9, 12.0);
@@ -757,6 +767,13 @@ void computePid_Vvl() {
   }
 
   pidVvlTotal = constrain(pidVvlTotal, -9.9, 12.0);
+  if ( distance < minDistance) {
+    pidVvlTotal = 12;
+  }
+  if ( distance > maxDistance) {
+    pidVvlTotal = -3;
+  }
+
   //Serial.print("pidVvlTotal: ");
   //Serial.println(pidVvlTotal);
   hoek_voor_vleugel = pidVvlTotal - pitch;
