@@ -3,8 +3,12 @@
 #include <SPI.h>
 #include <mcp2515.h>
 
+enum CAN_netwerk {
+  telemety, motor
+};
+
 struct can_frame canMsg;
-MCP2515 mcp2515(PB0);
+MCP2515 mcp2515_motor(PA4);
 
 const uint8_t triggerPin = trig_1;    // Pin number for trigger signal
 const uint8_t echoPin = echo_1;       // Pin number for echo signal (interrupt pin)
@@ -110,9 +114,9 @@ void setup() {
   lcd.setCursor(1, 2);
   lcd.print F(("Zonnebootteam"));
 
-  mcp2515.reset();
-  mcp2515.setBitrate(CAN_125KBPS);
-  mcp2515.setNormalMode();
+  mcp2515_motor.reset();
+  mcp2515_motor.setBitrate(CAN_125KBPS);
+  mcp2515_motor.setNormalMode();
 
   pinMode(triggerPin, OUTPUT);  // Pin 3 as triggerpin (output)
   pinMode(echoPin, INPUT);      // Pin 2 [INT0] as echopin (input)
@@ -251,12 +255,14 @@ void loop() {
 //======================================================================== read_CAN_data ======================================================================
 
 void read_CAN_data() {
-  if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK) {
+  if (mcp2515_motor.readMessage(&canMsg) == MCP2515::ERROR_OK) {
+Serial.print("CAN ID: ");
+Serial.println(canMsg.can_id, DEC);
     if (canMsg.can_id == 0x64) {
       pitch = float_from_can(0);  // byte 0-3 is float pitch
       roll = float_from_can(4);   // byte 4-7 is float roll
       newMesurement = true;       // er is een nieuwe meting voor de PID compute
-      // Serial.println(pitch);
+     //  Serial.println(pitch);
     } else if (canMsg.can_id == 0x32) {
       PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]);   //byte 0-1 is int16_t PWM links
       PWM_rechts = int16_from_can(canMsg.data[2], canMsg.data[3]);  //byte 0-1 is int16_t PWM rechts
@@ -276,10 +282,10 @@ void send_CAN_data() {
     //  Serial.println(CAN_pulsen_voor);
   }
   if (home_front_foil) {
-    bool_to_frame(home_front_foil, 301);  // TODO can ID toevoegen
+    bool_to_frame(home_front_foil, 301, motor);  // TODO can ID toevoegen
   }
   if (home_rear_foil) {
-    bool_to_frame(home_rear_foil, 300);  // TODO can ID toevoegen
+    bool_to_frame(home_rear_foil, 300, motor);  // TODO can ID toevoegen
   }
 }
 
@@ -1337,11 +1343,11 @@ can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3, uint1
   }
   ret.can_id = can_id;
   ret.can_dlc = sizeof(int16_t) * 3;
-  mcp2515.sendMessage(&ret);
+  mcp2515_motor.sendMessage(&ret);
   return ret;
 }
 
-can_frame bool_to_frame(bool b, uint16_t can_id) {
+can_frame bool_to_frame(bool b, uint16_t can_id, CAN_netwerk CAN_controller) {
   byte bytes[sizeof(bool)];
   memcpy(bytes, &b, sizeof(bool));
   can_frame ret;
@@ -1350,6 +1356,8 @@ can_frame bool_to_frame(bool b, uint16_t can_id) {
   }
   ret.can_id = can_id;
   ret.can_dlc = sizeof(bool);
-  mcp2515.sendMessage(&ret);
+  if (CAN_controller == motor) {
+  mcp2515_motor.sendMessage(&ret);
+  }
   return ret;
 }
