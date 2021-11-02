@@ -8,6 +8,7 @@ enum CAN_netwerk {
 };
 
 struct can_frame canMsg;
+MCP2515 mcp2515_telemetry (PB0);
 MCP2515 mcp2515_motor(PA4);
 
 const uint8_t triggerPin = trig_1;    // Pin number for trigger signal
@@ -256,13 +257,13 @@ void loop() {
 
 void read_CAN_data() {
   if (mcp2515_motor.readMessage(&canMsg) == MCP2515::ERROR_OK) {
-Serial.print("CAN ID: ");
-Serial.println(canMsg.can_id, DEC);
+    Serial.print("CAN ID: ");
+    Serial.println(canMsg.can_id, DEC);
     if (canMsg.can_id == 0x64) {
       pitch = float_from_can(0);  // byte 0-3 is float pitch
       roll = float_from_can(4);   // byte 4-7 is float roll
       newMesurement = true;       // er is een nieuwe meting voor de PID compute
-     //  Serial.println(pitch);
+      //  Serial.println(pitch);
     } else if (canMsg.can_id == 0x32) {
       PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]);   //byte 0-1 is int16_t PWM links
       PWM_rechts = int16_from_can(canMsg.data[2], canMsg.data[3]);  //byte 0-1 is int16_t PWM rechts
@@ -732,7 +733,7 @@ void computePid_Vvl() {
   static float hoek_voor_vleugel = 0;
   static uint16_t pulsen_liniear = 0;
   static float afstand_liniear = 0;
-  static float max_I_Vvl_new = 5.0 * 0.090; // de motor kan de vleugel maximaal met 4,89 (5 in formule) graden per seconden verstellen en iedere 90ms wordt de pid opnieuw berekend
+  static float max_I_Vvl_new = 7.0 * 0.090; // de motor kan de vleugel maximaal met 4,89 (5 in formule) graden per seconden verstellen en iedere 90ms wordt de pid opnieuw berekend
   static float min_I_Vvl = 0;
   static float max_I_Vvl = 0;
 
@@ -752,7 +753,7 @@ void computePid_Vvl() {
     P_Vvl = float(kp_Vvl) * error / 100.0;  // delen door 100 om komma te besparen op het display.
     if ((abs(PWM_links) + abs(PWM_rechts)) != 800) {
       static float I_Vvl_new = 0;
-      (float(ki_Vvl) * error * pidLoopTime_s / 100.0);
+      I_Vvl_new = float(ki_Vvl) * error * pidLoopTime_s / 100.0;
 
       I_Vvl = I_Vvl + constrain(I_Vvl_new, -max_I_Vvl_new, max_I_Vvl_new);
     }
@@ -1357,7 +1358,7 @@ can_frame bool_to_frame(bool b, uint16_t can_id, CAN_netwerk CAN_controller) {
   ret.can_id = can_id;
   ret.can_dlc = sizeof(bool);
   if (CAN_controller == motor) {
-  mcp2515_motor.sendMessage(&ret);
+    mcp2515_motor.sendMessage(&ret);
   }
   return ret;
 }
