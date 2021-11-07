@@ -279,7 +279,7 @@ void read_CAN_data() {
 
 void send_CAN_data() {
   if (! home_front_foil && ! home_rear_foil && pid_actief) {
-    int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200);
+    int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200, motor);
     //  Serial.println(CAN_pulsen_voor);
   }
   if (home_front_foil) {
