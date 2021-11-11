@@ -4,11 +4,12 @@
 #include <mcp2515.h>
 
 enum CAN_netwerk {
-  telemety, motor
+  telemety,
+  motor
 };
 
 struct can_frame canMsg;
-MCP2515 mcp2515_telemetry (PB0);
+MCP2515 mcp2515_telemetry(PB0);
 MCP2515 mcp2515_motor(PA4);
 
 const uint8_t triggerPin = trig_1;    // Pin number for trigger signal
@@ -30,25 +31,25 @@ const uint16_t PID_compute_time = 250;                               // How many
 const uint16_t maxPulseEncoder = 17008;                              // the maximum amount of pulses for the front foil motor encoder
 const uint16_t maxAfstandEncoder = 203;                              // de afstand in mm die de voor linieare motor kan uit schuiven
 const uint16_t pulsen_per_mm = maxPulseEncoder / maxAfstandEncoder;  // pulsen per mm van de linieare motor
-const int16_t minDistance = 5; // als de boot onder de minimale hoogte komt dan wordt de hoek van de vleugel aggresiever.
-const int16_t maxDistance = 30; // als de boot boven de maximale hoogte komt dan wordt de hoek van de vleugel minder aggresief.
+const int16_t minDistance = 5;                                       // als de boot onder de minimale hoogte komt dan wordt de hoek van de vleugel aggresiever.
+const int16_t maxDistance = 30;                                      // als de boot boven de maximale hoogte komt dan wordt de hoek van de vleugel minder aggresief.
 
 volatile uint32_t travelTime = 0;     // the time it takes the sound to comback to the sensor in micoseconds
 int16_t distance = 0;                 // distance from de ultrasoic sensor in cm
 volatile bool newMesurement = false;  // is true when the interupt is triggerd to indicate a new mesurement of een nieuwe gyro meting.
 volatile bool newHightMesurement = false;
-uint8_t controlMode = 0;              // 0 = off, 1 = manuel, 2 = Vvl, 3 = HOME, 4 = balans en 5 = Avl
-uint8_t cursorPlace = 0;              // is used to select the parameter that you want to change when in PID controlmode
-uint16_t pidChangeDetection = 0;      // is used to see if there are changes in the PID setting
-int16_t kp_Vvl = 0;                   // P parameter from the PID voorvleugel
-int16_t ki_Vvl = 0;                   // I parameter from the PID voorvleugel
-int16_t kd_Vvl = 0;                   // D parameter from the PID voorvleugel
-int16_t kp_Avl = 0;                   // P parameter from the PID voorvleugel
-int16_t ki_Avl = 0;                   // I parameter from the PID voorvleugel
-int16_t kd_Avl = 0;                   // D parameter from the PID voorvleugel
-int16_t kp_balans = 0;                // P parameter from the PID voorvleugel
-int16_t ki_balans = 0;                // I parameter from the PID voorvleugel
-int16_t kd_balans = 0;                // D parameter from the PID voorvleugel
+uint8_t controlMode = 0;          // 0 = off, 1 = manuel, 2 = Vvl, 3 = HOME, 4 = balans en 5 = Avl
+uint8_t cursorPlace = 0;          // is used to select the parameter that you want to change when in PID controlmode
+uint16_t pidChangeDetection = 0;  // is used to see if there are changes in the PID setting
+int16_t kp_Vvl = 0;               // P parameter from the PID voorvleugel
+int16_t ki_Vvl = 0;               // I parameter from the PID voorvleugel
+int16_t kd_Vvl = 0;               // D parameter from the PID voorvleugel
+int16_t kp_Avl = 0;               // P parameter from the PID voorvleugel
+int16_t ki_Avl = 0;               // I parameter from the PID voorvleugel
+int16_t kd_Avl = 0;               // D parameter from the PID voorvleugel
+int16_t kp_balans = 0;            // P parameter from the PID voorvleugel
+int16_t ki_balans = 0;            // I parameter from the PID voorvleugel
+int16_t kd_balans = 0;            // D parameter from the PID voorvleugel
 float P_Vvl;
 float I_Vvl;
 float D_Vvl;
@@ -239,7 +240,7 @@ void loop() {
   static uint32_t lastSendCan = 0;
   if (millis() - lastSendCan > sendCanTime) {
     lastSendCan = millis();
-    send_CAN_data();
+    send_CAN_data_motor();
   }
 
   //===================================================================== main loop reset buttonStateChange ============================================================
@@ -263,22 +264,34 @@ void read_CAN_data() {
       pitch = float_from_can(0);  // byte 0-3 is float pitch
       roll = float_from_can(4);   // byte 4-7 is float roll
       newMesurement = true;       // er is een nieuwe meting voor de PID compute
-      //  Serial.println(pitch);
-    } else if (canMsg.can_id == 0x32) {
-      PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]);   //byte 0-1 is int16_t PWM links
-      PWM_rechts = int16_from_can(canMsg.data[2], canMsg.data[3]);  //byte 0-1 is int16_t PWM rechts
 
-    } else if (canMsg.can_id == 0x33) {
-      PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]);  //byte 0-1 is int16_t PWM achter
-      overcurrent_achter = canMsg.data[2];                          //byte 2 is uint8_t overcurrent achter uint8_t
+      byte bytes[sizeof(float) * 2];
+      can_frame ret;
+      for (uint8_t i = 0; i < sizeof(float) * 2; i++) {
+        ret.data[i] = canMsg.data[i];
+      }
+      ret.can_id = 50;
+      ret.can_dlc = sizeof(float) * 2;
+      mcp2515_telemetry.sendMessage(&ret); // verstuur pitch en roll door naar de telemetry
     }
+
+    //  Serial.println(pitch);
+  } else if (canMsg.can_id == 0x32) {
+    PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]);   //byte 0-1 is int16_t PWM links
+    PWM_rechts = int16_from_can(canMsg.data[2], canMsg.data[3]);  //byte 0-1 is int16_t PWM rechts
+
+  } else if (canMsg.can_id == 0x33) {
+    PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]);  //byte 0-1 is int16_t PWM achter
+    overcurrent_achter = canMsg.data[2];                          //byte 2 is uint8_t overcurrent achter uint8_t
   }
 }
 
-//========================================================================= send_CAN_data ==================================================================
 
-void send_CAN_data() {
-  if (! home_front_foil && ! home_rear_foil && pid_actief) {
+
+//========================================================================= send_CAN_data_motor ==================================================================
+
+void send_CAN_data_motor() {
+  if (!home_front_foil && !home_rear_foil && pid_actief) {
     int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200, motor);
     //  Serial.println(CAN_pulsen_voor);
   }
@@ -733,7 +746,7 @@ void computePid_Vvl() {
   static float hoek_voor_vleugel = 0;
   static uint16_t pulsen_liniear = 0;
   static float afstand_liniear = 0;
-  static float max_I_Vvl_new = 7.0 * 0.090; // de motor kan de vleugel maximaal met 4,89 (5 in formule) graden per seconden verstellen en iedere 90ms wordt de pid opnieuw berekend
+  static float max_I_Vvl_new = 7.0 * 0.090;  // de motor kan de vleugel maximaal met 4,89 (5 in formule) graden per seconden verstellen en iedere 90ms wordt de pid opnieuw berekend
   static float min_I_Vvl = 0;
   static float max_I_Vvl = 0;
 
@@ -774,10 +787,10 @@ void computePid_Vvl() {
   }
 
   pidVvlTotal = constrain(pidVvlTotal, -9.9, 12.0);
-  if ( distance < minDistance) {
+  if (distance < minDistance) {
     pidVvlTotal = 12;
   }
-  if ( distance > maxDistance) {
+  if (distance > maxDistance) {
     pidVvlTotal = -3;
   }
 
@@ -786,10 +799,10 @@ void computePid_Vvl() {
   hoek_voor_vleugel = pidVvlTotal - pitch;
   //Serial.print("hoek_voor_vleugel: ");
   //Serial.println(hoek_voor_vleugel);
-  afstand_liniear = (sqrt(43.2 * 43.2 + 17.2 * 17.2 - 2 * 43.2 * 17.2 * cos((hoek_voor_vleugel + 90.0 - 3) * M_PI / 180.0))) - 30.55; // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel)) wanneer vleugel 0 graden is staat deze haaks op de boot dus 90graden. -3 omdat de vleugel hoger gemonteerd zit dan de linieare motor.
+  afstand_liniear = (sqrt(43.2 * 43.2 + 17.2 * 17.2 - 2 * 43.2 * 17.2 * cos((hoek_voor_vleugel + 90.0 - 3) * M_PI / 180.0))) - 30.55;  // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel)) wanneer vleugel 0 graden is staat deze haaks op de boot dus 90graden. -3 omdat de vleugel hoger gemonteerd zit dan de linieare motor.
   //Serial.print("afstand_liniear: ");
   //Serial.println(afstand_liniear);
-  pulsen_liniear = afstand_liniear * pulsen_per_mm * 10;                                                                                // pulsen naar voorvleugel = afstand in cm maal pulsen per cm
+  pulsen_liniear = afstand_liniear * pulsen_per_mm * 10;  // pulsen naar voorvleugel = afstand in cm maal pulsen per cm
   //Serial.print("pulsen_liniear: ");
   //Serial.println(pulsen_liniear);
   CAN_pulsen_voor = pulsen_liniear;
@@ -836,7 +849,7 @@ void computePid_Avl() {
 
   pidAvlTotal = constrain(pidAvlTotal, hoek_home, 12.0);
 
-  hoek_achter_vleugel = pitch - pidAvlTotal ;
+  hoek_achter_vleugel = pitch - pidAvlTotal;
   pulsen_liniear = (hoek_achter_vleugel - hoek_home) * 105.595;
   CAN_pulsen_achter = pulsen_liniear;
 }
@@ -891,31 +904,31 @@ void computePid_balans() {
 void displayData() {
   lcd.setCursor(0, 0);  // set curser at distantce place
   int x constrain(distance, -99, 999);
-  if (x == -39) {              // check for error
+  if (x == -39) {             // check for error
     lcd.print F(("ERROR "));  // print error
-  } else {                   // if no error print the distance
-    if ( (x >= 0) && (x < 100)) {
+  } else {                    // if no error print the distance
+    if ((x >= 0) && (x < 100)) {
       lcd.print F((" "));
       if (x < 10) {
         lcd.print F((" "));
       }
-    } else if ( (x > -10) && (x < 0)) {
+    } else if ((x > -10) && (x < 0)) {
       lcd.print F((" "));
     }
     lcd.print(x);
     lcd.print F(("cm"));  // print unit cm for distance
   }
   lcd.setCursor(12, 3);
-  lcd.print (char(224));
+  lcd.print(char(224));
   if (pitch > -1 && pitch < 10) {
     lcd.print F((" "));
     if (pitch >= 0 && pitch < 1) {
       lcd.print F((" "));
     }
   }
-  float pitch_display = pitch * 10 ;
+  float pitch_display = pitch * 10;
   pitch_display = constrain(pitch_display, -99, 999);
-  lcd.print (pitch_display, 0);
+  lcd.print(pitch_display, 0);
 
   if (controlMode == 2) {  // controlMode voorvleugel
     lcd.setCursor(0, 2);   // print P_Vvl
@@ -1333,7 +1346,7 @@ int16_t int16_from_can(uint8_t b1, uint8_t b2) {
   return ret;
 }
 
-can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3, uint16_t can_id) {
+can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3, uint16_t can_id, CAN_netwerk CAN_controller) {
   byte bytes[sizeof(int16_t) * 3];
   memcpy(bytes, &i16_1, sizeof(int16_t));
   memcpy(bytes + sizeof(int16_t), &i16_2, sizeof(int16_t));
@@ -1344,7 +1357,9 @@ can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3, uint1
   }
   ret.can_id = can_id;
   ret.can_dlc = sizeof(int16_t) * 3;
-  mcp2515_motor.sendMessage(&ret);
+  if (CAN_controller == motor) {
+    mcp2515_motor.sendMessage(&ret);
+  }
   return ret;
 }
 
