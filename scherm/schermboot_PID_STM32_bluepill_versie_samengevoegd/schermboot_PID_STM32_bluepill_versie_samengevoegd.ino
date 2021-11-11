@@ -4,7 +4,7 @@
 #include <mcp2515.h>
 
 enum CAN_netwerk {
-  telemety,
+  telemetry,
   motor
 };
 
@@ -62,6 +62,21 @@ float D_Balans;
 float pidVvlTotal = 0;
 float pidAvlTotal = 0;
 float pidBalansTotal = 0;
+
+int16_t P_Vvl_telemetry;
+int16_t I_Vvl_telemetry;
+int16_t D_Vvl_telemetry;
+int16_t P_Avl_telemetry;
+int16_t I_Avl_telemetry;
+int16_t D_Avl_telemetry;
+int8_t P_Balans_telemetry;
+int8_t I_Balans_telemetry;
+int8_t D_Balans_telemetry;
+int16_t pidVvlTotal_telemetry;
+int16_t pidAvlTotal_telemetry;
+int8_t pidBalansTotal_telemetry;
+int8_t distantce_telemetry;
+
 uint8_t setDistance = 10;           // target distance in cm that the PID will try to reach, this value can be changed on de
 int8_t setRoll = 0;                 // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
 int16_t setPitch = 0;               // target pitch in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
@@ -295,6 +310,21 @@ void read_CAN_data() {
 //========================================================================= send_CAN_data_telemetry ==================================================================
 
 void send_CAN_data_telemetry() {
+P_Vvl_telemetry = constran(P_Vvl, -12.0, 12.0) * 100.0;
+I_Vvl_telemetry = constran(I_Vvl, -12.0, 12.0) * 100.0;
+D_Vvl_telemetry = constran(D_Vvl, -12.0, 12.0) * 100.0;
+P_Avl_telemetry = constran(D_Vvl, -12.0, 12.0) * 100.0;
+I_Avl_telemetry = constran(D_Vvl, -12.0, 12.0) * 100.0;
+D_Avl_telemetry = constran(D_Vvl, -12.0, 12.0) * 100.0;
+pidVvlTotal_telemetry = constran(D_Vvl, -12.0, 12.0) * 100.0;
+pidAvlTotal_telemetry = constran(D_Vvl, -12.0, 12.0) * 100.0;
+P_Balans_telemetry = constran(P_Balans, -12.0, 12.0) * 10.0;
+I_Balans_telemetry = constran(P_Balans, -12.0, 12.0) * 10.0;;
+D_Balans_telemetry = constran(P_Balans, -12.0, 12.0) * 10.0;;
+pidBalansTotal_telemetry = constran(P_Balans, -12.0, 12.0) * 10.0;;
+distantce_telemetry = constran(P_Balans, -127, 127);
+
+   int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200, motor);
 
 }
 
@@ -1356,19 +1386,22 @@ int16_t int16_from_can(uint8_t b1, uint8_t b2) {
   return ret;
 }
 
-can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3, uint16_t can_id, CAN_netwerk CAN_controller) {
-  byte bytes[sizeof(int16_t) * 3];
+can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3,int16_t i16_4, uint16_t can_id, CAN_netwerk CAN_controller) {
+  byte bytes[sizeof(int16_t) * 4];
   memcpy(bytes, &i16_1, sizeof(int16_t));
   memcpy(bytes + sizeof(int16_t), &i16_2, sizeof(int16_t));
   memcpy(bytes + sizeof(int16_t) * 2, &i16_3, sizeof(int16_t));
+  memcpy(bytes + sizeof(int16_t) * 3, &i16_4, sizeof(int16_t));  
   can_frame ret;
-  for (uint8_t i = 0; i < sizeof(int16_t) * 3; i++) {
+  for (uint8_t i = 0; i < sizeof(int16_t) * 4; i++) {
     ret.data[i] = bytes[i];
   }
   ret.can_id = can_id;
-  ret.can_dlc = sizeof(int16_t) * 3;
+  ret.can_dlc = sizeof(int16_t) * 4;
   if (CAN_controller == motor) {
     mcp2515_motor.sendMessage(&ret);
+  } else if (CAN_controller == telemetry) {
+    mcp2515_telemetry.sendMessage(&ret);    
   }
   return ret;
 }
