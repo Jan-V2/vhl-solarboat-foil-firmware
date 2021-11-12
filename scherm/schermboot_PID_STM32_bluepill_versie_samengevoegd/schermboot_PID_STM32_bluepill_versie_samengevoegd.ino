@@ -337,10 +337,10 @@ void send_CAN_data_motor() {
     //  Serial.println(CAN_pulsen_voor);
   }
   if (home_front_foil) {
-    bool_to_frame(home_front_foil, 301, motor);  // TODO can ID toevoegen
+    bool_to_frame(home_front_foil, 301, motor);
   }
   if (home_rear_foil) {
-    bool_to_frame(home_rear_foil, 300, motor);  // TODO can ID toevoegen
+    bool_to_frame(home_rear_foil, 300, motor);
   }
 }
 
