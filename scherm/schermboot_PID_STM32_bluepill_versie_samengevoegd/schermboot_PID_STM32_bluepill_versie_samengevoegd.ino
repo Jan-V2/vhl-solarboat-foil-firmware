@@ -26,7 +26,8 @@ const float soundSpeed = 58.309038;                                  // speed of
 const uint16_t refreshDistanceDisplay = 399;                         // How many milliseconds between display updates
 const uint8_t pollTimeButtons = 24;                                  // How many milliseconds between button polls
 const uint8_t buttonCompompute = 49;                                 // How many milliseconds between button compute. less mili is faster long press
-const uint8_t SendCanMotorTime = 10;                                      // How many milliseconds between sending CAN frames
+const uint8_t SendCanMotorTime = 10;                                 // How many milliseconds between sending CAN frames
+const uint8_t SendCanTelemetryTime = 10; // How many milliseconds between sending CAN frames 
 const uint16_t PID_compute_time = 250;                               // How many milliseconds between PID compute.
 const uint16_t maxPulseEncoder = 17008;                              // the maximum amount of pulses for the front foil motor encoder
 const uint16_t maxAfstandEncoder = 203;                              // de afstand in mm die de voor linieare motor kan uit schuiven
@@ -258,11 +259,11 @@ void loop() {
     send_CAN_data_motor();
   }
 
-  static uint32_t lastSendCanMotor = 0;
-  if (millis() - lastSendCantelemetry > SendCantelemetryTime) {
-    lastSendCantelemetry = millis();
+  static uint32_t lastSendCanTelemetry = 0;
+  if (millis() - lastSendCanTelemetry > SendCanTelemetryTime) {
+    lastSendCanTelemetry = millis();
     send_CAN_data_telemetry();
-  }  
+  }
 
   //===================================================================== main loop reset buttonStateChange ============================================================
 
@@ -286,14 +287,13 @@ void read_CAN_data() {
       roll = float_from_can(4);   // byte 4-7 is float roll
       newMesurement = true;       // er is een nieuwe meting voor de PID compute
 
-      byte bytes[sizeof(float) * 2];
       can_frame ret;
       for (uint8_t i = 0; i < sizeof(float) * 2; i++) {
         ret.data[i] = canMsg.data[i];
       }
       ret.can_id = 50;
       ret.can_dlc = sizeof(float) * 2;
-      mcp2515_telemetry.sendMessage(&ret); // verstuur pitch en roll door naar de telemetry
+      mcp2515_telemetry.sendMessage(&ret);  // verstuur pitch en roll door naar de telemetry
     }
 
     //  Serial.println(pitch);
@@ -310,29 +310,30 @@ void read_CAN_data() {
 //========================================================================= send_CAN_data_telemetry ==================================================================
 
 void send_CAN_data_telemetry() {
-P_Vvl_telemetry = constran(P_Vvl, -12.0, 12.0) * 100.0;
-I_Vvl_telemetry = constran(I_Vvl, -12.0, 12.0) * 100.0;
-D_Vvl_telemetry = constran(D_Vvl, -12.0, 12.0) * 100.0;
-P_Avl_telemetry = constran(D_Vvl, -12.0, 12.0) * 100.0;
-I_Avl_telemetry = constran(D_Vvl, -12.0, 12.0) * 100.0;
-D_Avl_telemetry = constran(D_Vvl, -12.0, 12.0) * 100.0;
-pidVvlTotal_telemetry = constran(D_Vvl, -12.0, 12.0) * 100.0;
-pidAvlTotal_telemetry = constran(D_Vvl, -12.0, 12.0) * 100.0;
-P_Balans_telemetry = constran(P_Balans, -12.0, 12.0) * 10.0;
-I_Balans_telemetry = constran(P_Balans, -12.0, 12.0) * 10.0;;
-D_Balans_telemetry = constran(P_Balans, -12.0, 12.0) * 10.0;;
-pidBalansTotal_telemetry = constran(P_Balans, -12.0, 12.0) * 10.0;;
-distantce_telemetry = constran(P_Balans, -127, 127);
+  P_Vvl_telemetry = constrain(P_Vvl, -12.0, 12.0) * 100.0;
+  I_Vvl_telemetry = constrain(I_Vvl, -12.0, 12.0) * 100.0;
+  D_Vvl_telemetry = constrain(D_Vvl, -12.0, 12.0) * 100.0;
+  pidVvlTotal_telemetry = constrain(pidVvlTotal, -12.0, 12.0) * 100.0;
+  P_Avl_telemetry = constrain(P_Avl, -12.0, 12.0) * 100.0;
+  I_Avl_telemetry = constrain(I_Avl, -12.0, 12.0) * 100.0;
+  D_Avl_telemetry = constrain(D_Avl, -12.0, 12.0) * 100.0;
+  pidAvlTotal_telemetry = constrain(pidAvlTotal, -12.0, 12.0) * 100.0;
+  P_Balans_telemetry = constrain(P_Balans, -5.0, 5.0) * 20.0;
+  I_Balans_telemetry = constrain(I_Balans, -5.0, 5.0) * 20.0;
+  D_Balans_telemetry = constrain(D_Balans, -5.0, 5.0) * 20.0;
+  pidBalansTotal_telemetry = constrain(P_Balans, -5.0, 5.0) * 20.0; 
+  distantce_telemetry = constrain(P_Balans, -127, 127);
 
-   int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200, motor);
-
+  int_to_frame_thrice(P_Vvl_telemetry, I_Vvl_telemetry, D_Vvl_telemetry, pidVvlTotal_telemetry, 51, telemetry);
+  int_to_frame_thrice(P_Avl_telemetry, I_Avl_telemetry, D_Avl_telemetry, pidAvlTotal_telemetry, 52, telemetry);
+  int8_t_to_frame(P_Balans_telemetry, I_Balans_telemetry, D_Balans_telemetry, pidBalansTotal_telemetry, distantce_telemetry, 0, 0, 0, 53, telemetry);
 }
 
 //========================================================================= send_CAN_data_motor ==================================================================
 
 void send_CAN_data_motor() {
   if (!home_front_foil && !home_rear_foil && pid_actief) {
-    int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 200, motor);
+    int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 0, 200, motor);
     //  Serial.println(CAN_pulsen_voor);
   }
   if (home_front_foil) {
@@ -812,7 +813,7 @@ void computePid_Vvl() {
     }
     D_Vvl = (float(kd_Vvl) * diffErrorFilter / pidLoopTime_s) / 100.0;
 
-    min_I_Vvl = -9, 9 - P_Vvl;
+    min_I_Vvl = -9 - P_Vvl;
     max_I_Vvl = 12 - P_Vvl;
     I_Vvl = constrain(I_Vvl, min_I_Vvl, max_I_Vvl);
 
@@ -1386,12 +1387,12 @@ int16_t int16_from_can(uint8_t b1, uint8_t b2) {
   return ret;
 }
 
-can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3,int16_t i16_4, uint16_t can_id, CAN_netwerk CAN_controller) {
+can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3, int16_t i16_4, uint16_t can_id, CAN_netwerk CAN_controller) {
   byte bytes[sizeof(int16_t) * 4];
   memcpy(bytes, &i16_1, sizeof(int16_t));
   memcpy(bytes + sizeof(int16_t), &i16_2, sizeof(int16_t));
   memcpy(bytes + sizeof(int16_t) * 2, &i16_3, sizeof(int16_t));
-  memcpy(bytes + sizeof(int16_t) * 3, &i16_4, sizeof(int16_t));  
+  memcpy(bytes + sizeof(int16_t) * 3, &i16_4, sizeof(int16_t));
   can_frame ret;
   for (uint8_t i = 0; i < sizeof(int16_t) * 4; i++) {
     ret.data[i] = bytes[i];
@@ -1401,7 +1402,31 @@ can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3,int16_
   if (CAN_controller == motor) {
     mcp2515_motor.sendMessage(&ret);
   } else if (CAN_controller == telemetry) {
-    mcp2515_telemetry.sendMessage(&ret);    
+    mcp2515_telemetry.sendMessage(&ret);
+  }
+  return ret;
+}
+
+can_frame int8_t_to_frame(int8_t i8_1, int8_t i8_2, int8_t i8_3, int8_t i8_4,int8_t i8_5, int8_t i8_6, int8_t i8_7, int8_t i8_8, uint16_t can_id, CAN_netwerk CAN_controller) {
+  byte bytes[sizeof(int8_t) * 8];
+  memcpy(bytes, &i8_1, sizeof(int8_t));
+  memcpy(bytes + sizeof(int8_t), &i8_2, sizeof(int8_t));
+  memcpy(bytes + sizeof(int8_t) * 2, &i8_3, sizeof(int8_t));
+  memcpy(bytes + sizeof(int8_t) * 3, &i8_4, sizeof(int8_t));
+  memcpy(bytes + sizeof(int8_t) * 4, &i8_5, sizeof(int8_t));
+  memcpy(bytes + sizeof(int8_t) * 5, &i8_6, sizeof(int8_t));
+  memcpy(bytes + sizeof(int8_t) * 6, &i8_7, sizeof(int8_t));
+  memcpy(bytes + sizeof(int8_t) * 7, &i8_8, sizeof(int8_t));
+  can_frame ret;
+  for (uint8_t i = 0; i < sizeof(int8_t) * 8; i++) {
+    ret.data[i] = bytes[i];
+  }
+  ret.can_id = can_id;
+  ret.can_dlc = sizeof(int8_t) * 8;
+  if (CAN_controller == motor) {
+    mcp2515_motor.sendMessage(&ret);
+  } else if (CAN_controller == telemetry) {
+    mcp2515_telemetry.sendMessage(&ret);
   }
   return ret;
 }
