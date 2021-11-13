@@ -132,6 +132,10 @@ void setup() {
   lcd.setCursor(1, 2);
   lcd.print F(("Zonnebootteam"));
 
+  mcp2515_telemetry.reset();
+  mcp2515_telemetry.setBitrate(CAN_125KBPS);
+  mcp2515_telemetry.setNormalMode();
+  
   mcp2515_motor.reset();
   mcp2515_motor.setBitrate(CAN_125KBPS);
   mcp2515_motor.setNormalMode();
