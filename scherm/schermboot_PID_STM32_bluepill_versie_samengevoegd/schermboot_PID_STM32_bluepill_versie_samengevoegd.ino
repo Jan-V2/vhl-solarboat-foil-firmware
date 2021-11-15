@@ -76,7 +76,7 @@ int8_t D_Balans_telemetry;
 int16_t pidVvlTotal_telemetry;
 int16_t pidAvlTotal_telemetry;
 int8_t pidBalansTotal_telemetry;
-int8_t distantce_telemetry;
+int8_t distance_telemetry;
 
 uint8_t setDistance = 10;           // target distance in cm that the PID will try to reach, this value can be changed on de
 int8_t setRoll = 0;                 // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
@@ -133,7 +133,7 @@ void setup() {
   lcd.print F(("Zonnebootteam"));
 
   mcp2515_telemetry.reset();
-  mcp2515_telemetry.setBitrate(CAN_125KBPS);
+  mcp2515_telemetry.setBitrate(CAN_125KBPS, MCP_8MHZ);
   mcp2515_telemetry.setNormalMode();
   
   mcp2515_motor.reset();
@@ -325,12 +325,13 @@ void send_CAN_data_telemetry() {
   P_Balans_telemetry = constrain(P_Balans, -5.0, 5.0) * 20.0;
   I_Balans_telemetry = constrain(I_Balans, -5.0, 5.0) * 20.0;
   D_Balans_telemetry = constrain(D_Balans, -5.0, 5.0) * 20.0;
-  pidBalansTotal_telemetry = constrain(P_Balans, -5.0, 5.0) * 20.0; 
-  distantce_telemetry = constrain(P_Balans, -127, 127);
+  pidBalansTotal_telemetry = constrain(pidBalansTotal, -5.0, 5.0) * 20.0; 
+  distance_telemetry = constrain(distance, -127, 127);
+
 
   int_to_frame_thrice(P_Vvl_telemetry, I_Vvl_telemetry, D_Vvl_telemetry, pidVvlTotal_telemetry, 51, telemetry);
   int_to_frame_thrice(P_Avl_telemetry, I_Avl_telemetry, D_Avl_telemetry, pidAvlTotal_telemetry, 52, telemetry);
-  int8_t_to_frame(P_Balans_telemetry, I_Balans_telemetry, D_Balans_telemetry, pidBalansTotal_telemetry, distantce_telemetry, 0, 0, 0, 53, telemetry);
+  int8_t_to_frame(P_Balans_telemetry, I_Balans_telemetry, D_Balans_telemetry, pidBalansTotal_telemetry, distance_telemetry, 0, 0, 0, 53, telemetry);
 }
 
 //========================================================================= send_CAN_data_motor ==================================================================
@@ -947,7 +948,7 @@ void computePid_balans() {
 //======================================================================= displayData ==========================================================================
 
 void displayData() {
-  lcd.setCursor(0, 0);  // set curser at distantce place
+  lcd.setCursor(0, 0);  // set curser at distance place
   int x constrain(distance, -99, 999);
   if (x == -39) {             // check for error
     lcd.print F(("ERROR "));  // print error
