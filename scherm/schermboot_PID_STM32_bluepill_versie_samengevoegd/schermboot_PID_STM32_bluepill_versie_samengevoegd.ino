@@ -27,7 +27,7 @@ const uint16_t refreshDistanceDisplay = 399;                         // How many
 const uint8_t pollTimeButtons = 24;                                  // How many milliseconds between button polls
 const uint8_t buttonCompompute = 49;                                 // How many milliseconds between button compute. less mili is faster long press
 const uint8_t SendCanMotorTime = 10;                                 // How many milliseconds between sending CAN frames
-const uint8_t SendCanTelemetryTime = 10; // How many milliseconds between sending CAN frames 
+const uint8_t SendCanTelemetryTime = 10; // How many milliseconds between sending CAN frames
 const uint16_t PID_compute_time = 250;                               // How many milliseconds between PID compute.
 const uint16_t maxPulseEncoder = 17008;                              // the maximum amount of pulses for the front foil motor encoder
 const uint16_t maxAfstandEncoder = 203;                              // de afstand in mm die de voor linieare motor kan uit schuiven
@@ -77,6 +77,7 @@ int16_t pidVvlTotal_telemetry;
 int16_t pidAvlTotal_telemetry;
 int8_t pidBalansTotal_telemetry;
 int8_t distance_telemetry;
+bool   PID_debug_telemetry;
 
 uint8_t setDistance = 10;           // target distance in cm that the PID will try to reach, this value can be changed on de
 int8_t setRoll = 0;                 // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
@@ -135,7 +136,7 @@ void setup() {
   mcp2515_telemetry.reset();
   mcp2515_telemetry.setBitrate(CAN_125KBPS, MCP_8MHZ);
   mcp2515_telemetry.setNormalMode();
-  
+
   mcp2515_motor.reset();
   mcp2515_motor.setBitrate(CAN_125KBPS);
   mcp2515_motor.setNormalMode();
@@ -325,13 +326,13 @@ void send_CAN_data_telemetry() {
   P_Balans_telemetry = constrain(P_Balans, -5.0, 5.0) * 20.0;
   I_Balans_telemetry = constrain(I_Balans, -5.0, 5.0) * 20.0;
   D_Balans_telemetry = constrain(D_Balans, -5.0, 5.0) * 20.0;
-  pidBalansTotal_telemetry = constrain(pidBalansTotal, -5.0, 5.0) * 20.0; 
+  pidBalansTotal_telemetry = constrain(pidBalansTotal, -5.0, 5.0) * 20.0;
   distance_telemetry = constrain(distance, -127, 127);
 
 
   int_to_frame_thrice(P_Vvl_telemetry, I_Vvl_telemetry, D_Vvl_telemetry, pidVvlTotal_telemetry, 51, telemetry);
   int_to_frame_thrice(P_Avl_telemetry, I_Avl_telemetry, D_Avl_telemetry, pidAvlTotal_telemetry, 52, telemetry);
-  int8_t_to_frame(P_Balans_telemetry, I_Balans_telemetry, D_Balans_telemetry, pidBalansTotal_telemetry, distance_telemetry, 0, 0, 0, 53, telemetry);
+  int8_t_to_frame(P_Balans_telemetry, I_Balans_telemetry, D_Balans_telemetry, pidBalansTotal_telemetry, distance_telemetry, PID_debug_telemetry, 0, 0, 53, telemetry);
 }
 
 //========================================================================= send_CAN_data_motor ==================================================================
@@ -833,12 +834,13 @@ void computePid_Vvl() {
   }
 
   pidVvlTotal = constrain(pidVvlTotal, -9.9, 12.0);
-  if (distance < minDistance) {
-    pidVvlTotal = 12;
-  }
-  if (distance > maxDistance) {
-    pidVvlTotal = -3;
-  }
+
+  //if (distance < minDistance) {
+  //  pidVvlTotal = 4;
+  //}
+  //if (distance > maxDistance) {
+  //  pidVvlTotal = -3;
+  //}
 
   //Serial.print("pidVvlTotal: ");
   //Serial.println(pidVvlTotal);
@@ -1162,6 +1164,7 @@ void OFF() {
   if (controlMode == 0) {
     if (button_encoder_1 && buttonStateChange_enc_1) {
       pid_actief = !pid_actief;
+      PID_debug_telemetry = pid_actief;
     }
     lcd.setCursor(12, 0);
     if (pid_actief) {
@@ -1412,7 +1415,7 @@ can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3, int16
   return ret;
 }
 
-can_frame int8_t_to_frame(int8_t i8_1, int8_t i8_2, int8_t i8_3, int8_t i8_4,int8_t i8_5, int8_t i8_6, int8_t i8_7, int8_t i8_8, uint16_t can_id, CAN_netwerk CAN_controller) {
+can_frame int8_t_to_frame(int8_t i8_1, int8_t i8_2, int8_t i8_3, int8_t i8_4, int8_t i8_5, int8_t i8_6, int8_t i8_7, int8_t i8_8, uint16_t can_id, CAN_netwerk CAN_controller) {
   byte bytes[sizeof(int8_t) * 8];
   memcpy(bytes, &i8_1, sizeof(int8_t));
   memcpy(bytes + sizeof(int8_t), &i8_2, sizeof(int8_t));
