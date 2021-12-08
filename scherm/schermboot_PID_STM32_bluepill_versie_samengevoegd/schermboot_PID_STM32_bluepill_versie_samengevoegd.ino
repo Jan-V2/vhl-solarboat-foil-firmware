@@ -27,13 +27,14 @@ const uint16_t refreshDistanceDisplay = 399;                         // How many
 const uint8_t pollTimeButtons = 24;                                  // How many milliseconds between button polls
 const uint8_t buttonCompompute = 49;                                 // How many milliseconds between button compute. less mili is faster long press
 const uint8_t SendCanMotorTime = 10;                                 // How many milliseconds between sending CAN frames
-const uint8_t SendCanTelemetryTime = 10; // How many milliseconds between sending CAN frames
+const uint8_t SendCanTelemetryTime = 10;                             // How many milliseconds between sending CAN frames
 const uint16_t PID_compute_time = 250;                               // How many milliseconds between PID compute.
 const uint16_t maxPulseEncoder = 17008;                              // the maximum amount of pulses for the front foil motor encoder
 const uint16_t maxAfstandEncoder = 203;                              // de afstand in mm die de voor linieare motor kan uit schuiven
 const uint16_t pulsen_per_mm = maxPulseEncoder / maxAfstandEncoder;  // pulsen per mm van de linieare motor
 const int16_t minDistance = 5;                                       // als de boot onder de minimale hoogte komt dan wordt de hoek van de vleugel aggresiever.
 const int16_t maxDistance = 30;                                      // als de boot boven de maximale hoogte komt dan wordt de hoek van de vleugel minder aggresief.
+const float pi = 3.14159265359;
 
 volatile uint32_t travelTime = 0;     // the time it takes the sound to comback to the sensor in micoseconds
 int16_t distance = 0;                 // distance from de ultrasoic sensor in cm
@@ -77,7 +78,7 @@ int16_t pidVvlTotal_telemetry;
 int16_t pidAvlTotal_telemetry;
 int8_t pidBalansTotal_telemetry;
 int8_t distance_telemetry;
-bool   PID_debug_telemetry;
+bool PID_debug_telemetry;
 
 uint8_t setDistance = 10;           // target distance in cm that the PID will try to reach, this value can be changed on de
 int8_t setRoll = 0;                 // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
@@ -775,7 +776,7 @@ void computeDistance() {
   static int16_t distance_sensor;
   distance_sensor = (travelTime + (0.5 * soundSpeed)) / soundSpeed;  // afstand in cm. because int are rounded down we add 0,5 cm or 29 micoseconds
   static float pitch_rad;                                            // arduino werkt in radians.
-  pitch_rad = pitch * M_PI / 180.0;                                  // degees to radians
+  pitch_rad = pitch * pi / 180.0;                                  // degees to radians
   distance = distance_sensor - (270 * tan(pitch_rad)) - 40.0 + 0.5;  // afstand van de onderkant van de boot (-40) tot het water onder de vleugel door rekening te houden met de hoek van de boot(-270*tan(pitch_rad). because int are rounded down we add 0,5
 }
 
@@ -847,7 +848,7 @@ void computePid_Vvl() {
   hoek_voor_vleugel = pidVvlTotal - pitch;
   //Serial.print("hoek_voor_vleugel: ");
   //Serial.println(hoek_voor_vleugel);
-  afstand_liniear = (sqrt(43.2 * 43.2 + 17.2 * 17.2 - 2 * 43.2 * 17.2 * cos((hoek_voor_vleugel + 90.0 - 3) * M_PI / 180.0))) - 30.55;  // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel)) wanneer vleugel 0 graden is staat deze haaks op de boot dus 90graden. -3 omdat de vleugel hoger gemonteerd zit dan de linieare motor.
+  afstand_liniear = (sqrt(43.2 * 43.2 + 17.2 * 17.2 - 2 * 43.2 * 17.2 * cos((hoek_voor_vleugel + 90.0 - 3) * pi / 180.0))) - 30.55;  // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel)) wanneer vleugel 0 graden is staat deze haaks op de boot dus 90graden. -3 omdat de vleugel hoger gemonteerd zit dan de linieare motor.
   //Serial.print("afstand_liniear: ");
   //Serial.println(afstand_liniear);
   pulsen_liniear = afstand_liniear * pulsen_per_mm * 10;  // pulsen naar voorvleugel = afstand in cm maal pulsen per cm
