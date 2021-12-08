@@ -820,13 +820,13 @@ void computePid_Vvl() {
     }
     D_Vvl = (float(kd_Vvl) * diffErrorFilter / pidLoopTime_s) / 100.0;
 
-    min_I_Vvl = -9 - P_Vvl;
-    max_I_Vvl = 12 - P_Vvl;
-    I_Vvl = constrain(I_Vvl, min_I_Vvl, max_I_Vvl);
-
     P_Vvl = constrain(P_Vvl, -9.9, 12.0);
     I_Vvl = constrain(I_Vvl, -9.9, 12.0);
     D_Vvl = constrain(D_Vvl, -9.9, 9.9);
+
+    min_I_Vvl = -9.9 - P_Vvl;
+    max_I_Vvl = 12 - P_Vvl;
+    I_Vvl = constrain(I_Vvl, min_I_Vvl, max_I_Vvl);
 
     if (ki_Vvl == 0) {
       I_Vvl = 0.0;
