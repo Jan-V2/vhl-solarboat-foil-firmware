@@ -1297,18 +1297,26 @@ void blink_cursor() {
   static bool blinkCursor = false;
   static bool prevBlinkCursor = blinkCursor;
 
-  if (((controlMode == 2) || (controlMode == 4) || (controlMode == 5)) && (pid_actief == true)) {
-    if (cursorPlace == 0) {
+if (controlMode == 1) {
+  if (cursorPlace == 0) { // set hoek voorvleugel
+        lcd.setCursor(0, 1);
+     else if (cursorPlace == 1) { // set offset voorvleugel
+        lcd.setCursor(5, 1);
+     else if (cursorPlace == 1) { // set offset voorvleugel
+        lcd.setCursor(10, 1);
+
+} else if (((controlMode == 2) || (controlMode == 4) || (controlMode == 5)) && (pid_actief == true)) {
+    if (cursorPlace == 0) { // set hoogte
       lcd.setCursor(6, 0);
-    } else if (cursorPlace == 1) {
+    } else if (cursorPlace == 1) { // set roll
       lcd.setCursor(12, 1);
-    } else if (cursorPlace == 2) {
+    } else if (cursorPlace == 2) { // P
       lcd.setCursor(0, 1);
-    } else if (cursorPlace == 3) {
+    } else if (cursorPlace == 3) { // I
       lcd.setCursor(4, 1);
-    } else if (cursorPlace == 4) {
+    } else if (cursorPlace == 4) { // D
       lcd.setCursor(8, 1);
-    } else if (cursorPlace == 5) {
+    } else if (cursorPlace == 5) { // set pitch
       lcd.setCursor(7, 3);
     }
     blinkCursor = true;
