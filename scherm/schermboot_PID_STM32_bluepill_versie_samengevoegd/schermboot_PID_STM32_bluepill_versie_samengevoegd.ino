@@ -34,6 +34,8 @@ const uint16_t maxAfstandEncoder = 203;                              // de afsta
 const uint16_t pulsen_per_mm = maxPulseEncoder / maxAfstandEncoder;  // pulsen per mm van de linieare motor
 const int16_t minDistance = 5;                                       // als de boot onder de minimale hoogte komt dan wordt de hoek van de vleugel aggresiever.
 const int16_t maxDistance = 30;                                      // als de boot boven de maximale hoogte komt dan wordt de hoek van de vleugel minder aggresief.
+const int16_t SendCanTelemetryTimeStatus = 1000;                     // iedere seconden word er een berichtje naar de telemetrie verstuurd om te laten weten dat het scherm werkt en de voo/achter vleugel
+const int16_t offline_time = 2500;                                   // als de voor of achtervleugel langer dan 2,5 seconden niks over de can versturen word de online status false. deze info word naar de telemetrie verstuurd
 const float pi = 3.14159265359;
 
 volatile uint32_t travelTime = 0;     // the time it takes the sound to comback to the sensor in micoseconds
@@ -79,6 +81,11 @@ int16_t pidAvlTotal_telemetry;
 int8_t pidBalansTotal_telemetry;
 int8_t distance_telemetry;
 bool PID_debug_telemetry;
+int8_t status_Vvl = false;
+int8_t status_Avl = false;
+
+uint32_t last_Vvl_online_millis;
+uint32_t last_Avl_online_millis;
 
 uint8_t setDistance = 10;           // target distance in cm that the PID will try to reach, this value can be changed on de
 int8_t setRoll = 0;                 // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
@@ -271,6 +278,26 @@ void loop() {
     send_CAN_data_telemetry();
   }
 
+  static uint32_t lastSendCanTelemetryStatus = 0;
+  //    static uint32_t last_Vvl_online_millis = 0;
+  //  static uint32_t last_Avl_online_millis = 0;
+
+  if (millis() - lastSendCanTelemetryStatus > SendCanTelemetryTimeStatus) {
+    lastSendCanTelemetryStatus = millis();
+    if (millis() - last_Vvl_online_millis > offline_time) {
+      status_Vvl = false;
+    } else {
+      status_Vvl = true;
+    }
+    if (millis() - last_Avl_online_millis > offline_time) {
+      status_Avl = false;
+    } else {
+      status_Avl = true;
+    }
+
+    int8_t_to_frame(status_Vvl, status_Avl, 0, 0, 0, 0, 0, 0, 54, telemetry);
+  }
+
   //===================================================================== main loop reset buttonStateChange ============================================================
 
   buttonStateChange_enc_1 = false;
@@ -306,10 +333,12 @@ void read_CAN_data() {
   } else if (canMsg.can_id == 0x32) {
     PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]);   //byte 0-1 is int16_t PWM links
     PWM_rechts = int16_from_can(canMsg.data[2], canMsg.data[3]);  //byte 0-1 is int16_t PWM rechts
+    last_Vvl_online_millis = millis();
 
   } else if (canMsg.can_id == 0x33) {
     PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]);  //byte 0-1 is int16_t PWM achter
     overcurrent_achter = canMsg.data[2];                          //byte 2 is uint8_t overcurrent achter uint8_t
+    last_Avl_online_millis = millis();
   }
 }
 
@@ -329,7 +358,6 @@ void send_CAN_data_telemetry() {
   D_Balans_telemetry = constrain(D_Balans, -5.0, 5.0) * 20.0;
   pidBalansTotal_telemetry = constrain(pidBalansTotal, -5.0, 5.0) * 20.0;
   distance_telemetry = constrain(distance, -127, 127);
-
 
   int_to_frame_thrice(P_Vvl_telemetry, I_Vvl_telemetry, D_Vvl_telemetry, pidVvlTotal_telemetry, 51, telemetry);
   int_to_frame_thrice(P_Avl_telemetry, I_Avl_telemetry, D_Avl_telemetry, pidAvlTotal_telemetry, 52, telemetry);
@@ -776,7 +804,7 @@ void computeDistance() {
   static int16_t distance_sensor;
   distance_sensor = (travelTime + (0.5 * soundSpeed)) / soundSpeed;  // afstand in cm. because int are rounded down we add 0,5 cm or 29 micoseconds
   static float pitch_rad;                                            // arduino werkt in radians.
-  pitch_rad = pitch * pi / 180.0;                                  // degees to radians
+  pitch_rad = pitch * pi / 180.0;                                    // degees to radians
   distance = distance_sensor - (270 * tan(pitch_rad)) - 40.0 + 0.5;  // afstand van de onderkant van de boot (-40) tot het water onder de vleugel door rekening te houden met de hoek van de boot(-270*tan(pitch_rad). because int are rounded down we add 0,5
 }
 
@@ -1297,26 +1325,26 @@ void blink_cursor() {
   static bool blinkCursor = false;
   static bool prevBlinkCursor = blinkCursor;
 
-if (controlMode == 1) {
-  if (cursorPlace == 0) { // set hoek voorvleugel
-        lcd.setCursor(0, 1);
-     else if (cursorPlace == 1) { // set offset voorvleugel
-        lcd.setCursor(5, 1);
-     else if (cursorPlace == 1) { // set offset voorvleugel
-        lcd.setCursor(10, 1);
-
-} else if (((controlMode == 2) || (controlMode == 4) || (controlMode == 5)) && (pid_actief == true)) {
-    if (cursorPlace == 0) { // set hoogte
-      lcd.setCursor(6, 0);
-    } else if (cursorPlace == 1) { // set roll
-      lcd.setCursor(12, 1);
-    } else if (cursorPlace == 2) { // P
+  if (controlMode == 1) {
+    if (cursorPlace == 0) {  // set hoek voorvleugel
       lcd.setCursor(0, 1);
-    } else if (cursorPlace == 3) { // I
+    } else if (cursorPlace == 1) {  // set offset voorvleugel
+      lcd.setCursor(5, 1);
+    } else if (cursorPlace == 1) {  // set offset voorvleugel
+      lcd.setCursor(10, 1);
+    }
+  } else if (((controlMode == 2) || (controlMode == 4) || (controlMode == 5)) && (pid_actief == true)) {
+    if (cursorPlace == 0) {  // set hoogte
+      lcd.setCursor(6, 0);
+    } else if (cursorPlace == 1) {  // set roll
+      lcd.setCursor(12, 1);
+    } else if (cursorPlace == 2) {  // P
+      lcd.setCursor(0, 1);
+    } else if (cursorPlace == 3) {  // I
       lcd.setCursor(4, 1);
-    } else if (cursorPlace == 4) { // D
+    } else if (cursorPlace == 4) {  // D
       lcd.setCursor(8, 1);
-    } else if (cursorPlace == 5) { // set pitch
+    } else if (cursorPlace == 5) {  // set pitch
       lcd.setCursor(7, 3);
     }
     blinkCursor = true;
@@ -1332,7 +1360,6 @@ if (controlMode == 1) {
     }
   }
 }
-
 //=========================================================================== startupMenu =========================================================================
 
 void startupMenu() {
