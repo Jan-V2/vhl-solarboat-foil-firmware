@@ -34,7 +34,7 @@ const uint16_t maxAfstandEncoder = 203;                              // de afsta
 const uint16_t pulsen_per_mm = maxPulseEncoder / maxAfstandEncoder;  // pulsen per mm van de linieare motor
 const int16_t minDistance = 5;                                       // als de boot onder de minimale hoogte komt dan wordt de hoek van de vleugel aggresiever.
 const int16_t maxDistance = 30;                                      // als de boot boven de maximale hoogte komt dan wordt de hoek van de vleugel minder aggresief.
-const int16_t SendCanTelemetryTimeStatus = 1000;                     // iedere seconden word er een berichtje naar de telemetrie verstuurd om te laten weten dat het scherm werkt en de voo/achter vleugel
+const int16_t SendCanTelemetryTimeStatus = 450;                     // iedere seconden word er een berichtje naar de telemetrie verstuurd om te laten weten dat het scherm werkt en de voo/achter vleugel
 const int16_t offline_time = 2500;                                   // als de voor of achtervleugel langer dan 2,5 seconden niks over de can versturen word de online status false. deze info word naar de telemetrie verstuurd
 const float pi = 3.14159265359;
 
