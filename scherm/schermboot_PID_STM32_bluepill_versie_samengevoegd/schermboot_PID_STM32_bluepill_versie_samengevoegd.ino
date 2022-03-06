@@ -279,7 +279,7 @@ void loop() {
   }
 
   static uint32_t lastSendCanTelemetryStatus = 0;
-  //    static uint32_t last_Vvl_online_millis = 0;
+  //  static uint32_t last_Vvl_online_millis = 0;
   //  static uint32_t last_Avl_online_millis = 0;
 
   if (millis() - lastSendCanTelemetryStatus > SendCanTelemetryTimeStatus) {
@@ -330,12 +330,13 @@ void read_CAN_data() {
     }
 
     //  Serial.println(pitch);
-  } else if (canMsg.can_id == 0x32) {
+  } else if (canMsg.can_id == 0x33) {
     PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]);   //byte 0-1 is int16_t PWM links
     PWM_rechts = int16_from_can(canMsg.data[2], canMsg.data[3]);  //byte 0-1 is int16_t PWM rechts
     last_Vvl_online_millis = millis();
+    
 
-  } else if (canMsg.can_id == 0x33) {
+  } else if (canMsg.can_id == 0x32) {
     PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]);  //byte 0-1 is int16_t PWM achter
     overcurrent_achter = canMsg.data[2];                          //byte 2 is uint8_t overcurrent achter uint8_t
     last_Avl_online_millis = millis();
