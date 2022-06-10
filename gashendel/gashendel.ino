@@ -1,5 +1,6 @@
 #include "types.h"
 #define IDLE_TIMEOUT
+
 //#define DEBUG
 
 // 1000 us backwards max
@@ -8,10 +9,15 @@
 const int analog_in = A5;
 const int btn_in = A2;
 const int pwm_pin = D2;
+const int permission_pin = PF_1;
+const int temp_permission_PIN = PA_8;
+
+bool motorConected;
+ulong lastPermission = 0;
 
 #ifdef IDLE_TIMEOUT
 const int idle_time_ms = 30000;
-const ulong last_idle_ms = millis();
+ulong last_idle_ms = millis();
 bool is_idle = false;
 #endif
 
@@ -91,21 +97,24 @@ void setup() {
 
     pinMode(btn_in, INPUT);
     pinMode(analog_in, INPUT);
+    pinMode(permission_pin, OUTPUT);
+    pinMode(temp_permission_PIN, INPUT_PULLDOWN);
 #ifdef DEBUG
     Serial.begin(115200);
 #endif
     digitalWrite(LED_BUILTIN, HIGH);
+
 }
 
 void loop() {
 #ifdef IDLE_TIMEOUT
     if (is_idle) {
-        if (digitalRead(btn_in)) {
+              if (digitalRead(btn_in)) {
             is_idle = false;
             last_idle_ms = millis();
         }
     } else {
-        if(millis() - last_idle_ms > idle_time_ms && (current_state == neutral || current_state == bootup)) {
+        if(millis() - last_idle_ms > idle_time_ms && (current_state == neutral || current_state == bootup) ) {
             is_idle = true;
         }
     }
@@ -128,14 +137,25 @@ void loop() {
                 set_pwm(throttle, true);
             }
         } else if (current_state == neutral) {
+         motorConected = digitalRead(temp_permission_PIN);
+         if((digitalRead(btn_in) || !in_neutral())){
+                  lastPermission = millis();
+                  digitalWrite(permission_pin, LOW) ;
+                }
             if(in_neutral()) {
                 set_pwm_neutral();
-                if (digitalRead(btn_in)) {
-                    current_state = neutral_btn;
+                if(motorConected){
+                digitalWrite(permission_pin, HIGH) ;
                 }
-            } else {
+                
+                if (digitalRead(btn_in) && motorConected == LOW || millis() - lastPermission > 500) {
+                    current_state = neutral_btn;
+                     
+                }
+            } else if(motorConected == LOW|| millis() - lastPermission > 500){
                 current_state == forwards;
                 set_pwm(throttle, true);
+                
             }
         } else if (current_state == neutral_btn) {
             if(in_neutral()) {
