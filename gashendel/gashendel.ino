@@ -11,7 +11,7 @@ const int pwm_pin = D2;
 
 #ifdef IDLE_TIMEOUT
 const int idle_time_ms = 30000;
-const ulong last_idle_ms = millis();
+ulong last_idle_ms = millis();
 bool is_idle = false;
 #endif
 
