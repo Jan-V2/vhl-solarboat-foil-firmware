@@ -1,5 +1,5 @@
 #include "types.h"
-#define IDLE_TIMEOUT
+//#define IDLE_TIMEOUT
 //#define DEBUG
 
 // 1000 us backwards max
@@ -105,7 +105,7 @@ void loop() {
             last_idle_ms = millis();
         }
     } else {
-        if(millis() - last_idle_ms > idle_time_ms && (current_state == neutral || current_state == bootup)) {
+        if((millis() - last_idle_ms > idle_time_ms) && (current_state == neutral || current_state == bootup)) {
             is_idle = true;
         }
     }
@@ -159,7 +159,7 @@ void loop() {
             }
         }
 #ifdef IDLE_TIMEOUT
-        if(!(current_state == neutral || current_state == bootup)) {
+        if(current_state == backwards || current_state == forwards || current_state == neutral_btn) {
             last_idle_ms = millis();
         }
     }
@@ -171,7 +171,8 @@ void loop() {
     Serial.print(digitalRead(btn_in));
     Serial.print(" ");
     Serial.println(in_neutral());
-
+    Serial.print(" ");
+    Serial.println(is_idle);
 #endif
 
     delay(1);
