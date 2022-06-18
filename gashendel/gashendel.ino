@@ -1,5 +1,5 @@
 #include "types.h"
-//#define IDLE_TIMEOUT
+#define IDLE_TIMEOUT
 //#define DEBUG
 
 // 1000 us backwards max
@@ -134,7 +134,7 @@ void loop() {
                     current_state = neutral_btn;
                 }
             } else {
-                current_state == forwards;
+                current_state = forwards;
                 set_pwm(throttle, true);
             }
         } else if (current_state == neutral_btn) {
@@ -172,7 +172,7 @@ void loop() {
     Serial.print(" ");
     Serial.println(in_neutral());
     Serial.print(" ");
-    Serial.println(is_idle);
+    Serial.println(current_state);
 #endif
 
     delay(1);
