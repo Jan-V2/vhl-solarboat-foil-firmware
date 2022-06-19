@@ -1,7 +1,7 @@
 #include "types.h"
 #define IDLE_TIMEOUT
 
-//#define DEBUG
+#define DEBUG
 
 // 1000 us backwards max
 // 1500 us neutral
@@ -11,6 +11,7 @@ const int btn_in = A2;
 const int pwm_pin = D2;
 const int permission_pin = PF_1;
 const int temp_permission_PIN = PA_8;
+const int permission_time = 500;
 
 bool motorConected;
 ulong lastPermission = 0;
@@ -148,12 +149,12 @@ void loop() {
                 digitalWrite(permission_pin, HIGH) ;
                 }
                 
-                if (digitalRead(btn_in) && motorConected == LOW || millis() - lastPermission > 500) {
+                if (digitalRead(btn_in) && motorConected == LOW || millis() - lastPermission > permission_time) {
                     current_state = neutral_btn;
                      
                 }
-            } else if(motorConected == LOW|| millis() - lastPermission > 500){
-                current_state == forwards;
+            } else if(motorConected == LOW || millis() - lastPermission > permission_time){
+                current_state = forwards;
                 set_pwm(throttle, true);
                 
             }
@@ -191,6 +192,7 @@ void loop() {
     Serial.print(digitalRead(btn_in));
     Serial.print(" ");
     Serial.println(in_neutral());
+    Serial.println(current_state);
 
 #endif
 
