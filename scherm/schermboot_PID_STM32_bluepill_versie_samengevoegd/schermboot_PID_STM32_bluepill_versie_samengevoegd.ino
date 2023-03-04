@@ -29,8 +29,8 @@ const uint8_t buttonCompompute = 49;                                 // How many
 const uint8_t SendCanMotorTime = 10;                                 // How many milliseconds between sending CAN frames
 const uint8_t SendCanTelemetryTime = 10;                             // How many milliseconds between sending CAN frames
 const uint16_t PID_compute_time = 250;                               // How many milliseconds between PID compute.
-const uint16_t maxPulseEncoder = 17008;                              // the maximum amount of pulses for the front foil motor encoder
-const uint16_t maxAfstandEncoder = 203;                              // de afstand in mm die de voor linieare motor kan uit schuiven
+const uint16_t maxPulseEncoder = 11487;                              // the maximum amount of pulses for the front foil motor encoder
+const uint16_t maxAfstandEncoder = 200;                              // de afstand in mm die de voor linieare motor kan uit schuiven
 const uint16_t pulsen_per_mm = maxPulseEncoder / maxAfstandEncoder;  // pulsen per mm van de linieare motor
 const int16_t minDistance = 5;                                       // als de boot onder de minimale hoogte komt dan wordt de hoek van de vleugel aggresiever.
 const int16_t maxDistance = 30;                                      // als de boot boven de maximale hoogte komt dan wordt de hoek van de vleugel minder aggresief.
@@ -135,7 +135,7 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   setup_buttons_and_encoders();
 
-  lcd.begin(16, 4);  // Switch on the LCD screen
+  lcd.begin(20, 4);  // Switch on the LCD screen
   lcd.setCursor(2, 0);
   lcd.print F(("VHL-Nordwin"));  // Print these words to my LCD screen
   lcd.setCursor(1, 2);
