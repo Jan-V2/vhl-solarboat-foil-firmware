@@ -8,6 +8,19 @@ enum CAN_netwerk {
   motor
 };
 
+enum class Menu : uint8_t {
+  OFF,
+  VOORVLEUGEL,
+  ACHTERVLEUGEL,
+  BALANS_VOORVLEUGEL,
+  HOMEING,
+  MANUALLY,
+  STARTUP,
+  DEBUG
+};
+
+Menu menu;
+
 struct can_frame canMsg;
 MCP2515 mcp2515_telemetry(PB0);
 MCP2515 mcp2515_motor(PA4);
@@ -34,7 +47,7 @@ const uint16_t maxAfstandEncoder = 200;                              // de afsta
 const uint16_t pulsen_per_mm = maxPulseEncoder / maxAfstandEncoder;  // pulsen per mm van de linieare motor
 const int16_t minDistance = 5;                                       // als de boot onder de minimale hoogte komt dan wordt de hoek van de vleugel aggresiever.
 const int16_t maxDistance = 30;                                      // als de boot boven de maximale hoogte komt dan wordt de hoek van de vleugel minder aggresief.
-const int16_t SendCanTelemetryTimeStatus = 450;                     // iedere seconden word er een berichtje naar de telemetrie verstuurd om te laten weten dat het scherm werkt en de voo/achter vleugel
+const int16_t SendCanTelemetryTimeStatus = 450;                      // iedere seconden word er een berichtje naar de telemetrie verstuurd om te laten weten dat het scherm werkt en de voo/achter vleugel
 const int16_t offline_time = 2500;                                   // als de voor of achtervleugel langer dan 2,5 seconden niks over de can versturen word de online status false. deze info word naar de telemetrie verstuurd
 const float pi = 3.14159265359;
 
@@ -42,7 +55,7 @@ volatile uint32_t travelTime = 0;     // the time it takes the sound to comback 
 int16_t distance = 0;                 // distance from de ultrasoic sensor in cm
 volatile bool newMesurement = false;  // is true when the interupt is triggerd to indicate a new mesurement of een nieuwe gyro meting.
 volatile bool newHightMesurement = false;
-uint8_t controlMode = 0;          // 0 = off, 1 = manuel, 2 = Vvl, 3 = HOME, 4 = balans en 5 = Avl
+//uint8_t controlMode = 0;          // 0 = off, 1 = manuel, 2 = Vvl, 3 = HOME, 4 = balans en 5 = Avl
 uint8_t cursorPlace = 0;          // is used to select the parameter that you want to change when in PID controlmode
 uint16_t pidChangeDetection = 0;  // is used to see if there are changes in the PID setting
 int16_t kp_Vvl = 0;               // P parameter from the PID voorvleugel
@@ -81,11 +94,17 @@ int16_t pidAvlTotal_telemetry;
 int8_t pidBalansTotal_telemetry;
 int8_t distance_telemetry;
 bool PID_debug_telemetry;
-int8_t status_Vvl = false;
-int8_t status_Avl = false;
+bool status_Vvl = false;
+bool status_Avl = false;
+bool status_gryo = false;
+bool status_gashendel = false;
+bool status_temp = false;
+bool vvlhomed = false;
+bool avlhomed = false;
 
 uint32_t last_Vvl_online_millis;
 uint32_t last_Avl_online_millis;
+uint32_t last_gyro_online_millis;
 
 uint8_t setDistance = 10;           // target distance in cm that the PID will try to reach, this value can be changed on de
 int8_t setRoll = 0;                 // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
@@ -110,6 +129,45 @@ bool buttonStateChange3 = false;       // is true if a button is recently change
 bool buttonStateChange4 = false;       // is true if a button is recently changed its state
 bool buttonStateChange = false;        // is true if one of of the buttons has a state change. can be used as a flag to update the screen once before the refreshDisplay counter
 bool pid_actief = false;               // PID staat uit wanneer false. kan aangepast worden in OFF controlmode 0
+
+byte smile_happy[8] =
+
+  {
+    0b00000,
+    0b00000,
+    0b01010,
+    0b00000,
+    0b10001,
+    0b01110,
+    0b00000,
+    0b00000
+  };
+
+byte smile_neutraal[8] =
+
+  {
+    0b00000,
+    0b00000,
+    0b01010,
+    0b00000,
+    0b00000,
+    0b01110,
+    0b00000,
+    0b00000
+  };
+
+byte smile_sad[8] =
+
+  {
+    0b00000,
+    0b00000,
+    0b01010,
+    0b00000,
+    0b00000,
+    0b01110,
+    0b10001,
+    0b00000
+  };
 
 // data van CAN
 float pitch;
@@ -250,17 +308,17 @@ void loop() {
     blink_cursor();
   }
 
-  static uint8_t lastControlMode = 255;  // use 255 so that it runs at least ones to display the data
+  static Menu last_menu = Menu::STARTUP;  // use STARTUP so that it runs at least ones to display the data
 
-  if (controlMode != lastControlMode) {
-    lastControlMode = controlMode;
+  if (menu != last_menu) {
+    last_menu = menu;
     displayControlMode();
     blink_cursor();
   }
-  if (controlMode == 0) {
+  if (menu == Menu::OFF) {
     OFF();
   }
-  if (controlMode == 3) {
+  if (menu == Menu::DEBUG) {
     home();
   }
 
@@ -294,6 +352,11 @@ void loop() {
     } else {
       status_Avl = true;
     }
+    if (millis() - last_gyro_online_millis > offline_time) {
+      status_gryo = false;
+    } else {
+      status_gryo = true;
+    }
 
     int8_t_to_frame(status_Vvl, status_Avl, 0, 0, 0, 0, 0, 0, 54, telemetry);
   }
@@ -319,6 +382,7 @@ void read_CAN_data() {
       pitch = float_from_can(0);  // byte 0-3 is float pitch
       roll = float_from_can(4);   // byte 4-7 is float roll
       newMesurement = true;       // er is een nieuwe meting voor de PID compute
+      last_gyro_online_millis = millis();
 
       can_frame ret;
       for (uint8_t i = 0; i < sizeof(float) * 2; i++) {
@@ -334,7 +398,7 @@ void read_CAN_data() {
     PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]);   //byte 0-1 is int16_t PWM links
     PWM_rechts = int16_from_can(canMsg.data[2], canMsg.data[3]);  //byte 0-1 is int16_t PWM rechts
     last_Vvl_online_millis = millis();
-    
+
 
   } else if (canMsg.can_id == 0x32) {
     PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]);  //byte 0-1 is int16_t PWM achter
@@ -446,8 +510,8 @@ void pidDisplay() {
     }
   }
   //===========================================
-  if (controlMode == 2) {    // voor vleugel
-    if (cursorPlace == 2) {  // if 2 change the P from the PID parameter
+  if (menu == Menu::VOORVLEUGEL) {  // voor vleugel
+    if (cursorPlace == 2) {         // if 2 change the P from the PID parameter
       lcd.setCursor(0, 1);
       lcd.print F((">"));
       lcd.print(kp_Vvl);
@@ -505,8 +569,8 @@ void pidDisplay() {
       }
     }
   }
-  if (controlMode == 4) {    // balans
-    if (cursorPlace == 2) {  // if 2 change the P from the PID parameter
+  if (menu == Menu::BALANS_VOORVLEUGEL) {  // balans
+    if (cursorPlace == 2) {                // if 2 change the P from the PID parameter
       lcd.setCursor(0, 1);
       lcd.print F((">"));
       lcd.print(kp_balans);
@@ -564,8 +628,8 @@ void pidDisplay() {
       }
     }
   }
-  if (controlMode == 5) {    // achtervleugel
-    if (cursorPlace == 2) {  // if 2 change the P from the PID parameter
+  if (menu == Menu::ACHTERVLEUGEL) {  // achtervleugel
+    if (cursorPlace == 2) {           // if 2 change the P from the PID parameter
       lcd.setCursor(0, 1);
       lcd.print F((">"));
       lcd.print(kp_Avl);
@@ -648,16 +712,42 @@ void computeButtonPress() {
     controlMode++; //cursorPlace++;
     }*/
   if (button_encoder_2 && buttonStateChange_enc_2) {
-    controlMode++;
+    switch (menu) {
+      case Menu::HOMEING:
+        menu = Menu::OFF;
+        break;
+
+      case Menu::OFF:
+        menu = Menu::VOORVLEUGEL;
+        break;
+
+      case Menu::VOORVLEUGEL:
+        menu = Menu::ACHTERVLEUGEL;
+        break;
+
+      case Menu::ACHTERVLEUGEL:
+        menu = Menu::BALANS_VOORVLEUGEL;
+        break;
+
+      case Menu::BALANS_VOORVLEUGEL:
+        menu = Menu::DEBUG;
+        break;
+      
+      case Menu::DEBUG:
+         menu = Menu::MANUALLY;
+        break;
+
+      case Menu::MANUALLY:
+        menu = Menu::HOMEING;
+        break;
+    }
   }
   prev_enc_2_pulses = enc_2_pulses;
   if (cursorPlace == 6) {
     cursorPlace = 0;
   }
-  if (controlMode == 6) {
-    controlMode = 0;
-  }
-  if ((buttonAll == 1) && (controlMode == 1)) {  // works only in manuel
+
+  if ((buttonAll == 1) && (menu == Menu::MANUALLY)) {  // works only in manuel
     if (button1 == HIGH) {
       leftAcutatorStroke++;
       rightAcutatorStroke++;
@@ -675,7 +765,7 @@ void computeButtonPress() {
         rightAcutatorStroke++;
       }
     }
-  } else if ((buttonAll == 1) && (controlMode == 2)) {  // works only when in V vl mode
+  } else if ((buttonAll == 1) && (menu == Menu::VOORVLEUGEL)) {  // works only when in V vl mode
     if ((button1 == HIGH) && (buttonStateChange1)) {
       cursorPlace--;
     } else if ((button2 == HIGH) && (buttonStateChange2)) {
@@ -710,7 +800,7 @@ void computeButtonPress() {
     }
     pidChangeDetection = setDistance + cursorPlace + kp_Vvl + ki_Vvl + kd_Vvl + setPitch + setRoll;
 
-  } else if ((buttonAll == 1) && (controlMode == 4)) {  // works only when in 4 balans mode
+  } else if ((buttonAll == 1) && (menu == Menu::BALANS_VOORVLEUGEL)) {  // works only when in 4 balans mode
     if ((button1 == HIGH) && (buttonStateChange1)) {
       cursorPlace--;
     } else if ((button2 == HIGH) && (buttonStateChange2)) {
@@ -745,7 +835,7 @@ void computeButtonPress() {
     }
     pidChangeDetection = setDistance + cursorPlace + kp_balans + ki_balans + kd_balans + setPitch + setRoll;
 
-  } else if ((buttonAll == 1) && (controlMode == 5)) {  // works only when in 5 achtervleugel mode
+  } else if ((buttonAll == 1) && (menu == Menu::ACHTERVLEUGEL)) {  // works only when in 5 achtervleugel mode
     if ((button1 == HIGH) && (buttonStateChange1)) {
       cursorPlace--;
     } else if ((button2 == HIGH) && (buttonStateChange2)) {
@@ -781,7 +871,6 @@ void computeButtonPress() {
     pidChangeDetection = setDistance + cursorPlace + kp_Avl + ki_Avl + kd_Avl + setPitch + setRoll;
   }
   cursorPlace = constrain(cursorPlace, 0, 5);
-  controlMode = constrain(controlMode, 0, 5);
   setDistance = constrain(setDistance, 0, 99);
 
   kp_Vvl = constrain(kp_Vvl, 0, 999);
@@ -1008,8 +1097,79 @@ void displayData() {
   pitch_display = constrain(pitch_display, -99, 999);
   lcd.print(pitch_display, 0);
 
-  if (controlMode == 2) {  // controlMode voorvleugel
-    lcd.setCursor(0, 2);   // print P_Vvl
+  switch (menu) {
+      /*
+    online status: vvl & avl controller & homed?, gyroscoop, telemetrie en telemetrie online, gashendel en temperatuursensor
+    */
+    case Menu::DEBUG:
+      lcd.setCursor(0, 1);  // set curser at debug vvl place
+      lcd.print F(("vvl: "));
+      if (status_Vvl) {
+        lcd.print F((smile_happy));
+      } else {
+        lcd.print F((smile_sad));
+      }
+      
+      lcd.setCursor(0, 2);  // set curser at debug avl place
+      lcd.print F(("avl: "));
+      if (status_Avl) {
+        lcd.print F((smile_happy));
+      } else {
+        lcd.print F((smile_sad));
+      }
+
+      lcd.setCursor(0, 3); // set curser at debug gyroscoop place
+      lcd.print F(("gyro:"));
+      if(status_gryo){
+        lcd.print F((smile_happy));
+      } else {
+        lcd.print F((smile_sad));
+      }
+      
+        lcd.setCursor(0, 6); // set curser at debug gashendel place
+      lcd.print F(("Gas:"));
+      if(status_gashendel){
+        lcd.print F((smile_happy));
+      } else {
+        lcd.print F((smile_sad));
+      }
+
+      lcd.setCursor(6, 1); // set curser at homing vvl place
+      lcd.print F(("HomeVvl:"));
+        if (!home_front_foil && !vvlhomed ) {  // if not homed
+        lcd.print F((smile_sad));
+        } else if (home_front_foil) {    // if homing
+        lcd.print F((smile_neutraal));
+        } else if (!home_front_foil && vvlhomed) {    // if homed
+        lcd.print F((smile_happy));
+        } 
+      
+      lcd.setCursor(6, 2); // set curser at homing vvl place
+      lcd.print F(("HomeAvl:"));
+        if (!home_rear_foil && !avlhomed ) {  // if not homed
+        lcd.print F((smile_sad));
+        } else if (home_rear_foil) {    // if homing
+        lcd.print F((smile_neutraal));
+        } else if (!home_rear_foil && avlhomed) {    // if homed
+        lcd.print F((smile_happy));
+        } 
+
+      lcd.setCursor(6, 3); // set curser at debug tempratuur sensor
+      lcd.print F(("temp:"));
+        if (status_temp) {
+        lcd.print F((smile_happy));
+      } else {
+        lcd.print F((smile_sad));
+        }
+
+      lcd.setCursor(uint8_t, 0)  // status telemetrie
+      lcd.print F(("TelStat:"))
+
+      break;
+  }
+
+  if (menu == Menu::VOORVLEUGEL) {  // controlMode voorvleugel
+    lcd.setCursor(0, 2);            // print P_Vvl
     lcd.print("P");
     if (P_Vvl >= 0) {
       lcd.print F((" "));
@@ -1059,8 +1219,8 @@ void displayData() {
     lcd.print(pidVvlTotal * 10.0, 0);
     lcd.print(' ');
   }
-  if (controlMode == 5) {  // controlMode achtervleugel
-    lcd.setCursor(0, 2);   // print P_Avl
+  if (menu == Menu::ACHTERVLEUGEL) {  // controlMode achtervleugel
+    lcd.setCursor(0, 2);              // print P_Avl
     lcd.print("P");
     if (P_Avl >= 0) {
       lcd.print F((" "));
@@ -1110,8 +1270,8 @@ void displayData() {
     lcd.print(pidAvlTotal * 10.0, 0);
     lcd.print(' ');
   }
-  if (controlMode == 4) {  // controlMode balansvleugel
-    lcd.setCursor(0, 2);   // print P_Vvl
+  if (menu == Menu::BALANS_VOORVLEUGEL) {  // controlMode balansvleugel
+    lcd.setCursor(0, 2);                   // print P_Vvl
     lcd.print("P");
     if (P_Balans >= 0) {
       lcd.print F((" "));
@@ -1169,29 +1329,29 @@ void displayData() {
 void displayControlMode() {
   pidChangeDetection++;
   lcd.setCursor(12, 0);
-  if (controlMode == 0) {  // check controlmode. for off, manuel or automatic PID control
+  if (menu == Menu::OFF) {  // check controlmode. for off, manuel or automatic PID control
     lcd.clear();
     lcd.setCursor(12, 0);
     lcd.print F((" OFF"));
-  } else if (controlMode == 1) {
+  } else if (menu == Menu::MANUALLY) {
     lcd.clear();
     lcd.setCursor(12, 0);
     lcd.print F(("MAN "));
-  } else if (controlMode == 2) {
+  } else if (menu == Menu::VOORVLEUGEL) {
     lcd.print F(("V vl"));
-  } else if (controlMode == 3) {
+  } else if (menu == Menu::HOMEING) {
     lcd.clear();
     lcd.setCursor(12, 0);
     lcd.print F(("Home"));
-  } else if (controlMode == 4) {
+  } else if (menu == Menu::BALANS_VOORVLEUGEL) {
     lcd.print F(("Ball"));
-  } else if (controlMode == 5) {
+  } else if (menu == Menu::ACHTERVLEUGEL) {
     lcd.print F(("A vl"));
   }
 }
 
 void OFF() {
-  if (controlMode == 0) {
+  if (menu == Menu::OFF) {
     if (button_encoder_1 && buttonStateChange_enc_1) {
       pid_actief = !pid_actief;
       PID_debug_telemetry = pid_actief;
@@ -1209,10 +1369,10 @@ void home() {
   const static uint16_t min_home_time = 3000;
   static uint32_t last_home_time = millis();
 
-  if (controlMode == 3) {
+  if (menu == Menu::DEBUG) {
     if (button_encoder_1 && buttonStateChange_enc_1) {
-      lcd.setCursor(0, 1);
-      lcd.print("Home voor");
+      // lcd.setCursor(0, 1);
+      // lcd.print("Home voor");
       home_front_foil = true;
       pid_actief = false;
       CAN_pulsen_voor = 0;
@@ -1222,8 +1382,8 @@ void home() {
       home_front_foil = false;
     }
     if (button_encoder_1 && buttonStateChange_enc_1) {
-      lcd.setCursor(0, 2);
-      lcd.print("Home achter");
+      //lcd.setCursor(0, 2);
+      //lcd.print("Home achter");
       home_rear_foil = true;
       pid_actief = false;
       CAN_pulsen_achter = 0;
@@ -1326,7 +1486,7 @@ void blink_cursor() {
   static bool blinkCursor = false;
   static bool prevBlinkCursor = blinkCursor;
 
-  if (controlMode == 1) {
+  if (menu == Menu::MANUALLY) {
     if (cursorPlace == 0) {  // set hoek voorvleugel
       lcd.setCursor(0, 1);
     } else if (cursorPlace == 1) {  // set offset voorvleugel
@@ -1334,7 +1494,7 @@ void blink_cursor() {
     } else if (cursorPlace == 1) {  // set offset voorvleugel
       lcd.setCursor(10, 1);
     }
-  } else if (((controlMode == 2) || (controlMode == 4) || (controlMode == 5)) && (pid_actief == true)) {
+  } else if (((menu == Menu::VOORVLEUGEL) || (menu == Menu::BALANS_VOORVLEUGEL) || (menu == Menu::ACHTERVLEUGEL)) && (pid_actief == true)) {
     if (cursorPlace == 0) {  // set hoogte
       lcd.setCursor(6, 0);
     } else if (cursorPlace == 1) {  // set roll
@@ -1381,7 +1541,7 @@ void startupMenu() {
     delay(25);
   }
   if (button1) {
-    controlMode = 0;  // contolMode OFF
+    menu = Menu::OFF;  // contolMode OFF
     lcd.clear();
   } else {
     lcd.clear();
@@ -1394,15 +1554,15 @@ void startupMenu() {
   buttonPressDetection();
 
   if (button2) {
-    controlMode = 1;  // contolMode Manuel
+    menu = Menu::MANUALLY;  // contolMode Manuel
   } else if (button3) {
-    controlMode = 2;  // contolMode V vl
+    menu = Menu::VOORVLEUGEL;  // contolMode V vl
   } else if (button4) {
-    controlMode = 3;  // contolMode Home
+    menu = Menu::HOMEING;  // contolMode Home
   } else if (button_encoder_1) {
-    controlMode = 4;  // controlMode Balans
+    menu = Menu::BALANS_VOORVLEUGEL;  // controlMode Balans
   } else if (button_encoder_2) {
-    controlMode = 5;  // controMode A vl
+    menu = Menu::ACHTERVLEUGEL;  // controMode A vl
   }
 
   lcd.setCursor(1, 0);
