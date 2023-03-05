@@ -13,7 +13,6 @@ enum class Menu : uint8_t {
   VOORVLEUGEL,
   ACHTERVLEUGEL,
   BALANS_VOORVLEUGEL,
-  HOMEING,
   MANUALLY,
   STARTUP,
   DEBUG
@@ -99,8 +98,10 @@ bool status_Avl = false;
 bool status_gryo = false;
 bool status_gashendel = false;
 bool status_temp = false;
+bool status_telemetrie_verbinding_server = false;
+bool status_telemetrie_verbinding_CAN = false;
 bool vvlhomed = false;
-bool avlhomed = false;
+
 
 uint32_t last_Vvl_online_millis;
 uint32_t last_Avl_online_millis;
@@ -159,20 +160,20 @@ byte smile_neutraal[8] =
 byte smile_sad[8] =
 
   {
-    0b00000,
-    0b00000,
-    0b01010,
-    0b00000,
-    0b00000,
-    0b01110,
+    0b11111,
+    0b11111,
+    0b10101,
+    0b11111,
+    0b11111,
     0b10001,
-    0b00000
+    0b01110,
+    0b11111
   };
 
 // data van CAN
 float pitch;
 float roll;
-uint8_t overcurrent_achter;
+int16_t amps_achter_vleugel;
 int16_t PWM_links;
 int16_t PWM_rechts;
 int16_t PWM_achter;
@@ -183,6 +184,7 @@ int16_t CAN_pulsen_achter = 0;
 
 bool home_front_foil;
 bool home_rear_foil;
+int16_t has_homed_achter_vleugel;
 
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(RS, E, D4, D5, D6, D7);
@@ -401,8 +403,9 @@ void read_CAN_data() {
 
 
   } else if (canMsg.can_id == 0x32) {
-    PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]);  //byte 0-1 is int16_t PWM achter
-    overcurrent_achter = canMsg.data[2];                          //byte 2 is uint8_t overcurrent achter uint8_t
+    PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]);                //byte 0-1 is int16_t PWM achter
+    amps_achter_vleugel = int16_from_can(canMsg.data[2], canMsg.data[3]);       //byte 2-3 is uint8_t overcurrent achter uint8_t
+    has_homed_achter_vleugel = int16_from_can(canMsg.data[4], canMsg.data[5]);  // byte 3-4 is bool has homed achtervleugel 
     last_Avl_online_millis = millis();
   }
 }
@@ -713,9 +716,6 @@ void computeButtonPress() {
     }*/
   if (button_encoder_2 && buttonStateChange_enc_2) {
     switch (menu) {
-      case Menu::HOMEING:
-        menu = Menu::OFF;
-        break;
 
       case Menu::OFF:
         menu = Menu::VOORVLEUGEL;
@@ -732,13 +732,13 @@ void computeButtonPress() {
       case Menu::BALANS_VOORVLEUGEL:
         menu = Menu::DEBUG;
         break;
-      
+
       case Menu::DEBUG:
-         menu = Menu::MANUALLY;
+        menu = Menu::MANUALLY;
         break;
 
       case Menu::MANUALLY:
-        menu = Menu::HOMEING;
+        menu = Menu::OFF;
         break;
     }
   }
@@ -1085,12 +1085,14 @@ void displayData() {
     lcd.print(x);
     lcd.print F(("cm"));  // print unit cm for distance
   }
-  lcd.setCursor(12, 3);
-  lcd.print(char(224));
-  if (pitch > -1 && pitch < 10) {
-    lcd.print F((" "));
-    if (pitch >= 0 && pitch < 1) {
+  if (menu != Menu::DEBUG) {
+    lcd.setCursor(16, 3);
+    lcd.print(char(224));
+    if (pitch > -1 && pitch < 10) {
       lcd.print F((" "));
+      if (pitch >= 0 && pitch < 1) {
+        lcd.print F((" "));
+      }
     }
   }
   float pitch_display = pitch * 10;
@@ -1102,15 +1104,15 @@ void displayData() {
     online status: vvl & avl controller & homed?, gyroscoop, telemetrie en telemetrie online, gashendel en temperatuursensor
     */
     case Menu::DEBUG:
-      lcd.setCursor(0, 1);  // set curser at debug vvl place
+      lcd.setCursor(13, 0);  // set curser at debug vvl place
       lcd.print F(("vvl: "));
       if (status_Vvl) {
         lcd.print F((smile_happy));
       } else {
         lcd.print F((smile_sad));
       }
-      
-      lcd.setCursor(0, 2);  // set curser at debug avl place
+
+      lcd.setCursor(13, 1);  // set curser at debug avl place
       lcd.print F(("avl: "));
       if (status_Avl) {
         lcd.print F((smile_happy));
@@ -1118,209 +1120,224 @@ void displayData() {
         lcd.print F((smile_sad));
       }
 
-      lcd.setCursor(0, 3); // set curser at debug gyroscoop place
+      lcd.setCursor(6, 0);  // set curser at debug gyroscoop place
       lcd.print F(("gyro:"));
-      if(status_gryo){
+      if (status_gryo) {
         lcd.print F((smile_happy));
       } else {
         lcd.print F((smile_sad));
       }
-      
-        lcd.setCursor(0, 6); // set curser at debug gashendel place
+
+      lcd.setCursor(0, 1);  // set curser at debug gashendel place
       lcd.print F(("Gas:"));
-      if(status_gashendel){
+      if (status_gashendel) {
         lcd.print F((smile_happy));
       } else {
         lcd.print F((smile_sad));
       }
 
-      lcd.setCursor(6, 1); // set curser at homing vvl place
+      lcd.setCursor(9, 2);  // set curser at homing vvl place
       lcd.print F(("HomeVvl:"));
-        if (!home_front_foil && !vvlhomed ) {  // if not homed
+      if (!home_front_foil && !vvlhomed) {  // if not homed
         lcd.print F((smile_sad));
-        } else if (home_front_foil) {    // if homing
+      } else if (home_front_foil) {  // if homing
         lcd.print F((smile_neutraal));
-        } else if (!home_front_foil && vvlhomed) {    // if homed
+      } else if (!home_front_foil && vvlhomed) {  // if homed
         lcd.print F((smile_happy));
-        } 
-      
-      lcd.setCursor(6, 2); // set curser at homing vvl place
-      lcd.print F(("HomeAvl:"));
-        if (!home_rear_foil && !avlhomed ) {  // if not homed
-        lcd.print F((smile_sad));
-        } else if (home_rear_foil) {    // if homing
-        lcd.print F((smile_neutraal));
-        } else if (!home_rear_foil && avlhomed) {    // if homed
-        lcd.print F((smile_happy));
-        } 
+      }
 
-      lcd.setCursor(6, 3); // set curser at debug tempratuur sensor
+      lcd.setCursor(9, 3);  // set curser at homing vvl place
+      lcd.print F(("HomeAvl:"));
+      if (!home_rear_foil && !has_homed_achter_vleugel) {  // if not homed
+        lcd.print F((smile_sad));
+      } else if (home_rear_foil) {  // if homing
+        lcd.print F((smile_neutraal));
+      } else if (!home_rear_foil && has_homed_achter_vleugel) {  // if homed
+        lcd.print F((smile_happy));
+      }
+
+      lcd.setCursor(6, 1);  // set curser at debug tempratuur sensor
       lcd.print F(("temp:"));
-        if (status_temp) {
+      if (status_temp) {
         lcd.print F((smile_happy));
       } else {
         lcd.print F((smile_sad));
-        }
+      }
 
-      lcd.setCursor(uint8_t, 0)  // status telemetrie
-      lcd.print F(("TelStat:"))
+      lcd.setCursor(0, 3);  // status telemetrie server
+      lcd.print F(("tlmWWW:"));
+      if (status_telemetrie_verbinding_server) {
+        lcd.print F((smile_happy));
+      } else {
+        lcd.print F((smile_sad));
+      }
+
+      lcd.setCursor(0, 2);  // status telemetrie CAN
+      lcd.print F(("tlmCAN:"));
+      if (status_telemetrie_verbinding_CAN) {
+        lcd.print F((smile_happy));
+      } else {
+        lcd.print F((smile_sad));
+      }
 
       break;
-  }
 
-  if (menu == Menu::VOORVLEUGEL) {  // controlMode voorvleugel
-    lcd.setCursor(0, 2);            // print P_Vvl
-    lcd.print("P");
-    if (P_Vvl >= 0) {
-      lcd.print F((" "));
-      if (P_Vvl < 1) {
+    case Menu::VOORVLEUGEL:  // controlMode voorvleugel
+      lcd.setCursor(0, 2);   // print P_Vvl
+      lcd.print("P");
+      if (P_Vvl >= 0) {
+        lcd.print F((" "));
+        if (P_Vvl < 1) {
+          lcd.print(" ");
+        }
+      } else if (P_Vvl > -1.0) {
         lcd.print(" ");
       }
-    } else if (P_Vvl > -1.0) {
-      lcd.print(" ");
-    }
-    lcd.print(P_Vvl * 10.0, 0);
+      lcd.print(P_Vvl * 10.0, 0);
 
-    lcd.setCursor(4, 2);  // print I_Vvl
-    lcd.print(" I");
-    if (I_Vvl >= 0) {
-      lcd.print F((" "));
-      if (I_Vvl < 1) {
+      lcd.setCursor(4, 2);  // print I_Vvl
+      lcd.print(" I");
+      if (I_Vvl >= 0) {
+        lcd.print F((" "));
+        if (I_Vvl < 1) {
+          lcd.print(" ");
+        }
+      } else if (I_Vvl > -1.0) {
         lcd.print(" ");
       }
-    } else if (I_Vvl > -1.0) {
-      lcd.print(" ");
-    }
-    lcd.print(I_Vvl * 10.0, 0);
+      lcd.print(I_Vvl * 10.0, 0);
 
-    lcd.setCursor(9, 2);  // print D_Vvl
-    lcd.print(" D");
-    if (D_Vvl >= 0.0) {
-      lcd.print F((" "));
-      if (D_Vvl < 1.0) {
+      lcd.setCursor(9, 2);  // print D_Vvl
+      lcd.print(" D");
+      if (D_Vvl >= 0.0) {
+        lcd.print F((" "));
+        if (D_Vvl < 1.0) {
+          lcd.print(" ");
+        }
+      } else if (D_Vvl > -1.0) {
         lcd.print(" ");
       }
-    } else if (D_Vvl > -1.0) {
-      lcd.print(" ");
-    }
-    lcd.print(D_Vvl * 10.0, 0);
+      lcd.print(D_Vvl * 10.0, 0);
 
-    lcd.setCursor(0, 3);  // print PID_Vvl
-    lcd.print("PID");
-    if ((pidVvlTotal < 10.0) && (pidVvlTotal >= 0.0)) {
-      lcd.print(" ");
-      if (pidVvlTotal < 1) {
+      lcd.setCursor(0, 3);  // print PID_Vvl
+      lcd.print("PID");
+      if ((pidVvlTotal < 10.0) && (pidVvlTotal >= 0.0)) {
+        lcd.print(" ");
+        if (pidVvlTotal < 1) {
+          lcd.print(" ");
+        }
+      }
+      if (pidVvlTotal < 0.0 && pidVvlTotal > -1.0) {
         lcd.print(" ");
       }
-    }
-    if (pidVvlTotal < 0.0 && pidVvlTotal > -1.0) {
-      lcd.print(" ");
-    }
-    lcd.print(pidVvlTotal * 10.0, 0);
-    lcd.print(' ');
-  }
-  if (menu == Menu::ACHTERVLEUGEL) {  // controlMode achtervleugel
-    lcd.setCursor(0, 2);              // print P_Avl
-    lcd.print("P");
-    if (P_Avl >= 0) {
-      lcd.print F((" "));
-      if (P_Avl < 1) {
-        lcd.print(" ");
-      }
-    } else if (P_Avl > -1.0) {
-      lcd.print(" ");
-    }
-    lcd.print(P_Avl * 10.0, 0);
+      lcd.print(pidVvlTotal * 10.0, 0);
+      lcd.print(' ');
+      break;
 
-    lcd.setCursor(4, 2);  // print I_Avl
-    lcd.print(" I");
-    if (I_Avl >= 0) {
-      lcd.print F((" "));
-      if (I_Avl < 1) {
+    case Menu::ACHTERVLEUGEL:  // controlMode achtervleugel
+      lcd.setCursor(0, 2);     // print P_Avl
+      lcd.print("P");
+      if (P_Avl >= 0) {
+        lcd.print F((" "));
+        if (P_Avl < 1) {
+          lcd.print(" ");
+        }
+      } else if (P_Avl > -1.0) {
         lcd.print(" ");
       }
-    } else if (I_Avl > -1.0) {
-      lcd.print(" ");
-    }
-    lcd.print(I_Avl * 10.0, 0);
+      lcd.print(P_Avl * 10.0, 0);
 
-    lcd.setCursor(9, 2);  // print D_Avl
-    lcd.print(" D");
-    if (D_Avl >= 0.0) {
-      lcd.print F((" "));
-      if (D_Avl < 1.0) {
+      lcd.setCursor(4, 2);  // print I_Avl
+      lcd.print(" I");
+      if (I_Avl >= 0) {
+        lcd.print F((" "));
+        if (I_Avl < 1) {
+          lcd.print(" ");
+        }
+      } else if (I_Avl > -1.0) {
         lcd.print(" ");
       }
-    } else if (D_Avl > -1.0) {
-      lcd.print(" ");
-    }
-    lcd.print(D_Avl * 10.0, 0);
+      lcd.print(I_Avl * 10.0, 0);
 
-    lcd.setCursor(0, 3);  // print PID_Avl
-    lcd.print("PID");
-    if ((pidAvlTotal < 10.0) && (pidAvlTotal >= 0.0)) {
-      lcd.print(" ");
-      if (pidAvlTotal < 1) {
+      lcd.setCursor(9, 2);  // print D_Avl
+      lcd.print(" D");
+      if (D_Avl >= 0.0) {
+        lcd.print F((" "));
+        if (D_Avl < 1.0) {
+          lcd.print(" ");
+        }
+      } else if (D_Avl > -1.0) {
         lcd.print(" ");
       }
-    }
-    if (pidAvlTotal < 0.0 && pidAvlTotal > -1.0) {
-      lcd.print(" ");
-    }
-    lcd.print(pidAvlTotal * 10.0, 0);
-    lcd.print(' ');
-  }
-  if (menu == Menu::BALANS_VOORVLEUGEL) {  // controlMode balansvleugel
-    lcd.setCursor(0, 2);                   // print P_Vvl
-    lcd.print("P");
-    if (P_Balans >= 0) {
-      lcd.print F((" "));
-      if (P_Balans < 1) {
-        lcd.print(" ");
-      }
-    } else if (P_Balans > -1.0) {
-      lcd.print(" ");
-    }
-    lcd.print(P_Balans * 10.0, 0);
+      lcd.print(D_Avl * 10.0, 0);
 
-    lcd.setCursor(4, 2);  // print I_Vvl
-    lcd.print(" I");
-    if (I_Balans >= 0) {
-      lcd.print F((" "));
-      if (I_Balans < 1) {
+      lcd.setCursor(0, 3);  // print PID_Avl
+      lcd.print("PID");
+      if ((pidAvlTotal < 10.0) && (pidAvlTotal >= 0.0)) {
+        lcd.print(" ");
+        if (pidAvlTotal < 1) {
+          lcd.print(" ");
+        }
+      }
+      if (pidAvlTotal < 0.0 && pidAvlTotal > -1.0) {
         lcd.print(" ");
       }
-    } else if (I_Balans > -1.0) {
-      lcd.print(" ");
-    }
-    lcd.print(I_Balans * 10.0, 0);
+      lcd.print(pidAvlTotal * 10.0, 0);
+      lcd.print(' ');
+      break;
 
-    lcd.setCursor(9, 2);  // print D_Balans
-    lcd.print(" D");
-    if (D_Balans
-        >= 0.0) {
-      lcd.print F((" "));
-      if (D_Balans < 1.0) {
+    case Menu::BALANS_VOORVLEUGEL:  // controlMode balansvleugel
+      lcd.setCursor(0, 2);          // print P_Vvl
+      lcd.print("P");
+      if (P_Balans >= 0) {
+        lcd.print F((" "));
+        if (P_Balans < 1) {
+          lcd.print(" ");
+        }
+      } else if (P_Balans > -1.0) {
         lcd.print(" ");
       }
-    } else if (D_Balans > -1.0) {
-      lcd.print(" ");
-    }
-    lcd.print(D_Balans * 10.0, 0);
+      lcd.print(P_Balans * 10.0, 0);
 
-    lcd.setCursor(0, 3);  // print PID_Vvl
-    lcd.print("PID");
-    if ((pidBalansTotal < 10.0) && (pidBalansTotal >= 0.0)) {
-      lcd.print(" ");
-      if (pidBalansTotal < 1) {
+      lcd.setCursor(4, 2);  // print I_Vvl
+      lcd.print(" I");
+      if (I_Balans >= 0) {
+        lcd.print F((" "));
+        if (I_Balans < 1) {
+          lcd.print(" ");
+        }
+      } else if (I_Balans > -1.0) {
         lcd.print(" ");
       }
-    }
-    if (pidBalansTotal < 0.0 && pidBalansTotal > -1.0) {
-      lcd.print(" ");
-    }
-    lcd.print(pidBalansTotal * 10.0, 0);
-    lcd.print(' ');
+      lcd.print(I_Balans * 10.0, 0);
+
+      lcd.setCursor(9, 2);  // print D_Balans
+      lcd.print(" D");
+      if (D_Balans
+          >= 0.0) {
+        lcd.print F((" "));
+        if (D_Balans < 1.0) {
+          lcd.print(" ");
+        }
+      } else if (D_Balans > -1.0) {
+        lcd.print(" ");
+      }
+      lcd.print(D_Balans * 10.0, 0);
+
+      lcd.setCursor(0, 3);  // print PID_Vvl
+      lcd.print("PID");
+      if ((pidBalansTotal < 10.0) && (pidBalansTotal >= 0.0)) {
+        lcd.print(" ");
+        if (pidBalansTotal < 1) {
+          lcd.print(" ");
+        }
+      }
+      if (pidBalansTotal < 0.0 && pidBalansTotal > -1.0) {
+        lcd.print(" ");
+      }
+      lcd.print(pidBalansTotal * 10.0, 0);
+      lcd.print(' ');
+      break;
   }
 }
 
@@ -1328,21 +1345,19 @@ void displayData() {
 
 void displayControlMode() {
   pidChangeDetection++;
-  lcd.setCursor(12, 0);
+  lcd.setCursor(16, 0);
   if (menu == Menu::OFF) {  // check controlmode. for off, manuel or automatic PID control
     lcd.clear();
-    lcd.setCursor(12, 0);
+    lcd.setCursor(16, 0);
     lcd.print F((" OFF"));
   } else if (menu == Menu::MANUALLY) {
     lcd.clear();
-    lcd.setCursor(12, 0);
+    lcd.setCursor(16, 0);
     lcd.print F(("MAN "));
   } else if (menu == Menu::VOORVLEUGEL) {
     lcd.print F(("V vl"));
-  } else if (menu == Menu::HOMEING) {
+  } else if (menu == Menu::DEBUG) {
     lcd.clear();
-    lcd.setCursor(12, 0);
-    lcd.print F(("Home"));
   } else if (menu == Menu::BALANS_VOORVLEUGEL) {
     lcd.print F(("Ball"));
   } else if (menu == Menu::ACHTERVLEUGEL) {
@@ -1558,7 +1573,7 @@ void startupMenu() {
   } else if (button3) {
     menu = Menu::VOORVLEUGEL;  // contolMode V vl
   } else if (button4) {
-    menu = Menu::HOMEING;  // contolMode Home
+    menu = Menu::DEBUG;  // contolMode Home
   } else if (button_encoder_1) {
     menu = Menu::BALANS_VOORVLEUGEL;  // controlMode Balans
   } else if (button_encoder_2) {
