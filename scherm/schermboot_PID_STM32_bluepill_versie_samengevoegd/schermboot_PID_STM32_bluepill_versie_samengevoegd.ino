@@ -100,8 +100,6 @@ bool status_gashendel = false;
 bool status_temp = false;
 bool status_telemetrie_verbinding_server = false;
 bool status_telemetrie_verbinding_CAN = false;
-bool vvlhomed = false;
-
 
 uint32_t last_Vvl_online_millis;
 uint32_t last_Avl_online_millis;
@@ -184,6 +182,7 @@ int16_t CAN_pulsen_achter = 0;
 
 bool home_front_foil;
 bool home_rear_foil;
+int16_t has_homed_voor_vleugel;
 int16_t has_homed_achter_vleugel;
 
 #include <LiquidCrystal.h>
@@ -398,6 +397,7 @@ void read_CAN_data() {
   if (mcp2515_motor.readMessage(&canMsg) == MCP2515::ERROR_OK) {
     //  Serial.print("CAN ID: ");
     //  Serial.println(canMsg.can_id, DEC);
+
     if (canMsg.can_id == 0x64) {
       pitch = float_from_can(0);  // byte 0-3 is float pitch
       roll = float_from_can(4);   // byte 4-7 is float roll
@@ -412,17 +412,20 @@ void read_CAN_data() {
       ret.can_dlc = sizeof(float) * 2;
       mcp2515_telemetry.sendMessage(&ret);  // verstuur pitch en roll door naar de telemetry
     }
-
-    //  Serial.println(pitch);
-  } else if (canMsg.can_id == 0x33) {
-    PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]);   //byte 0-1 is int16_t PWM links
-    PWM_rechts = int16_from_can(canMsg.data[2], canMsg.data[3]);  //byte 0-1 is int16_t PWM rechts
+  } else if (canMsg.can_id == 0x34) {                             // CAN ID 52
+    PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]);   // byte 0-1 is int16_t amps links
+    PWM_rechts = int16_from_can(canMsg.data[2], canMsg.data[3]);  // byte 0-1 is int16_t amps rechts
     last_Vvl_online_millis = millis();
 
+  } else if (canMsg.can_id == 0x33) {                             // CAN ID 51
+    PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]);   // byte 0-1 is int16_t PWM links
+    PWM_rechts = int16_from_can(canMsg.data[2], canMsg.data[3]);  // byte 0-1 is int16_t PWM rechts
+    has_homed_voor_vleugel = int16_from_can(canMsg.data[4], canMsg.data[5]);
+    last_Vvl_online_millis = millis();
 
-  } else if (canMsg.can_id == 0x32) {
-    PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]);                //byte 0-1 is int16_t PWM achter
-    amps_achter_vleugel = int16_from_can(canMsg.data[2], canMsg.data[3]);       //byte 2-3 is uint8_t overcurrent achter uint8_t
+  } else if (canMsg.can_id == 0x32) {                                           // CAN ID 50
+    PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]);                // byte 0-1 is int16_t PWM achter
+    amps_achter_vleugel = int16_from_can(canMsg.data[2], canMsg.data[3]);       // byte 2-3 is uint8_t overcurrent achter uint8_t
     has_homed_achter_vleugel = int16_from_can(canMsg.data[4], canMsg.data[5]);  // byte 3-4 is bool has homed achtervleugel
     last_Avl_online_millis = millis();
   }
@@ -1157,11 +1160,12 @@ void displayData() {
 
       lcd.setCursor(9, 2);  // set curser at homing vvl place
       lcd.print F(("HomeVvl:"));
-      if (!home_front_foil && !vvlhomed) {  // if not homed
+
+      if (!home_front_foil && !has_homed_voor_vleugel) {  // if not homed
         lcd.write(3);
       } else if (home_front_foil) {  // if homing
         lcd.write(2);
-      } else if (!home_front_foil && vvlhomed) {  // if homed
+      } else if (!home_front_foil && has_homed_voor_vleugel) {  // if homed
         lcd.write(1);
       }
 
