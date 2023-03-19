@@ -9,12 +9,6 @@
   MOSI	PA7
 */
 
-// LED's //KLOPT
-#define LED_BUILTIN PC13
-#define LED_GREEN PC13
-//#define LED_ORANGE PC14
-//#define LED_RED PC15
-
 //input/buttons // KLOPT
 #define BUTTON_4 PB7
 #define BUTTON_3 PB6
@@ -76,9 +70,6 @@ void setup_buttons_and_encoders() {
   // pinMode(ENC_1A, INPUT_PULLUP); // youtube
   // pinMode(ENC_1B, INPUT_PULLUP); // youtube
 
-  pinMode(LED_GREEN, OUTPUT);
-  // pinMode(LED_ORANGE, OUTPUT);
-  // pinMode(LED_RED, OUTPUT);
 
   pinMode(BUTTON_1, INPUT_PULLUP);
   pinMode(BUTTON_2, INPUT_PULLUP);
@@ -117,17 +108,17 @@ void setup_buttons_and_encoders() {
   // Convert the bit pattern to a movement indicator (14 = impossible, ie switch bounce)
   lrsum += TRANS[lrmem];
 
-  /* encoder not in the neutral (detent) state */
-/* if (lrsum % 4 != 0) {
+  // encoder not in the neutral (detent) state 
+// if (lrsum % 4 != 0) {
    return 0;
   }
-  /* encoder in the neutral state - clockwise rotation*/
-/* if (lrsum == 4) {
+  // encoder in the neutral state - clockwise rotation
+// if (lrsum == 4) {
    lrsum = 0;
    return 1;
   }
-  /* encoder in the neutral state - anti-clockwise rotation*/
-/* if (lrsum == -4) {
+  // encoder in the neutral state - anti-clockwise rotation
+// if (lrsum == -4) {
    lrsum = 0;
    return -1;
   }

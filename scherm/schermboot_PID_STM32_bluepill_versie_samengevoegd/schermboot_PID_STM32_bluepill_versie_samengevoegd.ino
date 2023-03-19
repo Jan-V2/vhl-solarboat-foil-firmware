@@ -105,14 +105,10 @@ uint32_t last_Vvl_online_millis;
 uint32_t last_Avl_online_millis;
 uint32_t last_gyro_online_millis;
 
-uint8_t setDistance = 10;           // target distance in cm that the PID will try to reach, this value can be changed on de
-int8_t setRoll = 0;                 // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
-int16_t setPitch = 0;               // target pitch in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
-int16_t pulsen_offset = 0;          // berekende pulsen offset
-int16_t leftAcutatorStroke = 150;   // amount of mm the actuator is extened. value is 150 so you dont have to press the button 1000x. the vlalue will only be send when the controllmode is != OFF
-int16_t rightAcutatorStroke = 150;  // amount of mm the actuator is extened. value is 150 so you dont have to press the button 1000x. the vlalue will only be send when the controllmode is != OFF
-int16_t leftAcutatorStroke2 = 150;
-int16_t rightAcutatorStroke2 = 150;
+uint8_t setDistance = 10;              // target distance in cm that the PID will try to reach, this value can be changed on de
+int8_t setRoll = 0;                    // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
+int16_t setPitch = 0;                  // target pitch in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
+int16_t pulsen_offset = 0;             // berekende pulsen offset
 uint8_t button1 = LOW;                 // LOW in rest state and HIGH when pressed
 uint8_t button2 = LOW;                 // LOW in rest state and HIGH when pressed
 uint8_t button3 = LOW;                 // LOW in rest state and HIGH when pressed
@@ -241,9 +237,7 @@ void setup() {
   }
   Serial.println F(("--- Serial monitor started ---"));
 }
-
 void loop() {
-  digitalWrite(LED_BUILTIN, HIGH);
   /*
     // ================================ code van youtbe ===========================
     // Has rotary encoder moved?
@@ -716,25 +710,6 @@ void pidDisplay() {
 //===================================================================== computeButtonPress =========================================================================
 
 void computeButtonPress() {
-  static int8_t differnce = 0;
-  static int prev_enc_1_pulses;
-  static int prev_enc_2_pulses;
-  differnce = leftAcutatorStroke - rightAcutatorStroke;
-  //Serial.print(enc_1_pulses);
-  /*
-    if (enc_1_pulses < prev_enc_1_pulses) {
-      controlMode--;
-    } else if (enc_1_pulses > prev_enc_1_pulses) {
-      controlMode++;
-    }
-  */
-  prev_enc_1_pulses = enc_1_pulses;
-
-  /*if (enc_2_pulses < prev_enc_2_pulses) {
-    controlMode--; //cursorPlace--;
-    } else if (enc_2_pulses > prev_enc_2_pulses) {
-    controlMode++; //cursorPlace++;
-    }*/
   if (button_encoder_2 && buttonStateChange_enc_2) {
     switch (menu) {
 
@@ -763,30 +738,10 @@ void computeButtonPress() {
         break;
     }
   }
-  prev_enc_2_pulses = enc_2_pulses;
   if (cursorPlace == 6) {
     cursorPlace = 0;
   }
-
-  if ((buttonAll == 1) && (menu == Menu::MANUALLY)) {  // works only in manuel
-    if (button1 == HIGH) {
-      leftAcutatorStroke++;
-      rightAcutatorStroke++;
-    } else if (button2 == HIGH) {
-      leftAcutatorStroke--;
-      rightAcutatorStroke--;
-    } else if ((button3 == HIGH) && (buttonStateChange3)) {
-      if (differnce < 9) {
-        leftAcutatorStroke++;
-        rightAcutatorStroke--;
-      }
-    } else if ((button4 == HIGH) && (buttonStateChange4)) {
-      if (differnce > -9) {
-        leftAcutatorStroke--;
-        rightAcutatorStroke++;
-      }
-    }
-  } else if ((buttonAll == 1) && (menu == Menu::VOORVLEUGEL)) {  // works only when in V vl mode
+  if ((buttonAll == 1) && (menu == Menu::VOORVLEUGEL)) {  // works only when in V vl mode
     if ((button1 == HIGH) && (buttonStateChange1)) {
       cursorPlace--;
     } else if ((button2 == HIGH) && (buttonStateChange2)) {
@@ -1268,7 +1223,6 @@ void displayData() {
       } else if (P_Avl > -1.0) {
         lcd.print(" ");
       }
-      lcd.print(P_Avl * 10.0, 0);
 
       lcd.setCursor(4, 2);  // print I_Avl
       lcd.print(" I");
