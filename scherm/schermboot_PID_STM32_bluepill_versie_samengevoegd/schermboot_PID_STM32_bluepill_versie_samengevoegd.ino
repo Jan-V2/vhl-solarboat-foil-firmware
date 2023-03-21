@@ -324,38 +324,6 @@ void computePid_balans() {
 
 //======================================================================= displayControlMode ==========================================================================
 
-void displayControlMode() {
-  pidChangeDetection++;
-  lcd.setCursor(16, 0);
-  if (menu == Menu::OFF) {  // check controlmode. for off, manuel or automatic PID control
-    lcd.clear();
-    lcd.setCursor(16, 0);
-    lcd.print F((" OFF"));
-  } else if (menu == Menu::VOORVLEUGEL) {
-    lcd.print F(("V vl"));
-  } else if (menu == Menu::DEBUG) {
-    lcd.clear();
-  } else if (menu == Menu::BALANS_VOORVLEUGEL) {
-    lcd.print F(("Ball"));
-  } else if (menu == Menu::ACHTERVLEUGEL) {
-    lcd.print F(("A vl"));
-  }
-}
-
-void OFF() {
-  if (menu == Menu::OFF) {
-    if (Buttons::button_encoder_1 && Buttons::buttonStateChange_enc_1) {
-      pid_actief = !pid_actief;
-      CAN_Module::PID_debug_telemetry = pid_actief;
-    }
-    lcd.setCursor(16, 0);
-    if (pid_actief) {
-      lcd.print("!");
-    } else {
-      lcd.print(" ");
-    }
-  }
-}
 
 void home() {
   const static uint16_t min_home_time = 3000;
