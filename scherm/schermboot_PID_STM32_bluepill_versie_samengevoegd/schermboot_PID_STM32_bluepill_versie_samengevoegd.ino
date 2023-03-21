@@ -56,7 +56,7 @@ bool pid_actief = false;               // PID staat uit wanneer false. kan aange
 void setup() {
 
   Serial.begin(115200);
-  setup_buttons_and_encoders();
+  
 
   Ultrasonic_Module::setup_Ultrasonic_Module();
 
@@ -64,7 +64,7 @@ void setup() {
 
   LCD_Module::setup_LCD_Module();
   
-  Buttons::setup_Buttons();
+  Buttons::setup_buttons_encoders();
 
   delay(25);
   while (Buttons::buttonAll == 0) {
