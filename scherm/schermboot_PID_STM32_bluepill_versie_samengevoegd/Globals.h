@@ -4,6 +4,7 @@
 #include <LCD_Module.h>
 
 using namespace Buttons;
+using namespace LCD_Module;
 
 namespace Globals {
 
