@@ -2,6 +2,7 @@
 
 #include <Buttons.h>
 #include <LCD_Module.h>
+#include <PID_Berekeningen>
 
 //using namespace Buttons;
 //using namespace LCD_Module; 
@@ -62,31 +63,31 @@ void computeButtonPress() {
         cursorPlace = 0;
       }
     } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 0)) {  // if cursor place is at 0 change setDistance
-      setDistance--;
+      PID_Berekeningen::setDistance--;
     } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 0)) {
-      setDistance++;
+      PID_Berekeningen::setDistance++;
     } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 1)) {  // if cursor place is at 1 change roll setpoint
-      setRoll--;
+      PID_Berekeningen::setRoll--;
     } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1)) {
-      setRoll++;
+      PID_Berekeningen::setRoll++;
     } else if ((button3 == HIGH) && (cursorPlace == 2)) {  // if cursor place is at 2 change the P from PID
-      kp_Vvl--;
+      PID_Berekeningen::kp_Vvl--;
     } else if ((button4 == HIGH) && (cursorPlace == 2)) {
-      kp_Vvl++;
+      PID_Berekeningen::kp_Vvl++;
     } else if ((button3 == HIGH) && (cursorPlace == 3)) {  // if cursor place is at 3 change the I from PID
-      ki_Vvl--;
+      PID_Berekeningen::ki_Vvl--;
     } else if ((button4 == HIGH) && (cursorPlace == 3)) {
-      ki_Vvl++;
+      PID_Berekeningen::ki_Vvl++;
     } else if ((button3 == HIGH) && (cursorPlace == 4)) {  // if cursor place is at 4 change the D from PID
-      kd_Vvl--;
+      PID_Berekeningen::kd_Vvl--;
     } else if ((button4 == HIGH) && (cursorPlace == 4)) {
-      kd_Vvl++;
+      PID_Berekeningen::kd_Vvl++;
     } else if ((button3 == HIGH) && (cursorPlace == 5)) {  // if cursor place is at 5 change the pitch van de boot
-      setPitch--;
+      PID_Berekeningen::setPitch--;
     } else if ((button4 == HIGH) && (cursorPlace == 5)) {
-      setPitch++;
+      PID_Berekeningen::setPitch++;
     }
-    pidChangeDetection = setDistance + cursorPlace + kp_Vvl + ki_Vvl + kd_Vvl + setPitch + setRoll;
+    pidChangeDetection = PID_Berekeningen::setDistance + cursorPlace + PID_Berekeningen::kp_Vvl + PID_Berekeningen::ki_Vvl + PID_Berekeningen::kd_Vvl + PID_Berekeningen::setPitch + PID_Berekeningen::setRoll;
 
   } else if ((buttonAll == 1) && (menu == Menu::BALANS_VOORVLEUGEL)) {  // works only when in 4 balans mode
     if ((button1 == HIGH) && (buttonStateChange1)) {
