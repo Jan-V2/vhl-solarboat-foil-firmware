@@ -6,3 +6,7 @@
 #include "Buttons.h"
 #include "Globals.h"
 
+namespace PID_Berekeningen {
+
+} // namespace PID_Berekeningen
+
