@@ -39,9 +39,28 @@ bool buttonStateChange3 = false;       // is true if a button is recently change
 bool buttonStateChange4 = false;       // is true if a button is recently changed its state
 bool buttonStateChange = false;        // is true if one of of the buttons has a state change. can be used as a flag to update the screen once before the refreshDisplay counter
 
-void setup_Buttons();
+// Functions have to be decalred before they can be used in another function this is called a "forward declaration"
+void setup_buttons_encoders();
 void button_state_change_reset();
 void buttonPressDetection();
+
+void encoder1_ISR() {
+  Serial.println("Rotary 1");
+  if (digitalRead(ENC_1B)) {
+    enc_1_pulses++;
+  } else {
+    enc_1_pulses--;
+  }
+}
+
+void encoder2_ISR() {
+  Serial.println("Rotary 2");
+  if (digitalRead(ENC_2B)) {
+    enc_2_pulses++;
+  } else {
+    enc_2_pulses--;
+  }
+}
 
 void setup_buttons_encoders() {
 

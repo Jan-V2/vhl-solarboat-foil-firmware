@@ -11,23 +11,7 @@
 //  rotaryEncoder = true; // youtube
 // }
 
-void encoder1_ISR() {
-  Serial.println("Rotary 1");
-  if (digitalRead(ENC_1B)) {
-    enc_1_pulses++;
-  } else {
-    enc_1_pulses--;
-  }
-}
 
-void encoder2_ISR() {
-  Serial.println("Rotary 2");
-  if (digitalRead(ENC_2B)) {
-    enc_2_pulses++;
-  } else {
-    enc_2_pulses--;
-  }
-}
 
 
 

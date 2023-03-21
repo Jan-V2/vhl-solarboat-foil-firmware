@@ -68,11 +68,11 @@ void setup() {
 
   delay(25);
   while (Buttons::buttonAll == 0) {
-    buttonPressDetection();  // wait until button press
+    Buttons::buttonPressDetection();  // wait until button press
     delay(25);
   }
   while (Buttons::buttonAll == 1) {
-    buttonPressDetection();  // wait until button release
+    Buttons::buttonPressDetection();  // wait until button release
     delay(25);
   }
   LCD_Module::lcd.clear();
@@ -97,7 +97,7 @@ Ultrasonic_Module::Ultrasonic_Module_loop();
   static uint32_t lastPollButtons = 0;
   if (millis() - lastPollButtons > Buttons::pollTimeButtons) {
     lastPollButtons = millis();
-    buttonPressDetection();  // check for buttonpress
+    Buttons::buttonPressDetection();  // check for buttonpress
   }
 
   //================================================================== main loop compute data ==========================================================================
@@ -344,7 +344,7 @@ void displayControlMode() {
 
 void OFF() {
   if (menu == Menu::OFF) {
-    if (button_encoder_1 && buttonStateChange_enc_1) {
+    if (Buttons::button_encoder_1 && Buttons::buttonStateChange_enc_1) {
       pid_actief = !pid_actief;
       CAN_Module::PID_debug_telemetry = pid_actief;
     }
@@ -362,7 +362,7 @@ void home() {
   static uint32_t last_home_time = millis();
 
   if (menu == Menu::DEBUG) {
-    if (button_encoder_1 && buttonStateChange_enc_1) {
+    if (Buttons::button_encoder_1 && Buttons::buttonStateChange_enc_1) {
       // lcd.setCursor(0, 1);
       // lcd.print("Home voor");
       CAN_Module::home_front_foil = true;
@@ -373,7 +373,7 @@ void home() {
     } else if (millis() - last_home_time > min_home_time) {
       CAN_Module::home_front_foil = false;
     }
-    if (button_encoder_1 && buttonStateChange_enc_1) {
+    if (Buttons::button_encoder_1 && Buttons::buttonStateChange_enc_1) {
       Serial.println("homeing");
       //lcd.setCursor(0, 2);
       //lcd.print("Home achter");
