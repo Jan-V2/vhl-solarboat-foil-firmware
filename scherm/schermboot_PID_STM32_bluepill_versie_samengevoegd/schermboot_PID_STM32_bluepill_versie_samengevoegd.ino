@@ -8,8 +8,6 @@
 
 using namespace Globals;
 
-
-
 const uint16_t PID_compute_time = 250;                               // How many milliseconds between PID compute.
 const uint16_t maxPulseEncoder = 11487;                              // the maximum amount of pulses for the front foil motor encoder
 const uint16_t maxAfstandEncoder = 200;                              // de afstand in mm die de voor linieare motor kan uit schuiven
