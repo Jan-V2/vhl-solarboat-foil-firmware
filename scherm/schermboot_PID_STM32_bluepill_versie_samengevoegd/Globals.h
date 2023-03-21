@@ -98,77 +98,77 @@ void computeButtonPress() {
         cursorPlace = 0;
       }
     } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 0)) {  // if cursor place is at 0 change setDistance
-      setDistance--;
+      PID_Berekeningen::setDistance--;
     } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 0)) {
-      setDistance++;
+      PID_Berekeningen::setDistance++;
     } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 1)) {  // if cursor place is at 1 change roll setpoint
-      setRoll--;
+      PID_Berekeningen::setRoll--;
     } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1)) {
-      setRoll++;
+      PID_Berekeningen::setRoll++;
     } else if ((button3 == HIGH) && (cursorPlace == 2)) {  // if cursor place is at 2 change the P from PID
-      kp_balans--;
+      PID_Berekeningen::kp_balans--;
     } else if ((button4 == HIGH) && (cursorPlace == 2)) {
-      kp_balans++;
+      PID_Berekeningen::kp_balans++;
     } else if ((button3 == HIGH) && (cursorPlace == 3)) {  // if cursor place is at 3 change the I from PID
-      ki_balans--;
+      PID_Berekeningen::ki_balans--;
     } else if ((button4 == HIGH) && (cursorPlace == 3)) {
-      ki_balans++;
+      PID_Berekeningen::ki_balans++;
     } else if ((button3 == HIGH) && (cursorPlace == 4)) {  // if cursor place is at 4 change the D from PID
-      kd_balans--;
+      PID_Berekeningen::kd_balans--;
     } else if ((button4 == HIGH) && (cursorPlace == 4)) {
-      kd_balans++;
+      PID_Berekeningen::kd_balans++;
     } else if ((button3 == HIGH) && (cursorPlace == 5)) {  // if cursor place is at 5 change the ptich van de boot
-      setPitch--;
+      PID_Berekeningen::setPitch--;
     } else if ((button4 == HIGH) && (cursorPlace == 5)) {
-      setPitch++;
+      PID_Berekeningen::setPitch++;
     }
-    pidChangeDetection = setDistance + cursorPlace + kp_balans + ki_balans + kd_balans + setPitch + setRoll;
+    pidChangeDetection = PID_Berekeningen::setDistance + cursorPlace + PID_Berekeningen::kp_balans + PID_Berekeningen::ki_balans + PID_Berekeningen::kd_balans + PID_Berekeningen::setPitch + PID_Berekeningen::setRoll;
 
   } else if ((buttonAll == 1) && (menu == Menu::ACHTERVLEUGEL)) {  // works only when in 5 achtervleugel mode
     if ((button1 == HIGH) && (buttonStateChange1)) {
-      cursorPlace--;
+      PID_Berekeningen::cursorPlace--;
     } else if ((button2 == HIGH) && (buttonStateChange2)) {
       cursorPlace++;
       if (cursorPlace == 6) {
         cursorPlace = 0;
       }
     } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 0)) {  // if cursor place is at 0 change setDistance
-      setDistance--;
+      PID_Berekeningen::setDistance--;
     } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 0)) {
-      setDistance++;
+      PID_Berekeningen::setDistance++;
     } else if ((button3 == HIGH) && (buttonStateChange3) && (cursorPlace == 1)) {  // if cursor place is at 1 change roll setpoint
-      setRoll--;
+      PID_Berekeningen::setRoll--;
     } else if ((button4 == HIGH) && (buttonStateChange4) && (cursorPlace == 1)) {
-      setRoll++;
+      PID_Berekeningen::setRoll++;
     } else if ((button3 == HIGH) && (cursorPlace == 2)) {  // if cursor place is at 2 change the P from PID
-      kp_Avl--;
+      PID_Berekeningen::kp_Avl--;
     } else if ((button4 == HIGH) && (cursorPlace == 2)) {
-      kp_Avl++;
+      PID_Berekeningen::kp_Avl++;
     } else if ((button3 == HIGH) && (cursorPlace == 3)) {  // if cursor place is at 3 change the I from PID
-      ki_Avl--;
+      PID_Berekeningen::ki_Avl--;
     } else if ((button4 == HIGH) && (cursorPlace == 3)) {
-      ki_Avl++;
+      PID_Berekeningen::ki_Avl++;
     } else if ((button3 == HIGH) && (cursorPlace == 4)) {  // if cursor place is at 4 change the D from PID
-      kd_Avl--;
+      PID_Berekeningen::kd_Avl--;
     } else if ((button4 == HIGH) && (cursorPlace == 4)) {
-      kd_Avl++;
+      PID_Berekeningen::kd_Avl++;
     } else if ((button3 == HIGH) && (cursorPlace == 5)) {  // if cursor place is at 5 change the pitch van de boot
-      setPitch--;
+      PID_Berekeningen::setPitch--;
     } else if ((button4 == HIGH) && (cursorPlace == 5)) {
-      setPitch++;
+      PID_Berekeningen::setPitch++;
     }
-    pidChangeDetection = setDistance + cursorPlace + kp_Avl + ki_Avl + kd_Avl + setPitch + setRoll;
+    PID_Berekeningen::pidChangeDetection = PID_Berekeningen::setDistance + cursorPlace + PID_Berekeningen::kp_Avl + PID_Berekeningen::ki_Avl + PID_Berekeningen::kd_Avl + PID_Berekeningen::setPitch + PID_Berekeningen::setRoll;
   }
   cursorPlace = constrain(cursorPlace, 0, 5);
   setDistance = constrain(setDistance, 0, 99);
 
-  kp_Vvl = constrain(kp_Vvl, 0, 999);
-  ki_Vvl = constrain(ki_Vvl, 0, 999);
-  kd_Vvl = constrain(kd_Vvl, 0, 999);
+  PID_Berekeningen::kp_Vvl = constrain(kp_Vvl, 0, 999);
+  PID_Berekeningen::ki_Vvl = constrain(ki_Vvl, 0, 999);
+  PID_Berekeningen::kd_Vvl = constrain(kd_Vvl, 0, 999);
 
-  kp_Avl = constrain(kp_Avl, 0, 999);
-  ki_Avl = constrain(ki_Avl, 0, 999);
-  kd_Avl = constrain(kd_Avl, 0, 999);
+  PID_Berekeningen::kp_Avl = constrain(kp_Avl, 0, 999);
+  PID_Berekeningen::ki_Avl = constrain(ki_Avl, 0, 999);
+  PID_Berekeningen::kd_Avl = constrain(kd_Avl, 0, 999);
 
   kp_balans = constrain(kp_balans, 0, 999);
   ki_balans = constrain(ki_balans, 0, 999);
