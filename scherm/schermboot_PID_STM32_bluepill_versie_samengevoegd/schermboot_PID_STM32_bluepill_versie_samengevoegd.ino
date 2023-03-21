@@ -110,7 +110,7 @@ Ultrasonic_Module::Ultrasonic_Module_loop();
   }
   if ((millis() - lastButtonCompute > x) || (Buttons::buttonStateChange)) {  // normal compute delay or longpess delay
     lastButtonCompute = millis();
-    computeButtonPress();
+    Globals::computeButtonPress();
     if (!Buttons::buttonStateChange) {  // if no state change the button is still pressed
       x = Buttons::buttonCompompute;    // reset delay to (longpress) normal delay
     }
