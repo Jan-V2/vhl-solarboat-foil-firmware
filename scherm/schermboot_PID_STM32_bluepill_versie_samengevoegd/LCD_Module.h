@@ -55,6 +55,13 @@ byte smile_sad[8] =
     0b11111
   };
 
+// Functions have to be decalred before they can be used in another function this is called a "forward declaration"
+void setup_LCD_Module();
+void blink_cursor();
+void LCD_Module_loop();
+void pidDisplay();
+void displayData();
+
 // begin setup
 void setup_LCD_Module() {
   lcd.createChar(1, smile_happy);
@@ -333,7 +340,7 @@ void pidDisplay() {
       }
     }
   }
-} // einde PID_display
+}  // einde PID_display
 
 //======================================================================= displayData ==========================================================================
 
@@ -614,6 +621,39 @@ void displayData() {
     case Menu::STARTUP:
       break;
   }
-} // einde displayData
+}  // einde displayData
+
+// begin blink_cursor
+void blink_cursor() {
+  static bool blinkCursor = false;
+  static bool prevBlinkCursor = blinkCursor;
+
+  if (((menu == Menu::VOORVLEUGEL) || (menu == Menu::BALANS_VOORVLEUGEL) || (menu == Menu::ACHTERVLEUGEL)) && (pid_actief == true)) {
+    if (cursorPlace == 0) {  // set hoogte
+      lcd.setCursor(6, 0);
+    } else if (cursorPlace == 1) {  // set roll
+      lcd.setCursor(12, 1);
+    } else if (cursorPlace == 2) {  // P
+      lcd.setCursor(0, 1);
+    } else if (cursorPlace == 3) {  // I
+      lcd.setCursor(4, 1);
+    } else if (cursorPlace == 4) {  // D
+      lcd.setCursor(8, 1);
+    } else if (cursorPlace == 5) {  // set pitch
+      lcd.setCursor(7, 3);
+    }
+    blinkCursor = true;
+  } else {
+    blinkCursor = false;
+  }
+  if (blinkCursor != prevBlinkCursor) {
+    prevBlinkCursor = blinkCursor;
+    if (blinkCursor) {
+      lcd.blink();
+    } else {
+      lcd.noBlink();
+    }
+  }
+}  // einde blink_cursor
 
 }  // namespace CAN_Module

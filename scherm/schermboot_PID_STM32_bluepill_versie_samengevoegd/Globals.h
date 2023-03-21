@@ -1,8 +1,7 @@
 #pragma once
+
 #include <Buttons.h>
 #include <LCD_Module.h>
-
-
 
 namespace Globals {
 
