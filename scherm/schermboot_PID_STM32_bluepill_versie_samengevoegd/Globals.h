@@ -25,7 +25,7 @@ const float pi = 3.14159265359;
 // Functions have to be decalred before they can be used in another function this is called a "forward declaration"
 void computeButtonPress();
 void startupMenu();
-
+void home();
 
 void computeButtonPress() {
   if (button_encoder_2 && buttonStateChange_enc_2) {
