@@ -19,17 +19,10 @@ enum class Menu : uint8_t {
 
 Menu menu;
 
-const uint8_t buttonPin4 = BUTTON_1;  // Pin number for button
-const uint8_t buttonPin3 = BUTTON_2;  // Pin number for button
-const uint8_t buttonPin2 = BUTTON_3;  // Pin number for button
-const uint8_t buttonPin1 = BUTTON_4;  // Pin number for button
-const uint8_t buttonPin_encoder_1 = ENC_1_BTN;
-const uint8_t buttonPin_encoder_2 = ENC_2_BTN;
-const uint8_t pollTimeSensor = 89;  // How many milliseconds between sensor polls (the PID runs at the same speed)
+
 
 const uint16_t refreshDistanceDisplay = 399;  // How many milliseconds between display updates
-const uint8_t pollTimeButtons = 24;           // How many milliseconds between button polls
-const uint8_t buttonCompompute = 49;          // How many milliseconds between button compute. less mili is faster long press
+
 
 const uint16_t PID_compute_time = 250;                               // How many milliseconds between PID compute.
 const uint16_t maxPulseEncoder = 11487;                              // the maximum amount of pulses for the front foil motor encoder
@@ -69,20 +62,7 @@ uint8_t setDistance = 10;              // target distance in cm that the PID wil
 int8_t setRoll = 0;                    // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
 int16_t setPitch = 0;                  // target pitch in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
 int16_t pulsen_offset = 0;             // berekende pulsen offset
-uint8_t button1 = LOW;                 // LOW in rest state and HIGH when pressed
-uint8_t button2 = LOW;                 // LOW in rest state and HIGH when pressed
-uint8_t button3 = LOW;                 // LOW in rest state and HIGH when pressed
-uint8_t button4 = LOW;                 // LOW in rest state and HIGH when pressed
-uint8_t buttonAll = 0;                 // to count the total buttons that are high
-uint8_t button_encoder_1 = LOW;        // LOW in rest state and HIGH when pressed
-uint8_t button_encoder_2 = LOW;        // LOW in rest state and HIGH when pressed
-bool buttonStateChange_enc_1 = false;  // is true if a button is recently changed its state
-bool buttonStateChange_enc_2 = false;  // is true if a button is recently changed its state
-bool buttonStateChange1 = false;       // is true if a button is recently changed its state
-bool buttonStateChange2 = false;       // is true if a button is recently changed its state
-bool buttonStateChange3 = false;       // is true if a button is recently changed its state
-bool buttonStateChange4 = false;       // is true if a button is recently changed its state
-bool buttonStateChange = false;        // is true if one of of the buttons has a state change. can be used as a flag to update the screen once before the refreshDisplay counter
+
 bool pid_actief = false;               // PID staat uit wanneer false. kan aangepast worden in OFF controlmode 0
 
 byte smile_happy[8] =
@@ -150,20 +130,15 @@ void setup() {
   Ultrasonic_Module::setup_Ultrasonic_Module();
 
   CAN_Module::setup_CAN_Module();
-
-  pinMode(buttonPin1, INPUT_PULLUP);
-  pinMode(buttonPin2, INPUT_PULLUP);
-  pinMode(buttonPin3, INPUT_PULLUP);
-  pinMode(buttonPin4, INPUT_PULLUP);
-  pinMode(buttonPin_encoder_1, INPUT_PULLUP);
-
+  
+  Buttons::setup_Buttons();
 
   delay(25);
-  while (buttonAll == 0) {
+  while (Buttons::buttonAll == 0) {
     buttonPressDetection();  // wait until button press
     delay(25);
   }
-  while (buttonAll == 1) {
+  while (Buttons::buttonAll == 1) {
     buttonPressDetection();  // wait until button release
     delay(25);
   }
