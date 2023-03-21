@@ -468,39 +468,39 @@ void displayData() {
     case Menu::VOORVLEUGEL:  // controlMode voorvleugel
       lcd.setCursor(0, 2);   // print P_Vvl
       lcd.print("P");
-      if (P_Vvl >= 0) {
+      if (PID_Berekeningen::P_Vvl >= 0) {
         lcd.print F((" "));
-        if (P_Vvl < 1) {
+        if (PID_Berekeningen::P_Vvl < 1) {
           lcd.print(" ");
         }
-      } else if (P_Vvl > -1.0) {
+      } else if (PID_Berekeningen::P_Vvl > -1.0) {
         lcd.print(" ");
       }
-      lcd.print(P_Vvl * 10.0, 0);
+      lcd.print(PID_Berekeningen::P_Vvl * 10.0, 0);
 
       lcd.setCursor(4, 2);  // print I_Vvl
       lcd.print(" I");
-      if (I_Vvl >= 0) {
+      if (PID_Berekeningen::I_Vvl >= 0) {
         lcd.print F((" "));
-        if (I_Vvl < 1) {
+        if (PID_Berekeningen::I_Vvl < 1) {
           lcd.print(" ");
         }
-      } else if (I_Vvl > -1.0) {
+      } else if (PID_Berekeningen::I_Vvl > -1.0) {
         lcd.print(" ");
       }
-      lcd.print(I_Vvl * 10.0, 0);
+      lcd.print(PID_Berekeningen::I_Vvl * 10.0, 0);
 
       lcd.setCursor(9, 2);  // print D_Vvl
       lcd.print(" D");
-      if (D_Vvl >= 0.0) {
+      if (PID_Berekeningen::D_Vvl >= 0.0) {
         lcd.print F((" "));
-        if (D_Vvl < 1.0) {
+        if (PID_Berekeningen::D_Vvl < 1.0) {
           lcd.print(" ");
         }
-      } else if (D_Vvl > -1.0) {
+      } else if (PID_Berekeningen::D_Vvl > -1.0) {
         lcd.print(" ");
       }
-      lcd.print(D_Vvl * 10.0, 0);
+      lcd.print(PID_Berekeningen::D_Vvl * 10.0, 0);
 
       lcd.setCursor(0, 3);  // print PID_Vvl
       lcd.print("PID");
@@ -517,69 +517,69 @@ void displayData() {
       lcd.print(' ');
       break;
 
-    case Menu::ACHTERVLEUGEL:  // controlMode achtervleugel
+    case Globels::Menu::ACHTERVLEUGEL:  // controlMode achtervleugel
       lcd.setCursor(0, 2);     // print P_Avl
       lcd.print("P");
-      if (P_Avl >= 0) {
+      if (PID_Berekeningen::P_Avl >= 0) {
         lcd.print F((" "));
-        if (P_Avl < 1) {
+        if (PID_Berekeningen::P_Avl < 1) {
           lcd.print(" ");
         }
-      } else if (P_Avl > -1.0) {
+      } else if (PID_Berekeningen::P_Avl > -1.0) {
         lcd.print(" ");
       }
 
       lcd.setCursor(4, 2);  // print I_Avl
       lcd.print(" I");
-      if (I_Avl >= 0) {
+      if (PID_Berekeningen::I_Avl >= 0) {
         lcd.print F((" "));
-        if (I_Avl < 1) {
+        if (PID_Berekeningen::I_Avl < 1) {
           lcd.print(" ");
         }
-      } else if (I_Avl > -1.0) {
+      } else if (PID_Berekeningen::I_Avl > -1.0) {
         lcd.print(" ");
       }
-      lcd.print(I_Avl * 10.0, 0);
+      lcd.print(PID_Berekeningen::I_Avl * 10.0, 0);
 
       lcd.setCursor(9, 2);  // print D_Avl
       lcd.print(" D");
-      if (D_Avl >= 0.0) {
+      if (PID_Berekeningen::D_Avl >= 0.0) {
         lcd.print F((" "));
-        if (D_Avl < 1.0) {
+        if (PID_Berekeningen::D_Avl < 1.0) {
           lcd.print(" ");
         }
-      } else if (D_Avl > -1.0) {
+      } else if (PID_Berekeningen::D_Avl > -1.0) {
         lcd.print(" ");
       }
-      lcd.print(D_Avl * 10.0, 0);
+      lcd.print(PID_Berekeningen::D_Avl * 10.0, 0);
 
       lcd.setCursor(0, 3);  // print PID_Avl
       lcd.print("PID");
-      if ((pidAvlTotal < 10.0) && (pidAvlTotal >= 0.0)) {
+      if ((PID_Berekeningen::pidAvlTotal < 10.0) && (PID_Berekeningen::pidAvlTotal >= 0.0)) {
         lcd.print(" ");
-        if (pidAvlTotal < 1) {
+        if (PID_Berekeningen::pidAvlTotal < 1) {
           lcd.print(" ");
         }
       }
-      if (pidAvlTotal < 0.0 && pidAvlTotal > -1.0) {
+      if (PID_Berekeningen::pidAvlTotal < 0.0 && PID_Berekeningen::pidAvlTotal > -1.0) {
         lcd.print(" ");
       }
-      lcd.print(pidAvlTotal * 10.0, 0);
+      lcd.print(PID_Berekeningen::pidAvlTotal * 10.0, 0);
       lcd.print(' ');
       break;
 
-    case Menu::BALANS_VOORVLEUGEL:  // controlMode balansvleugel
+    case Globels::Menu::BALANS_VOORVLEUGEL:  // controlMode balansvleugel
       lcd.setCursor(0, 2);          // print P_Vvl
       lcd.print("P");
-      if (P_Balans >= 0) {
+      if (PID_Berekeningen::P_Balans >= 0) {
         lcd.print F((" "));
-        if (P_Balans < 1) {
+        if (PID_Berekeningen::P_Balans < 1) {
           lcd.print(" ");
         }
-      } else if (P_Balans > -1.0) {
+      } else if (PID_Berekeningen::P_Balans > -1.0) {
         lcd.print(" ");
       }
-      lcd.print(P_Balans * 10.0, 0);
+      lcd.print(PID_Berekeningen::P_Balans * 10.0, 0);
 
       lcd.setCursor(4, 2);  // print I_Vvl
       lcd.print(" I");
@@ -588,43 +588,43 @@ void displayData() {
         if (I_Balans < 1) {
           lcd.print(" ");
         }
-      } else if (I_Balans > -1.0) {
+      } else if (PID_Berekeningen::I_Balans > -1.0) {
         lcd.print(" ");
       }
-      lcd.print(I_Balans * 10.0, 0);
+      lcd.print(PID_Berekeningen::I_Balans * 10.0, 0);
 
       lcd.setCursor(9, 2);  // print D_Balans
       lcd.print(" D");
-      if (D_Balans
+      if (PID_Berekeningen::D_Balans
           >= 0.0) {
         lcd.print F((" "));
-        if (D_Balans < 1.0) {
+        if (PID_Berekeningen::D_Balans < 1.0) {
           lcd.print(" ");
         }
-      } else if (D_Balans > -1.0) {
+      } else if (PID_Berekeningen::D_Balans > -1.0) {
         lcd.print(" ");
       }
-      lcd.print(D_Balans * 10.0, 0);
+      lcd.print(PID_Berekeningen::D_Balans * 10.0, 0);
 
       lcd.setCursor(0, 3);  // print PID_Vvl
       lcd.print("PID");
-      if ((pidBalansTotal < 10.0) && (pidBalansTotal >= 0.0)) {
+      if ((PID_Berekeningen::pidBalansTotal < 10.0) && (PID_Berekeningen::pidBalansTotal >= 0.0)) {
         lcd.print(" ");
-        if (pidBalansTotal < 1) {
+        if (PID_Berekeningen::pidBalansTotal < 1) {
           lcd.print(" ");
         }
       }
-      if (pidBalansTotal < 0.0 && pidBalansTotal > -1.0) {
+      if (PID_Berekeningen::pidBalansTotal < 0.0 && PID_Berekeningen::pidBalansTotal > -1.0) {
         lcd.print(" ");
       }
-      lcd.print(pidBalansTotal * 10.0, 0);
+      lcd.print(PID_Berekeningen::pidBalansTotal * 10.0, 0);
       lcd.print(' ');
       break;
 
-    case Menu::OFF:
+    case Globels::Menu::OFF:
       break;
 
-    case Menu::STARTUP:
+    case Globels::Menu::STARTUP:
       break;
   }
 }  // einde displayData
