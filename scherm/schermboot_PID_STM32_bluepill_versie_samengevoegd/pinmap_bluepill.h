@@ -15,13 +15,7 @@
 
 
 
-//LCD //KLOPT
-#define E  PC14
-#define RS PC15
-#define D4 PA0
-#define D5 PA1
-#define D6 PA2
-#define D7 PA3
+
 
 int enc_1_pulses = 0;
 int enc_2_pulses = 0;
