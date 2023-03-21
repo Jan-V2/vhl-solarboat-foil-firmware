@@ -97,11 +97,13 @@ void setup() {
 }
 void loop() {
 
-  CAN_Module::CAN_loop();
+  CAN_Module::CAN_Module_loop();
 
   //================================================================== main loop poll sensor ==========================================================================
 
   
+Ultrasonic_Module::Ultrasonic_Module_loop();
+
   static uint32_t lastPollButtons = 0;
   if (millis() - lastPollButtons > Buttons::pollTimeButtons) {
     lastPollButtons = millis();

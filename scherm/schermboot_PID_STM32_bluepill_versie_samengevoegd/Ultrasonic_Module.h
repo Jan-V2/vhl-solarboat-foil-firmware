@@ -30,16 +30,14 @@ void setup_Ultrasonic_Module() {
   attachInterrupt(digitalPinToInterrupt(echo_1_pin), call_INT0, CHANGE);  // Attach function call_INT0 to echo_1_pin when it CHANGEs state
 }  // einde setup
 
-// start loop
+// ========================start loop ================
 void Ultrasonic_Module_loop() {
   static uint32_t lastPollSensor = 0;
   if (millis() - lastPollSensor > pollTimeSensor) {
     lastPollSensor = millis();
     startMeasurement();  // measure the distance from the ultrasonic sensor
   }
-}  // einde loop
-
-//=================================================================== doMeasurement =================================================================
+}  // ====================== einde loop =============
 
 void startMeasurement() {
   // Initiate next trigger
