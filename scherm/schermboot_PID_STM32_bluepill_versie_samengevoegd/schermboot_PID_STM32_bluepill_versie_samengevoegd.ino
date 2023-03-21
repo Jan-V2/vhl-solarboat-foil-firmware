@@ -139,7 +139,7 @@ void setup() {
 
   CAN_Module::setup_CAN_Module();
 
-  setup lcd
+  LCD_Module::setup_LCD_Module();
 
   pinMode(buttonPin1, INPUT_PULLUP);
   pinMode(buttonPin2, INPUT_PULLUP);
