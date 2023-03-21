@@ -63,44 +63,7 @@ int16_t pulsen_offset = 0;             // berekende pulsen offset
 
 bool pid_actief = false;               // PID staat uit wanneer false. kan aangepast worden in OFF controlmode 0
 
-byte smile_happy[8] =
 
-  {
-    0b00000,
-    0b00000,
-    0b01010,
-    0b00000,
-    0b10001,
-    0b01110,
-    0b00000,
-    0b00000
-  };
-
-byte smile_neutraal[8] =
-
-  {
-    0b00000,
-    0b00000,
-    0b01010,
-    0b00000,
-    0b00000,
-    0b01110,
-    0b00000,
-    0b00000
-  };
-
-byte smile_sad[8] =
-
-  {
-    0b11111,
-    0b11111,
-    0b10101,
-    0b11111,
-    0b11111,
-    0b10001,
-    0b01110,
-    0b11111
-  };
 
 
 
