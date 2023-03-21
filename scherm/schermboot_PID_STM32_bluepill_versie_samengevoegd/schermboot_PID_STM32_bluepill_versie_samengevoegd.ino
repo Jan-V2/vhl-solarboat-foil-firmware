@@ -142,35 +142,7 @@ Ultrasonic_Module::Ultrasonic_Module_loop();
 
   //================================================================== main loop display data ==========================================================================
 
-  static uint32_t lastRefreshDistanceDisplay = 0;
-  if (millis() - lastRefreshDistanceDisplay > refreshDistanceDisplay) {
-    lastRefreshDistanceDisplay = millis();
-    Ultrasonic_Module::computeDistance();
-    displayData();
-    blink_cursor();
-  }
-
-  if ((pidChangeDetection != lastPidChangeDetection) && pid_actief) {  // wanneer de PID ingesteld word
-    lastPidChangeDetection = pidChangeDetection;
-    if (menu != Menu::DEBUG) {
-      pidDisplay();
-      blink_cursor();
-    }
-  }
-
-  static Menu last_menu = Menu::STARTUP;  // use STARTUP so that it runs at least ones to display the data
-
-  if (menu != last_menu) {
-    last_menu = menu;
-    displayControlMode();
-    blink_cursor();
-  }
-  if (menu == Menu::OFF) {
-    OFF();
-  }
-  if (menu == Menu::DEBUG) {
-    home();
-  }
+ 
 
   //===================================================================== main loop reset buttonStateChange ============================================================
   Buttons::button_state_change_reset();
