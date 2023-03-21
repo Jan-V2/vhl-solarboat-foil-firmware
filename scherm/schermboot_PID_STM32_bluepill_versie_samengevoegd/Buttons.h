@@ -40,6 +40,8 @@ bool buttonStateChange4 = false;       // is true if a button is recently change
 bool buttonStateChange = false;        // is true if one of of the buttons has a state change. can be used as a flag to update the screen once before the refreshDisplay counter
 
 // Functions have to be decalred before they can be used in another function this is called a "forward declaration"
+void encoder1_ISR();
+void encoder2_ISR()
 void setup_buttons_encoders();
 void button_state_change_reset();
 void buttonPressDetection();
@@ -147,4 +149,4 @@ void buttonPressDetection() {
   }
 }
 
-}
+} // namespace Buttons
