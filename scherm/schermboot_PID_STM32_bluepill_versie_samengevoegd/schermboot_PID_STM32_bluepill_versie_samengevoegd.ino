@@ -27,9 +27,9 @@ const uint8_t buttonPin_encoder_1 = ENC_1_BTN;
 const uint8_t buttonPin_encoder_2 = ENC_2_BTN;
 const uint8_t pollTimeSensor = 89;  // How many milliseconds between sensor polls (the PID runs at the same speed)
 
-const uint16_t refreshDistanceDisplay = 399;  // How many milliseconds between display updates
-const uint8_t pollTimeButtons = 24;           // How many milliseconds between button polls
-const uint8_t buttonCompompute = 49;          // How many milliseconds between button compute. less mili is faster long press
+
+const uint8_t pollTimeButtons = 24;   // How many milliseconds between button polls
+const uint8_t buttonCompompute = 49;  // How many milliseconds between button compute. less mili is faster long press
 
 const uint16_t PID_compute_time = 250;                               // How many milliseconds between PID compute.
 const uint16_t maxPulseEncoder = 11487;                              // the maximum amount of pulses for the front foil motor encoder
@@ -135,21 +135,11 @@ void setup() {
   Serial.begin(115200);
   setup_buttons_and_encoders();
 
-  lcd.createChar(1, smile_happy);
-  lcd.createChar(2, smile_neutraal);
-  lcd.createChar(3, smile_sad);
-
-  lcd.begin(20, 4);  // Switch on the LCD screen
-  lcd.setCursor(2, 0);
-  lcd.print F(("VHL-Nordwin"));  // Print these words to my LCD screen
-  lcd.setCursor(1, 2);
-  lcd.print F(("Zonnebootteam"));
-
-
-
   Ultrasonic_Module::setup_Ultrasonic_Module();
 
   CAN_Module::setup_CAN_Module();
+
+  setup lcd
 
   pinMode(buttonPin1, INPUT_PULLUP);
   pinMode(buttonPin2, INPUT_PULLUP);
