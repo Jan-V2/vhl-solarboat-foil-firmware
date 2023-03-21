@@ -116,7 +116,7 @@ void loop() {
     Ultrasonic_Module::doMeasurement();  // measure the distance from the ultrasonic sensor
   }
   static uint32_t lastPollButtons = 0;
-  if (millis() - lastPollButtons > pollTimeButtons) {
+  if (millis() - lastPollButtons > Buttons::pollTimeButtons) {
     lastPollButtons = millis();
     buttonPressDetection();  // check for buttonpress
   }
@@ -126,14 +126,14 @@ void loop() {
   static uint8_t x;
   static uint32_t lastButtonCompute = 0;
 
-  if (buttonStateChange) {  // check if button was just pressed
+  if (Buttons::buttonStateChange) {  // check if button was just pressed
     x = 255;                // delay before longpress starts
   }
-  if ((millis() - lastButtonCompute > x) || (buttonStateChange)) {  // normal compute delay or longpess delay
+  if ((millis() - lastButtonCompute > x) || (Buttons::buttonStateChange)) {  // normal compute delay or longpess delay
     lastButtonCompute = millis();
     computeButtonPress();
     if (!buttonStateChange) {  // if no state change the button is still pressed
-      x = buttonCompompute;    // reset delay to (longpress) normal delay
+      x = Buttons::buttonCompompute;    // reset delay to (longpress) normal delay
     }
   }
   static uint32_t last_PID_compute_time = 0;
@@ -192,14 +192,8 @@ void loop() {
   }
 
   //===================================================================== main loop reset buttonStateChange ============================================================
-
-  buttonStateChange_enc_1 = false;
-  buttonStateChange_enc_2 = false;
-  buttonStateChange1 = false;  // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
-  buttonStateChange2 = false;  // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
-  buttonStateChange3 = false;  // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
-  buttonStateChange4 = false;  // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
-  buttonStateChange = false;   // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
+  button_state_change_reset();
+  
 }
 
 //============================================================================ pidDisplay ===============================================================

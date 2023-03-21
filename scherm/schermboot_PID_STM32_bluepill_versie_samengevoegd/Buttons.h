@@ -10,8 +10,8 @@ const uint8_t buttonPin_encoder_1 = ENC_1_BTN;
 const uint8_t buttonPin_encoder_2 = ENC_2_BTN;
 
 
-const uint8_t pollTimeButtons = 24;           // How many milliseconds between button polls
-const uint8_t buttonCompompute = 49;          // How many milliseconds between button compute. less mili is faster long press
+const uint8_t pollTimeButtons = 24;   // How many milliseconds between button polls
+const uint8_t buttonCompompute = 49;  // How many milliseconds between button compute. less mili is faster long press
 
 uint8_t button1 = LOW;                 // LOW in rest state and HIGH when pressed
 uint8_t button2 = LOW;                 // LOW in rest state and HIGH when pressed
@@ -35,5 +35,15 @@ void setup_Buttons() {
   pinMode(buttonPin4, INPUT_PULLUP);
   pinMode(buttonPin_encoder_1, INPUT_PULLUP);
 }
+void button_state_change_reset() {
+  buttonStateChange_enc_1 = false;
+  buttonStateChange_enc_2 = false;
+  buttonStateChange1 = false;  // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
+  buttonStateChange2 = false;  // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
+  buttonStateChange3 = false;  // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
+  buttonStateChange4 = false;  // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
+  buttonStateChange = false;   // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
+}
+
 
 }
