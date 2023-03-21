@@ -57,10 +57,12 @@ byte smile_sad[8] =
 
 // Functions have to be decalred before they can be used in another function this is called a "forward declaration"
 void setup_LCD_Module();
-void blink_cursor();
 void LCD_Module_loop();
 void pidDisplay();
 void displayData();
+void blink_cursor();
+void displayControlMode()
+void OFF()
 
 // begin setup
 void setup_LCD_Module() {

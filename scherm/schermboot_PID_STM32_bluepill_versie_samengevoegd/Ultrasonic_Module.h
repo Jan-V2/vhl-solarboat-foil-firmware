@@ -22,7 +22,11 @@ float pitch_rad;                     // arduino werkt in radians.
 int16_t distance = 0;                // distance from de ultrasoic sensor in cm
 
 // Functions have to be decalred before they can be used in another function (in this case  "attachInterrupt()") this is called a "forward declaration"
+void setup_Ultrasonic_Module();
+void Ultrasonic_Module_loop();
+void startMeasurement();
 void call_INT0();
+void computeDistance();
 
 // begin setup
 void setup_Ultrasonic_Module() {
