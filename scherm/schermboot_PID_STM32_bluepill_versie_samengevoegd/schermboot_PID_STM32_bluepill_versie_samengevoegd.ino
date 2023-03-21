@@ -6,7 +6,7 @@
 #include "Buttons.h"
 #include "Globals.h"
 
-using namespace Globals;
+//using namespace Globals;
 
 const uint16_t PID_compute_time = 250;                               // How many milliseconds between PID compute.
 const uint16_t maxPulseEncoder = 11487;                              // the maximum amount of pulses for the front foil motor encoder
