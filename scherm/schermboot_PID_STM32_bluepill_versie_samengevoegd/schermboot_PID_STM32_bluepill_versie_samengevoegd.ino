@@ -274,8 +274,6 @@ void loop() {
   buttonStateChange = false;   // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
 }
 
-
-
 //============================================================================ pidDisplay ===============================================================
 
 void pidDisplay() {
