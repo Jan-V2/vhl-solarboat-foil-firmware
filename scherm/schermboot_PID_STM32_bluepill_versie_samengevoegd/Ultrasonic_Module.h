@@ -16,6 +16,7 @@ volatile uint32_t travelTime = 0;     // the time it takes the sound to comback 
 volatile bool newMesurement = false;  // is true when the interupt is triggerd to indicate a new mesurement of een nieuwe gyro meting.
 volatile bool newHightMesurement = false;
 //const uint16_t   soundSpeed              = 343;              // Speed of sound in m/s (choos one soundspeed)
+
 const float soundSpeed = 58.309038;  // speed of sound in micosecond/cm (29,15*2=58.3 want heen en terug)  (choos one soundspeed)
 float pitch_rad;                     // arduino werkt in radians.
 int16_t distance = 0;                // distance from de ultrasoic sensor in cm

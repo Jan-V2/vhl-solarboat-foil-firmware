@@ -2,10 +2,9 @@
 
 #include <LiquidCrystal.h>
 
-
 namespace LCD_Module {
 
-//LCD //KLOPT
+// Pin assignment for LCD_Module
 const uint8_t E = PC14;
 const uint8_t RS = PC15;
 const uint8_t D4 = PA0;
