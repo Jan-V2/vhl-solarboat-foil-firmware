@@ -34,7 +34,10 @@ void setup_Buttons() {
   pinMode(buttonPin3, INPUT_PULLUP);
   pinMode(buttonPin4, INPUT_PULLUP);
   pinMode(buttonPin_encoder_1, INPUT_PULLUP);
-}
+}// einde setup
+
+
+
 void button_state_change_reset() {
   buttonStateChange_enc_1 = false;
   buttonStateChange_enc_2 = false;
@@ -45,33 +48,34 @@ void button_state_change_reset() {
   buttonStateChange = false;   // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
 }
 
+// begin loop
 //===================================================================== computeButtonPress =========================================================================
 
 void computeButtonPress() {
   if (button_encoder_2 && buttonStateChange_enc_2) {
-    switch (menu) {
+    switch (Globals::menu) {
 
-      case Menu::OFF:
-        menu = Menu::VOORVLEUGEL;
+      case Globals::Menu::OFF:
+        Globals::menu = Globals::Menu::VOORVLEUGEL;
         break;
 
-      case Menu::VOORVLEUGEL:
-        menu = Menu::ACHTERVLEUGEL;
+      case Globals::Menu::VOORVLEUGEL:
+        Globals::menu = Globals::Menu::ACHTERVLEUGEL;
         break;
 
-      case Menu::ACHTERVLEUGEL:
-        menu = Menu::BALANS_VOORVLEUGEL;
+      case Globals::Menu::ACHTERVLEUGEL:
+        Globals::menu = Globals::Menu::BALANS_VOORVLEUGEL;
         break;
 
-      case Menu::BALANS_VOORVLEUGEL:
-        menu = Menu::DEBUG;
+      case Globals::Menu::BALANS_VOORVLEUGEL:
+        Globals::menu = Globals::Menu::DEBUG;
         break;
 
-      case Menu::DEBUG:
-        menu = Menu::OFF;
+      case Globals::Menu::DEBUG:
+        Globals::menu = Globals::Menu::OFF;
         break;
 
-      case Menu::STARTUP:
+      case Globals::Menu::STARTUP:
         break;
     }
   }
