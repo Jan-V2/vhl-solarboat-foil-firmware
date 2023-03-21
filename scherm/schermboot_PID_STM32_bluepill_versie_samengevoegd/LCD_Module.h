@@ -1,14 +1,19 @@
 #pragma once
 
+#include <LiquidCrystal.h>
+
+
 namespace LCD_Module {
 
 //LCD //KLOPT
-#define E PC14
-#define RS PC15
-#define D4 PA0
-#define D5 PA1
-#define D6 PA2
-#define D7 PA3
+const uint8_t E = PC14;
+const uint8_t RS = PC15;
+const uint8_t D4 = PA0;
+const uint8_t D5 = PA1;
+const uint8_t D6 = PA2;
+const uint8_t D7 = PA3;
+
+LiquidCrystal lcd(RS, E, D4, D5, D6, D7);
 
 const uint16_t refreshDistanceDisplay = 399;  // How many milliseconds between display updates
 

@@ -19,9 +19,6 @@ enum class Menu : uint8_t {
 
 Menu menu;
 
-
-
-
 const uint16_t PID_compute_time = 250;                               // How many milliseconds between PID compute.
 const uint16_t maxPulseEncoder = 11487;                              // the maximum amount of pulses for the front foil motor encoder
 const uint16_t maxAfstandEncoder = 200;                              // de afstand in mm die de voor linieare motor kan uit schuiven
@@ -65,12 +62,6 @@ int16_t pulsen_offset = 0;             // berekende pulsen offset
 
 bool pid_actief = false;               // PID staat uit wanneer false. kan aangepast worden in OFF controlmode 0
 
-
-
-
-
-#include <LiquidCrystal.h>
-LiquidCrystal lcd(RS, E, D4, D5, D6, D7);
 //RunningMedian travelTimeMedian = RunningMedian(medianSize);
 
 void setup() {
