@@ -666,57 +666,6 @@ void home() {
   }
 }
 
-//======================================================================== buttonPressDetection =========================================================================
-
-void buttonPressDetection() {
-  button1 = !digitalRead(buttonPin1);
-  button2 = !digitalRead(buttonPin2);
-  button3 = !digitalRead(buttonPin3);
-  button4 = !digitalRead(buttonPin4);
-  button_encoder_1 = !digitalRead(buttonPin_encoder_1);
-  button_encoder_2 = !digitalRead(buttonPin_encoder_2);
-
-  buttonAll = button1 + button2 + button3 + button4 + button_encoder_1 + button_encoder_2;
-
-  //=========================================================================== buttonStateChange detection =======================================================================
-
-  static uint8_t lastButton1 = LOW;
-  static uint8_t lastButton2 = LOW;
-  static uint8_t lastButton3 = LOW;
-  static uint8_t lastButton4 = LOW;
-  static uint8_t lastButton_encoder_1 = LOW;
-  static uint8_t lastButton_encoder_2 = LOW;
-
-  if (lastButton1 != button1) {  // button1
-    lastButton1 = button1;
-    buttonStateChange1 = true;
-  }
-  if (lastButton2 != button2) {  // button2
-    lastButton2 = button2;
-    buttonStateChange2 = true;
-  }
-  if (lastButton3 != button3) {  // button3
-    lastButton3 = button3;
-    buttonStateChange3 = true;
-  }
-  if (lastButton4 != button4) {  // button4
-    lastButton4 = button4;
-    buttonStateChange4 = true;
-  }
-  if (lastButton_encoder_1 != button_encoder_1) {  // encoder button 1
-    lastButton_encoder_1 = button_encoder_1;
-    buttonStateChange_enc_1 = true;
-  }
-  if (lastButton_encoder_2 != button_encoder_2) {  // encoder button 2
-    lastButton_encoder_2 = button_encoder_2;
-    buttonStateChange_enc_2 = true;
-  }
-  if ((buttonStateChange1 + buttonStateChange2 + buttonStateChange3 + buttonStateChange4 + buttonStateChange_enc_1 + buttonStateChange_enc_2) > 0) {
-    buttonStateChange = true;
-  }
-}
-
-
 
 void blink_cursor() {
   static bool blinkCursor = false;
