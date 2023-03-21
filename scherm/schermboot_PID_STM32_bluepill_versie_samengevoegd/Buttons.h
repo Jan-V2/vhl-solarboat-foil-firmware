@@ -2,12 +2,23 @@
 
 namespace Buttons {
 
-const uint8_t buttonPin4 = BUTTON_1;  // Pin number for button
-const uint8_t buttonPin3 = BUTTON_2;  // Pin number for button
-const uint8_t buttonPin2 = BUTTON_3;  // Pin number for button
-const uint8_t buttonPin1 = BUTTON_4;  // Pin number for button
-const uint8_t buttonPin_encoder_1 = ENC_1_BTN;
-const uint8_t buttonPin_encoder_2 = ENC_2_BTN;
+//input/buttons // KLOPT
+
+#define ENC_1A PB9
+#define ENC_1B PB8
+#define ENC_2A PB15
+#define ENC_2B PB14
+
+
+int enc_1_pulses = 0;
+int enc_2_pulses = 0;
+
+const uint8_t buttonPin4 = PB4;  // Pin number for button
+const uint8_t buttonPin3 = PB5;  // Pin number for button
+const uint8_t buttonPin2 = PB6;  // Pin number for button
+const uint8_t buttonPin1 = PB7;  // Pin number for button
+const uint8_t buttonPin_encoder_1 = PA8;
+const uint8_t buttonPin_encoder_2 = PB13;
 
 
 const uint8_t pollTimeButtons = 24;   // How many milliseconds between button polls
@@ -28,7 +39,25 @@ bool buttonStateChange3 = false;       // is true if a button is recently change
 bool buttonStateChange4 = false;       // is true if a button is recently changed its state
 bool buttonStateChange = false;        // is true if one of of the buttons has a state change. can be used as a flag to update the screen once before the refreshDisplay counter
 
-void setup_Buttons() {
+void setup_Buttons();
+void button_state_change_reset();
+void buttonPressDetection();
+
+void setup_buttons_encoders() {
+
+  // The module already has pullup resistors on board
+  // pinMode(ENC_1A, INPUT_PULLUP); // youtube
+  // pinMode(ENC_1B, INPUT_PULLUP); // youtube
+
+  
+  // We need to monitor both pins, rising and falling for all states
+  // attachInterrupt(digitalPinToInterrupt(ENC_1A), rotary, CHANGE); // youtube
+  // attachInterrupt(digitalPinToInterrupt(ENC_1B), rotary, CHANGE); // youtube
+  attachInterrupt(digitalPinToInterrupt(ENC_2A), encoder2_ISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(ENC_1A), encoder1_ISR, FALLING);
+  
+  pinMode(ENC_1_BTN, INPUT_PULLUP);
+  pinMode(ENC_2_BTN, INPUT_PULLUP);
   pinMode(buttonPin1, INPUT_PULLUP);
   pinMode(buttonPin2, INPUT_PULLUP);
   pinMode(buttonPin3, INPUT_PULLUP);
