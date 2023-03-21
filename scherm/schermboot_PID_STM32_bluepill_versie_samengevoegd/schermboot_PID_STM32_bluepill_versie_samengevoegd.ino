@@ -1,6 +1,6 @@
 //#include <Arduino.h>
 #include "pinmap_bluepill.h"
-#include "LCD.h"
+#include "LCD_Module.h"
 #include "CAN_Module.h"
 #include "Ultrasonic_Module.h"
 #include "Buttons.h"
@@ -77,7 +77,7 @@ void setup() {
   }
   lcd.clear();
 
-  startupMenu();
+  Globals::startupMenu();
 
   while (!Serial) {
     ;  //Wait for Serial
