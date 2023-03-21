@@ -1,6 +1,8 @@
 #pragma once
 #include <Buttons.h>
 
+
+
 namespace Globals {
 
 enum class Menu : uint8_t {
@@ -170,5 +172,56 @@ void computeButtonPress() {
 
   setPitch = constrain(setPitch, -99, 999);
 }
+
+// begin startupMenu
+void startupMenu() {
+  lcd.print F(("1:OFF"));  // print Menu
+  lcd.setCursor(0, 1);
+  lcd.print F(("2:Manuel"));
+  lcd.setCursor(9, 0);
+  lcd.print F(("3:V vl"));
+  lcd.setCursor(9, 1);
+  lcd.print F(("4:HOME"));
+  lcd.setCursor(0, 2);
+  lcd.print F(("5:Balans"));
+  lcd.setCursor(9, 2);
+  lcd.print F(("6:A vl"));
+
+  while (buttonAll == 0) {
+    buttonPressDetection();  // wait until button press
+    delay(25);
+  }
+  if (button1) {
+    menu = Menu::OFF;  // contolMode OFF
+    lcd.clear();
+  } else {
+    lcd.clear();
+    lcd.setCursor(2, 0);
+    lcd.print F(("Hold button"));
+    delay(1000);
+  }
+  buttonPressDetection();
+  delay(25);
+  buttonPressDetection();
+
+  if (button3) {
+    menu = Menu::VOORVLEUGEL;  // contolMode V vl
+  } else if (button4) {
+    menu = Menu::DEBUG;  // contolMode Home
+  } else if (button_encoder_1) {
+    menu = Menu::BALANS_VOORVLEUGEL;  // controlMode Balans
+  } else if (button_encoder_2) {
+    menu = Menu::ACHTERVLEUGEL;  // controMode A vl
+  }
+
+  lcd.setCursor(1, 0);
+  lcd.print F(("Release button"));  //  as feedback for menue selection
+
+  while (buttonAll > 0) {
+    buttonPressDetection();  // wait until button release
+    delay(25);
+  }
+  lcd.clear();
+} // einde startupMenu
 
 } // namespace Globals
