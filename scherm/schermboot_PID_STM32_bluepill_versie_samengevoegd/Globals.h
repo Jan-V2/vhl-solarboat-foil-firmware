@@ -228,4 +228,34 @@ void startupMenu() {
   lcd.clear();
 } // einde startupMenu
 
+void home() {
+  const static uint16_t min_home_time = 3000;
+  static uint32_t last_home_time = millis();
+
+  if (menu == Menu::DEBUG) {
+    if (Buttons::button_encoder_1 && Buttons::buttonStateChange_enc_1) {
+      // lcd.setCursor(0, 1);
+      // lcd.print("Home voor");
+      CAN_Module::home_front_foil = true;
+      pid_actief = false;
+      CAN_Module::CAN_pulsen_voor = 0;
+      CAN_Module::CAN_pulsen_offset = 0;
+      last_home_time = millis();
+    } else if (millis() - last_home_time > min_home_time) {
+      CAN_Module::home_front_foil = false;
+    }
+    if (Buttons::button_encoder_1 && Buttons::buttonStateChange_enc_1) {
+      Serial.println("homeing");
+      //lcd.setCursor(0, 2);
+      //lcd.print("Home achter");
+      CAN_Module::home_rear_foil = true;
+      pid_actief = false;
+      CAN_Module::CAN_pulsen_achter = 0;
+      last_home_time = millis();
+    } else if (millis() - last_home_time > min_home_time) {
+      CAN_Module::home_rear_foil = false;
+    }
+  }
+}
+
 } // namespace Globals
