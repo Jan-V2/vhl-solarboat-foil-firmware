@@ -5,6 +5,7 @@
 #include "Ultrasonic_Module.h"
 #include "Buttons.h"
 #include "Globals.h"
+#include "PID_Berekeningen"
 
 //using namespace Globals;
 
@@ -18,36 +19,7 @@ const int16_t maxDistance = 30;                                      // als de b
 //uint8_t controlMode = 0;          // 0 = off, 1 = manuel, 2 = Vvl, 3 = HOME, 4 = balans en 5 = Avl
 uint8_t cursorPlace = 0;  // is used to select the parameter that you want to change when in PID controlmode
 
-int16_t kp_Vvl = 0;               // P parameter from the PID voorvleugel
-int16_t ki_Vvl = 0;               // I parameter from the PID voorvleugel
-int16_t kd_Vvl = 0;               // D parameter from the PID voorvleugel
-int16_t kp_Avl = 0;               // P parameter from the PID voorvleugel
-int16_t ki_Avl = 0;               // I parameter from the PID voorvleugel
-int16_t kd_Avl = 0;               // D parameter from the PID voorvleugel
-int16_t kp_balans = 0;            // P parameter from the PID voorvleugel
-int16_t ki_balans = 0;            // I parameter from the PID voorvleugel
-int16_t kd_balans = 0;            // D parameter from the PID voorvleugel
-uint16_t pidChangeDetection = 0;  // is used to see if there are changes in the PID setting
 
-float P_Vvl;
-float I_Vvl;
-float D_Vvl;
-float P_Avl;
-float I_Avl;
-float D_Avl;
-float P_Balans;
-float I_Balans;
-float D_Balans;
-float pidVvlTotal = 0;
-float pidAvlTotal = 0;
-float pidBalansTotal = 0;
-
-uint8_t setDistance = 10;              // target distance in cm that the PID will try to reach, this value can be changed on de
-int8_t setRoll = 0;                    // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
-int16_t setPitch = 0;                  // target pitch in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
-int16_t pulsen_offset = 0;             // berekende pulsen offset
-
-bool pid_actief = false;               // PID staat uit wanneer false. kan aangepast worden in OFF controlmode 0
 
 //RunningMedian travelTimeMedian = RunningMedian(medianSize);
 
