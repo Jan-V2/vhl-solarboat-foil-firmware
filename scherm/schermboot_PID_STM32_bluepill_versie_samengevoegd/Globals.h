@@ -3,6 +3,8 @@
 #include <Buttons.h>
 #include <LCD_Module.h>
 
+using namespace Buttons;
+
 namespace Globals {
 
 enum class Menu : uint8_t {
