@@ -77,8 +77,8 @@ void setup_buttons_encoders() {
   attachInterrupt(digitalPinToInterrupt(ENC_2A), encoder2_ISR, FALLING);
   attachInterrupt(digitalPinToInterrupt(ENC_1A), encoder1_ISR, FALLING);
   
-  pinMode(ENC_1_BTN, INPUT_PULLUP);
-  pinMode(ENC_2_BTN, INPUT_PULLUP);
+  pinMode(button_encoder_1, INPUT_PULLUP);
+  pinMode(button_encoder_2, INPUT_PULLUP);
   pinMode(buttonPin1, INPUT_PULLUP);
   pinMode(buttonPin2, INPUT_PULLUP);
   pinMode(buttonPin3, INPUT_PULLUP);
