@@ -65,8 +65,8 @@ void LCD_Module_loop();
 void pidDisplay();
 void displayData();
 void blink_cursor();
-void displayControlMode()
-void OFF()
+void displayControlMode();
+void OFF();
 
 // begin setup
 void setup_LCD_Module() {
@@ -173,57 +173,57 @@ void pidDisplay() {
     if (cursorPlace == 2) {         // if 2 change the P from the PID parameter
       lcd.setCursor(0, 1);
       lcd.print F((">"));
-      lcd.print(kp_Vvl);
-      if (kp_Vvl < 10) {
+      lcd.print(PID_Berekeningen::kp_Vvl);
+      if (PID_Berekeningen::kp_Vvl < 10) {
         lcd.print F(("  "));
-      } else if (kp_Vvl < 100) {
+      } else if (PID_Berekeningen::kp_Vvl < 100) {
         lcd.print F((" "));
       }
     } else {
       lcd.setCursor(0, 1);
       lcd.print F(("P"));
-      lcd.print(kp_Vvl);
-      if (kp_Vvl < 10) {
+      lcd.print(PID_Berekeningen::kp_Vvl);
+      if (PID_Berekeningen::kp_Vvl < 10) {
         lcd.print F(("  "));
-      } else if (kp_Vvl < 100) {
+      } else if (PID_Berekeningen::kp_Vvl < 100) {
         lcd.print F((" "));
       }
     }
     if (cursorPlace == 3) {  // if 3 change the I from the PID parameter
       lcd.setCursor(4, 1);
       lcd.print F((">"));
-      lcd.print(ki_Vvl);
-      if (ki_Vvl < 10) {
+      lcd.print(PID_Berekeningen::ki_Vvl);
+      if (PID_Berekeningen::ki_Vvl < 10) {
         lcd.print F(("  "));
-      } else if (ki_Vvl < 100) {
+      } else if (PID_Berekeningen::ki_Vvl < 100) {
         lcd.print F((" "));
       }
     } else {
       lcd.setCursor(4, 1);
       lcd.print F(("I"));
-      lcd.print(ki_Vvl);
-      if (ki_Vvl < 10) {
+      lcd.print(PID_Berekeningen::ki_Vvl);
+      if (PID_Berekeningen::ki_Vvl < 10) {
         lcd.print F(("  "));
-      } else if (ki_Vvl < 100) {
+      } else if (PID_Berekeningen::ki_Vvl < 100) {
         lcd.print F((" "));
       }
     }
     if (cursorPlace == 4) {  // if 4 change the D from the PID parameter
       lcd.setCursor(8, 1);
       lcd.print F((">"));
-      lcd.print(kd_Vvl);
-      if (kd_Vvl < 10) {
+      lcd.print(PID_Berekeningen::kd_Vvl);
+      if (PID_Berekeningen::kd_Vvl < 10) {
         lcd.print F(("  "));
-      } else if (kd_Vvl < 100) {
+      } else if (PID_Berekeningen::kd_Vvl < 100) {
         lcd.print F((" "));
       }
     } else {
       lcd.setCursor(8, 1);
       lcd.print F(("D"));
-      lcd.print(kd_Vvl);
-      if (kd_Vvl < 10) {
+      lcd.print(PID_Berekeningen::kd_Vvl);
+      if (PID_Berekeningen::kd_Vvl < 10) {
         lcd.print F(("  "));
-      } else if (kd_Vvl < 100) {
+      } else if (PID_Berekeningen::kd_Vvl < 100) {
         lcd.print F((" "));
       }
     }
@@ -232,57 +232,57 @@ void pidDisplay() {
     if (cursorPlace == 2) {                // if 2 change the P from the PID parameter
       lcd.setCursor(0, 1);
       lcd.print F((">"));
-      lcd.print(kp_balans);
-      if (kp_balans < 10) {
+      lcd.print(PID_Berekeningen::kp_balans);
+      if (PID_Berekeningen::kp_balans < 10) {
         lcd.print F(("  "));
-      } else if (kp_balans < 100) {
+      } else if (PID_Berekeningen::kp_balans < 100) {
         lcd.print F((" "));
       }
     } else {
       lcd.setCursor(0, 1);
       lcd.print F(("P"));
-      lcd.print(kp_balans);
-      if (kp_balans < 10) {
+      lcd.print(PID_Berekeningen::kp_balans);
+      if (PID_Berekeningen::kp_balans < 10) {
         lcd.print F(("  "));
-      } else if (kp_balans < 100) {
+      } else if (PID_Berekeningen::kp_balans < 100) {
         lcd.print F((" "));
       }
     }
     if (cursorPlace == 3) {  // if 3 change the I from the PID parameter
       lcd.setCursor(4, 1);
       lcd.print F((">"));
-      lcd.print(ki_balans);
-      if (ki_balans < 10) {
+      lcd.print(PID_Berekeningen::ki_balans);
+      if (PID_Berekeningen::ki_balans < 10) {
         lcd.print F(("  "));
-      } else if (ki_balans < 100) {
+      } else if (PID_Berekeningen::ki_balans < 100) {
         lcd.print F((" "));
       }
     } else {
       lcd.setCursor(4, 1);
       lcd.print F(("I"));
-      lcd.print(ki_balans);
-      if (ki_balans < 10) {
+      lcd.print(PID_Berekeningen::ki_balans);
+      if (PID_Berekeningen::ki_balans < 10) {
         lcd.print F(("  "));
-      } else if (ki_balans < 100) {
+      } else if (PID_Berekeningen::ki_balans < 100) {
         lcd.print F((" "));
       }
     }
     if (cursorPlace == 4) {  // if 4 change the D from the PID parameter
       lcd.setCursor(8, 1);
       lcd.print F((">"));
-      lcd.print(kd_balans);
-      if (kd_balans < 10) {
+      lcd.print(PID_Berekeningen::kd_balans);
+      if (PID_Berekeningen::kd_balans < 10) {
         lcd.print F(("  "));
-      } else if (kd_balans < 100) {
+      } else if (PID_Berekeningen::kd_balans < 100) {
         lcd.print F((" "));
       }
     } else {
       lcd.setCursor(8, 1);
       lcd.print F(("D"));
-      lcd.print(kd_balans);
-      if (kd_balans < 10) {
+      lcd.print(PID_Berekeningen::kd_balans);
+      if (PID_Berekeningen::kd_balans < 10) {
         lcd.print F(("  "));
-      } else if (kd_balans < 100) {
+      } else if (PID_Berekeningen::kd_balans < 100) {
         lcd.print F((" "));
       }
     }
@@ -291,57 +291,57 @@ void pidDisplay() {
     if (cursorPlace == 2) {           // if 2 change the P from the PID parameter
       lcd.setCursor(0, 1);
       lcd.print F((">"));
-      lcd.print(kp_Avl);
-      if (kp_Avl < 10) {
+      lcd.print(PID_Berekeningen::kp_Avl);
+      if (PID_Berekeningen::kp_Avl < 10) {
         lcd.print F(("  "));
-      } else if (kp_Avl < 100) {
+      } else if (PID_Berekeningen::kp_Avl < 100) {
         lcd.print F((" "));
       }
     } else {
       lcd.setCursor(0, 1);
       lcd.print F(("P"));
-      lcd.print(kp_Avl);
-      if (kp_Avl < 10) {
+      lcd.print(PID_Berekeningen::kp_Avl);
+      if (PID_Berekeningen::kp_Avl < 10) {
         lcd.print F(("  "));
-      } else if (kp_Avl < 100) {
+      } else if (PID_Berekeningen::kp_Avl < 100) {
         lcd.print F((" "));
       }
     }
     if (cursorPlace == 3) {  // if 3 change the I from the PID parameter
       lcd.setCursor(4, 1);
       lcd.print F((">"));
-      lcd.print(ki_Avl);
-      if (ki_Avl < 10) {
+      lcd.print(PID_Berekeningen::ki_Avl);
+      if (PID_Berekeningen::ki_Avl < 10) {
         lcd.print F(("  "));
-      } else if (ki_Avl < 100) {
+      } else if (PID_Berekeningen::ki_Avl < 100) {
         lcd.print F((" "));
       }
     } else {
       lcd.setCursor(4, 1);
       lcd.print F(("I"));
-      lcd.print(ki_Avl);
-      if (ki_Avl < 10) {
+      lcd.print(PID_Berekeningen::ki_Avl);
+      if (PID_Berekeningen::ki_Avl < 10) {
         lcd.print F(("  "));
-      } else if (ki_Avl < 100) {
+      } else if (PID_Berekeningen::ki_Avl < 100) {
         lcd.print F((" "));
       }
     }
     if (cursorPlace == 4) {  // if 4 change the D from the PID parameter
       lcd.setCursor(8, 1);
       lcd.print F((">"));
-      lcd.print(kd_Avl);
-      if (kd_Avl < 10) {
+      lcd.print(PID_Berekeningen::kd_Avl);
+      if (PID_Berekeningen::kd_Avl < 10) {
         lcd.print F(("  "));
-      } else if (kd_Avl < 100) {
+      } else if (PID_Berekeningen::kd_Avl < 100) {
         lcd.print F((" "));
       }
     } else {
       lcd.setCursor(8, 1);
       lcd.print F(("D"));
-      lcd.print(kd_Avl);
-      if (kd_Avl < 10) {
+      lcd.print(PID_Berekeningen::kd_Avl);
+      if (PID_Berekeningen::kd_Avl < 10) {
         lcd.print F(("  "));
-      } else if (kd_Avl < 100) {
+      } else if (PID_Berekeningen::kd_Avl < 100) {
         lcd.print F((" "));
       }
     }
