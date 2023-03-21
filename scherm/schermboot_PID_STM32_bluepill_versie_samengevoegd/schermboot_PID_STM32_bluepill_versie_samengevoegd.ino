@@ -43,6 +43,8 @@ int16_t ki_balans = 0;            // I parameter from the PID voorvleugel
 int16_t kd_balans = 0;            // D parameter from the PID voorvleugel
 uint16_t pidChangeDetection = 0;  // is used to see if there are changes in the PID setting
 
+const uint8_t pollTimeSensor = 89;  // How many milliseconds between sensor polls (the PID runs at the same speed)
+
 float P_Vvl;
 float I_Vvl;
 float D_Vvl;

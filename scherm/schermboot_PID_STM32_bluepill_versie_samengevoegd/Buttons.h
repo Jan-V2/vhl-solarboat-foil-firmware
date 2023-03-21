@@ -8,7 +8,7 @@ const uint8_t buttonPin2 = BUTTON_3;  // Pin number for button
 const uint8_t buttonPin1 = BUTTON_4;  // Pin number for button
 const uint8_t buttonPin_encoder_1 = ENC_1_BTN;
 const uint8_t buttonPin_encoder_2 = ENC_2_BTN;
-const uint8_t pollTimeSensor = 89;  // How many milliseconds between sensor polls (the PID runs at the same speed)
+
 
 const uint8_t pollTimeButtons = 24;           // How many milliseconds between button polls
 const uint8_t buttonCompompute = 49;          // How many milliseconds between button compute. less mili is faster long press
