@@ -67,7 +67,36 @@ void setup_LCD_Module() {
   lcd.print F(("VHL-Nordwin"));  // Print these words to my LCD screen
   lcd.setCursor(1, 2);
   lcd.print F(("Zonnebootteam"));
-}
-// einde setup
+} // einde setup
+
+ static uint32_t lastRefreshDistanceDisplay = 0;
+  if (millis() - lastRefreshDistanceDisplay > refreshDistanceDisplay) {
+    lastRefreshDistanceDisplay = millis();
+    Ultrasonic_Module::computeDistance();
+    displayData();
+    blink_cursor();
+  }
+
+  if ((pidChangeDetection != lastPidChangeDetection) && pid_actief) {  // wanneer de PID ingesteld word
+    lastPidChangeDetection = pidChangeDetection;
+    if (menu != Menu::DEBUG) {
+      pidDisplay();
+      blink_cursor();
+    }
+  }
+
+  static Menu last_menu = Menu::STARTUP;  // use STARTUP so that it runs at least ones to display the data
+
+  if (menu != last_menu) {
+    last_menu = menu;
+    displayControlMode();
+    blink_cursor();
+  }
+  if (menu == Menu::OFF) {
+    OFF();
+  }
+  if (menu == Menu::DEBUG) {
+    home();
+  }
 
 }  // namespace CAN_Module
