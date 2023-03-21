@@ -126,7 +126,7 @@ void computeButtonPress() {
     } else if ((button4 == HIGH) && (cursorPlace == 5)) {
       PID_Berekeningen::setPitch++;
     }
-    pidChangeDetection = PID_Berekeningen::setDistance + cursorPlace + PID_Berekeningen::kp_balans + PID_Berekeningen::ki_balans + PID_Berekeningen::kd_balans + PID_Berekeningen::setPitch + PID_Berekeningen::setRoll;
+    PID_Berekeningen::pidChangeDetection = PID_Berekeningen::setDistance + cursorPlace + PID_Berekeningen::kp_balans + PID_Berekeningen::ki_balans + PID_Berekeningen::kd_balans + PID_Berekeningen::setPitch + PID_Berekeningen::setRoll;
 
   } else if ((buttonAll == 1) && (menu == Menu::ACHTERVLEUGEL)) {  // works only when in 5 achtervleugel mode
     if ((button1 == HIGH) && (buttonStateChange1)) {
@@ -164,21 +164,21 @@ void computeButtonPress() {
     PID_Berekeningen::pidChangeDetection = PID_Berekeningen::setDistance + cursorPlace + PID_Berekeningen::kp_Avl + PID_Berekeningen::ki_Avl + PID_Berekeningen::kd_Avl + PID_Berekeningen::setPitch + PID_Berekeningen::setRoll;
   }
   cursorPlace = constrain(cursorPlace, 0, 5);
-  setDistance = constrain(setDistance, 0, 99);
+  PID_Berekeningen::setDistance = constrain(PID_Berekeningen::setDistance, 0, 99);
 
-  PID_Berekeningen::kp_Vvl = constrain(kp_Vvl, 0, 999);
-  PID_Berekeningen::ki_Vvl = constrain(ki_Vvl, 0, 999);
-  PID_Berekeningen::kd_Vvl = constrain(kd_Vvl, 0, 999);
+  PID_Berekeningen::kp_Vvl = constrain(PID_Berekeningen::kp_Vvl, 0, 999);
+  PID_Berekeningen::ki_Vvl = constrain(PID_Berekeningen::ki_Vvl, 0, 999);
+  PID_Berekeningen::kd_Vvl = constrain(PID_Berekeningen::kd_Vvl, 0, 999);
 
-  PID_Berekeningen::kp_Avl = constrain(kp_Avl, 0, 999);
-  PID_Berekeningen::ki_Avl = constrain(ki_Avl, 0, 999);
-  PID_Berekeningen::kd_Avl = constrain(kd_Avl, 0, 999);
+  PID_Berekeningen::kp_Avl = constrain(PID_Berekeningen::kp_Avl, 0, 999);
+  PID_Berekeningen::ki_Avl = constrain(PID_Berekeningen::ki_Avl, 0, 999);
+  PID_Berekeningen::kd_Avl = constrain(PID_Berekeningen::kd_Avl, 0, 999);
 
-  kp_balans = constrain(kp_balans, 0, 999);
-  ki_balans = constrain(ki_balans, 0, 999);
-  kd_balans = constrain(kd_balans, 0, 999);
+  PID_Berekeningen::kp_balans = constrain(PID_Berekeningen::kp_balans, 0, 999);
+  PID_Berekeningen::ki_balans = constrain(PID_Berekeningen::ki_balans, 0, 999);
+  PID_Berekeningen::kd_balans = constrain(PID_Berekeningen::kd_balans, 0, 999);
 
-  setPitch = constrain(setPitch, -99, 999);
+  PID_Berekeningen::setPitch = constrain(PID_Berekeningen::setPitch, -99, 999);
 }
 
 // begin startupMenu
