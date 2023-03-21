@@ -23,15 +23,23 @@ int16_t distance = 0;                // distance from de ultrasoic sensor in cm
 // Functions have to be decalred before they can be used in another function (in this case  "attachInterrupt()") this is called a "forward declaration"
 void call_INT0();
 
+// begin setup
 void setup_Ultrasonic_Module() {
   pinMode(trig_1_pin, OUTPUT);                                            // Pin 3 as trig_1_pin (output)
   pinMode(echo_1_pin, INPUT);                                             // [INT0] as echo_1_pin (input)
   attachInterrupt(digitalPinToInterrupt(echo_1_pin), call_INT0, CHANGE);  // Attach function call_INT0 to echo_1_pin when it CHANGEs state
-}
+}  // einde setup
 
-//=================================================================== doMeasurement =================================================================
+// ========================start loop ================
+void Ultrasonic_Module_loop() {
+  static uint32_t lastPollSensor = 0;
+  if (millis() - lastPollSensor > pollTimeSensor) {
+    lastPollSensor = millis();
+    startMeasurement();  // measure the distance from the ultrasonic sensor
+  }
+}  // ====================== einde loop =============
 
-void doMeasurement() {
+void startMeasurement() {
   // Initiate next trigger
   digitalWrite(trig_1_pin, LOW);   // LOW
   delayMicroseconds(2);            // for 2µs

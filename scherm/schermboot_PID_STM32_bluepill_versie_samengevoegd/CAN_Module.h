@@ -102,7 +102,7 @@ void setup_CAN_Module() {
 }
 
 // ===== start CAN loop =====
-void CAN_loop() {
+void CAN_Module_loop() {
 
   read_CAN_data();
 
