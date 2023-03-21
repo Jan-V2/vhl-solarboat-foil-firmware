@@ -1,13 +1,5 @@
 // de cpu is Geen stm32f103RBT6 MAAR STM32F103C8T6 digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-
-//SPI 1 //KLOPT
-/*
-  CS CAN1 PA4 motor
-  CS CAN2 PB0 telemety
-  CLK	PA5
-  MISO	PA6
-  MOSI	PA7
-*/
+#pragma once
 
 //input/buttons // KLOPT
 #define BUTTON_4 PB7
@@ -21,11 +13,7 @@
 #define ENC_1_BTN PA8
 #define ENC_2_BTN PB13
 
-//ultrasound sensor // KLOPT
-#define trig_1 PB3
-#define echo_1 PA15
-#define trig_2 PA12
-#define echo_2 PA11
+
 
 //LCD //KLOPT
 #define E  PC14

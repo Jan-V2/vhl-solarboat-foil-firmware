@@ -1,7 +1,15 @@
 //#include <Arduino.h>
 #include "pinmap_bluepill.h"
+#include "LCD.h"
+#include "CAN.h"
+#include "Ultrasonic_Module.h"
+#include "Buttons.h"
+#include "Globals.h"
+
 #include <SPI.h>
 #include <mcp2515.h>
+
+using namespace Globals;
 
 enum CAN_netwerk {
   telemetry,
@@ -13,9 +21,8 @@ enum class Menu : uint8_t {
   VOORVLEUGEL,
   ACHTERVLEUGEL,
   BALANS_VOORVLEUGEL,
-  MANUALLY,
-  STARTUP,
-  DEBUG
+  DEBUG,
+  STARTUP
 };
 
 Menu menu;
@@ -24,8 +31,7 @@ struct can_frame canMsg;
 MCP2515 mcp2515_telemetry(PB0);
 MCP2515 mcp2515_motor(PA4);
 
-const uint8_t triggerPin = trig_1;    // Pin number for trigger signal
-const uint8_t echoPin = echo_1;       // Pin number for echo signal (interrupt pin)
+
 const uint8_t buttonPin4 = BUTTON_1;  // Pin number for button
 const uint8_t buttonPin3 = BUTTON_2;  // Pin number for button
 const uint8_t buttonPin2 = BUTTON_3;  // Pin number for button
@@ -33,8 +39,7 @@ const uint8_t buttonPin1 = BUTTON_4;  // Pin number for button
 const uint8_t buttonPin_encoder_1 = ENC_1_BTN;
 const uint8_t buttonPin_encoder_2 = ENC_2_BTN;
 const uint8_t pollTimeSensor = 89;  // How many milliseconds between sensor polls (the PID runs at the same speed)
-//const uint16_t   soundSpeed              = 343;              // Speed of sound in m/s (choos one soundspeed)
-const float soundSpeed = 58.309038;                                  // speed of sound in micosecond/cm (29,15*2=58.3 want heen en terug)  (choos one soundspeed)
+
 const uint16_t refreshDistanceDisplay = 399;                         // How many milliseconds between display updates
 const uint8_t pollTimeButtons = 24;                                  // How many milliseconds between button polls
 const uint8_t buttonCompompute = 49;                                 // How many milliseconds between button compute. less mili is faster long press
@@ -47,13 +52,12 @@ const uint16_t pulsen_per_mm = maxPulseEncoder / maxAfstandEncoder;  // pulsen p
 const int16_t minDistance = 5;                                       // als de boot onder de minimale hoogte komt dan wordt de hoek van de vleugel aggresiever.
 const int16_t maxDistance = 30;                                      // als de boot boven de maximale hoogte komt dan wordt de hoek van de vleugel minder aggresief.
 const int16_t SendCanTelemetryTimeStatus = 450;                      // iedere seconden word er een berichtje naar de telemetrie verstuurd om te laten weten dat het scherm werkt en de voo/achter vleugel
-const int16_t offline_time = 2500;                                   // als de voor of achtervleugel langer dan 2,5 seconden niks over de can versturen word de online status false. deze info word naar de telemetrie verstuurd
-const float pi = 3.14159265359;
+const int16_t offline_time = 2500;                                   // als de voor of achtervleugel langer dan 2,5 seconden niks over de can versturen word de online status false. deze info word naar de telemetrie en scherm verstuurd
 
-volatile uint32_t travelTime = 0;     // the time it takes the sound to comback to the sensor in micoseconds
-int16_t distance = 0;                 // distance from de ultrasoic sensor in cm
-volatile bool newMesurement = false;  // is true when the interupt is triggerd to indicate a new mesurement of een nieuwe gyro meting.
-volatile bool newHightMesurement = false;
+
+
+
+
 //uint8_t controlMode = 0;          // 0 = off, 1 = manuel, 2 = Vvl, 3 = HOME, 4 = balans en 5 = Avl
 uint8_t cursorPlace = 0;          // is used to select the parameter that you want to change when in PID controlmode
 uint16_t pidChangeDetection = 0;  // is used to see if there are changes in the PID setting
@@ -186,8 +190,9 @@ LiquidCrystal lcd(RS, E, D4, D5, D6, D7);
 //RunningMedian travelTimeMedian = RunningMedian(medianSize);
 
 void setup() {
+  using namespace Ultrasonic_Module;
+  
   Serial.begin(115200);
-  pinMode(LED_BUILTIN, OUTPUT);
   setup_buttons_and_encoders();
 
   lcd.createChar(1, smile_happy);
@@ -208,16 +213,13 @@ void setup() {
   mcp2515_motor.setBitrate(CAN_125KBPS);
   mcp2515_motor.setNormalMode();
 
-  pinMode(triggerPin, OUTPUT);  // Pin 3 as triggerpin (output)
-  pinMode(echoPin, INPUT);      // Pin 2 [INT0] as echopin (input)
+  Ultrasonic_Module::setup_Ultrasonic_Module();
   pinMode(buttonPin1, INPUT_PULLUP);
   pinMode(buttonPin2, INPUT_PULLUP);
   pinMode(buttonPin3, INPUT_PULLUP);
   pinMode(buttonPin4, INPUT_PULLUP);
   pinMode(buttonPin_encoder_1, INPUT_PULLUP);
 
-  // Attach function call_INT0 to pin 2 when it CHANGEs state
-  attachInterrupt(digitalPinToInterrupt(echoPin), call_INT0, CHANGE);  // Pin 2 -> INT0
 
   delay(25);
   while (buttonAll == 0) {
@@ -238,26 +240,13 @@ void setup() {
   Serial.println F(("--- Serial monitor started ---"));
 }
 void loop() {
-  /*
-    // ================================ code van youtbe ===========================
-    // Has rotary encoder moved?
-    if (rotaryEncoder) {
-      // Get the movement (if valid)
-      int8_t rotationValue = checkRotaryEncoder();
 
-      // If valid movement, do something
-      if (rotationValue != 0) {
-        enc_1_pulses += rotationValue;
-      }
-    }
-    // =============================== einde code youtube ============================
-  */
   //================================================================== main loop poll sensor ==========================================================================
 
   static uint32_t lastPollSensor = 0;
   if (millis() - lastPollSensor > pollTimeSensor) {
     lastPollSensor = millis();
-    doMeasurement();  // measure the distance from the ultrasonic sensor
+    Ultrasonic_Module::doMeasurement();  // measure the distance from the ultrasonic sensor
   }
   static uint32_t lastPollButtons = 0;
   if (millis() - lastPollButtons > pollTimeButtons) {
@@ -282,10 +271,10 @@ void loop() {
   }
   static uint32_t last_PID_compute_time = 0;
   static uint16_t lastPidChangeDetection = 1;
-  if ((((millis() - last_PID_compute_time > PID_compute_time) || newMesurement || (pidChangeDetection != lastPidChangeDetection)) && pid_actief)) {
+  if ((((millis() - last_PID_compute_time > PID_compute_time) || Ultrasonic_Module::newMesurement || (pidChangeDetection != lastPidChangeDetection)) && pid_actief)) {
     last_PID_compute_time = millis();
-    newMesurement = false;
-    computeDistance();
+    Ultrasonic_Module::newMesurement = false;
+    Ultrasonic_Module::computeDistance();
     computePid_Vvl();
     computePid_Avl();
     computePid_balans();
@@ -294,7 +283,7 @@ void loop() {
     Serial.print(" - ");
     Serial.print(PID_compute_time);
     Serial.print(" - ");
-    Serial.print(newMesurement);
+    Serial.print(Ultrasonic_Module::newMesurement);
     Serial.print(" - ");
     Serial.print(pidChangeDetection);
     Serial.print(" - ");
@@ -308,16 +297,16 @@ void loop() {
   static uint32_t lastRefreshDistanceDisplay = 0;
   if (millis() - lastRefreshDistanceDisplay > refreshDistanceDisplay) {
     lastRefreshDistanceDisplay = millis();
-    computeDistance();
+    Ultrasonic_Module::computeDistance();
     displayData();
     blink_cursor();
   }
 
   if ((pidChangeDetection != lastPidChangeDetection) && pid_actief) {  // wanneer de PID ingesteld word
     lastPidChangeDetection = pidChangeDetection;
-    if(menu != Menu::DEBUG){
-    pidDisplay();
-    blink_cursor();
+    if (menu != Menu::DEBUG) {
+      pidDisplay();
+      blink_cursor();
     }
   }
 
@@ -393,9 +382,9 @@ void read_CAN_data() {
     //  Serial.println(canMsg.can_id, DEC);
 
     if (canMsg.can_id == 0x64) {
-      pitch = float_from_can(0);  // byte 0-3 is float pitch
-      roll = float_from_can(4);   // byte 4-7 is float roll
-      newMesurement = true;       // er is een nieuwe meting voor de PID compute
+      pitch = float_from_can(0);                // byte 0-3 is float pitch
+      roll = float_from_can(4);                 // byte 4-7 is float roll
+      Ultrasonic_Module::newMesurement = true;  // er is een nieuwe meting voor de PID compute
       last_gyro_online_millis = millis();
 
       can_frame ret;
@@ -440,7 +429,7 @@ void send_CAN_data_telemetry() {
   I_Balans_telemetry = constrain(I_Balans, -5.0, 5.0) * 20.0;
   D_Balans_telemetry = constrain(D_Balans, -5.0, 5.0) * 20.0;
   pidBalansTotal_telemetry = constrain(pidBalansTotal, -5.0, 5.0) * 20.0;
-  distance_telemetry = constrain(distance, -127, 127);
+  distance_telemetry = constrain(Ultrasonic_Module::distance, -127, 127);
 
   int_to_frame_thrice(P_Vvl_telemetry, I_Vvl_telemetry, D_Vvl_telemetry, pidVvlTotal_telemetry, 51, telemetry);
   int_to_frame_thrice(P_Avl_telemetry, I_Avl_telemetry, D_Avl_telemetry, pidAvlTotal_telemetry, 52, telemetry);
@@ -462,16 +451,6 @@ void send_CAN_data_motor() {
   }
 }
 
-//========================================================================= doMeasurement =====================================================================
-
-void doMeasurement() {
-  // Initiate next trigger
-  digitalWrite(triggerPin, LOW);   // LOW
-  delayMicroseconds(2);            // for 2µs
-  digitalWrite(triggerPin, HIGH);  // HIGH
-  delayMicroseconds(10);           // for 10µs
-  digitalWrite(triggerPin, LOW);   // Set LOW again
-}
 
 //============================================================================ pidDisplay ===============================================================
 
@@ -730,11 +709,10 @@ void computeButtonPress() {
         break;
 
       case Menu::DEBUG:
-        menu = Menu::MANUALLY;
+        menu = Menu::OFF;
         break;
 
-      case Menu::MANUALLY:
-        menu = Menu::OFF;
+      case Menu::STARTUP:
         break;
     }
   }
@@ -864,18 +842,9 @@ void computeButtonPress() {
   setPitch = constrain(setPitch, -99, 999);
 }
 
-//======================================================================= computeDistance ==========================================================================
 
-void computeDistance() {
-  static int16_t distance_sensor;
-  distance_sensor = (travelTime + (0.5 * soundSpeed)) / soundSpeed;  // afstand in cm. because int are rounded down we add 0,5 cm or 29 micoseconds
-  static float pitch_rad;                                            // arduino werkt in radians.
-  pitch_rad = pitch * pi / 180.0;                                    // degees to radians
-  distance = distance_sensor - (270 * tan(pitch_rad)) - 40.0 + 0.5;  // afstand van de onderkant van de boot (-40) tot het water onder de vleugel door rekening te houden met de hoek van de boot(-270*tan(pitch_rad). because int are rounded down we add 0,5
-}
 
-//======================================================================= compute pid voorvleugel ==========================================================================
-
+//========================================================== compute pid voorvleugel ===============================================================
 void computePid_Vvl() {
   static float error = 0;
   static float diffError = 0;
@@ -893,13 +862,13 @@ void computePid_Vvl() {
   static float max_I_Vvl = 0;
 
 
-  if (newHightMesurement == true) {
-    newHightMesurement = false;
+  if (Ultrasonic_Module::newHightMesurement == true) {
+    Ultrasonic_Module::newHightMesurement = false;
     pidTime = millis();
     pidLoopTime_ms = pidTime - lastPidTime;
     lastPidTime = pidTime;
     pidLoopTime_s = float(pidLoopTime_ms) / 1000.0;
-    error = float(setDistance) - float(distance);
+    error = float(setDistance) - float(Ultrasonic_Module::distance);
     diffError = error - oldError;
     oldError = error;
 
@@ -930,10 +899,10 @@ void computePid_Vvl() {
 
   pidVvlTotal = constrain(pidVvlTotal, -9.9, 12.0);
 
-  //if (distance < minDistance) {
+  //if (Ultrasonic_Module::distance < minDistance) {
   //  pidVvlTotal = 4;
   //}
-  //if (distance > maxDistance) {
+  //if (Ultrasonic_Module::distance > maxDistance) {
   //  pidVvlTotal = -3;
   //}
 
@@ -1047,7 +1016,7 @@ void computePid_balans() {
 
 void displayData() {
   lcd.setCursor(0, 0);  // set curser at distance place
-  int x constrain(distance, -99, 999);
+  int x constrain(Ultrasonic_Module::distance, -99, 999);
   if (x == -39) {             // check for error
     lcd.print F(("ERROR "));  // print error
   } else {                    // if no error print the distance
@@ -1315,6 +1284,12 @@ void displayData() {
       lcd.print(pidBalansTotal * 10.0, 0);
       lcd.print(' ');
       break;
+
+    case Menu::OFF:
+      break;
+
+    case Menu::STARTUP:
+      break;
   }
 }
 
@@ -1327,10 +1302,6 @@ void displayControlMode() {
     lcd.clear();
     lcd.setCursor(16, 0);
     lcd.print F((" OFF"));
-  } else if (menu == Menu::MANUALLY) {
-    lcd.clear();
-    lcd.setCursor(16, 0);
-    lcd.print F(("MAN "));
   } else if (menu == Menu::VOORVLEUGEL) {
     lcd.print F(("V vl"));
   } else if (menu == Menu::DEBUG) {
@@ -1437,57 +1408,13 @@ void buttonPressDetection() {
   }
 }
 
-//=============================================================================== interrupt for ultrasonic sensor ==================================================================
 
-// Interrupt handling for INT0 (pin 2 on Arduino Uno)
-// Keep this as FAST and LIGHT (cpu load) as possible !
-void call_INT0() {
-  byte pinRead;
-  pinRead = digitalRead(echoPin);  // same as digitalRead(2) but faster
-
-  unsigned long currentTime = micros();  // Get current time (in µs)
-  static volatile uint32_t startTime;
-  static volatile uint32_t oldTravelTime = 0;
-  if (pinRead) {
-    // If pin state has changed to HIGH -> remember start time (in µs)
-    startTime = currentTime;
-  } else {
-    // If pin state has changed to LOW -> calculate time passed (in µs)
-    travelTime = currentTime - startTime;
-    // Serial.println(travelTime / 58.3);
-    newMesurement = true;
-    newHightMesurement = true;
-
-    //=========================================================================== out of range detection =========================================================================
-
-    static uint8_t i = 0;
-    if ((travelTime > 15000) || (travelTime < 1300)) {  // if object is out of range or mesurement error
-      travelTime = oldTravelTime;                       // use preveus mesurement becaus of mesurement error
-      if ((i < 4) && (travelTime > 1300)) {             // count out of range mesurement untill five
-        i++;
-      } else {
-        travelTime = 0;  // if object is realy out of range return 0
-      }
-    } else {
-      oldTravelTime = travelTime;  // save a new mesurement as old mesurment
-      i = 0;                       // reset out of range counter
-    }
-  }
-}
 
 void blink_cursor() {
   static bool blinkCursor = false;
   static bool prevBlinkCursor = blinkCursor;
 
-  if (menu == Menu::MANUALLY) {
-    if (cursorPlace == 0) {  // set hoek voorvleugel
-      lcd.setCursor(0, 1);
-    } else if (cursorPlace == 1) {  // set offset voorvleugel
-      lcd.setCursor(5, 1);
-    } else if (cursorPlace == 1) {  // set offset voorvleugel
-      lcd.setCursor(10, 1);
-    }
-  } else if (((menu == Menu::VOORVLEUGEL) || (menu == Menu::BALANS_VOORVLEUGEL) || (menu == Menu::ACHTERVLEUGEL)) && (pid_actief == true)) {
+  if (((menu == Menu::VOORVLEUGEL) || (menu == Menu::BALANS_VOORVLEUGEL) || (menu == Menu::ACHTERVLEUGEL)) && (pid_actief == true)) {
     if (cursorPlace == 0) {  // set hoogte
       lcd.setCursor(6, 0);
     } else if (cursorPlace == 1) {  // set roll
@@ -1546,9 +1473,7 @@ void startupMenu() {
   delay(25);
   buttonPressDetection();
 
-  if (button2) {
-    menu = Menu::MANUALLY;  // contolMode Manuel
-  } else if (button3) {
+  if (button3) {
     menu = Menu::VOORVLEUGEL;  // contolMode V vl
   } else if (button4) {
     menu = Menu::DEBUG;  // contolMode Home
