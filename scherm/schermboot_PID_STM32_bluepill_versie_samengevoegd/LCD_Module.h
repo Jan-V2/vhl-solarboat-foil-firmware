@@ -4,7 +4,7 @@
 
 #include "Globals.h"
 
-using namespace Globals;
+//using namespace Globals;
 
 namespace LCD_Module {
 
