@@ -1,9 +1,7 @@
-#include "variant_PILL_F103Cx.h"
 #pragma once
 
 #include "Globals.h"
 
-//using namespace Globals;
 namespace Ultrasonic_Module {
 
 float pitch = 0;  // tijdelijk voor debuggen moet uit de CAN.h komen
@@ -11,8 +9,8 @@ float pitch = 0;  // tijdelijk voor debuggen moet uit de CAN.h komen
 // Pin assignment for Ultrasonic_Module
 const uint8_t trig_1_pin = PB3;   // Pin number for trigger signal
 const uint8_t echo_1_pin = PA15;  // Pin number for echo signal (interrupt pin)
-const uint8_t trig_2_pin = PA12;  // Pin number for trigger signal 2, NOT USED
-const uint8_t echo_2_pin = PA11;  // Pin number for echo signal 2 (interrupt pin), NOT USED
+//const uint8_t trig_2_pin = PA12;  // Pin number for trigger signal 2, NOT USED
+//const uint8_t echo_2_pin = PA11;  // Pin number for echo signal 2 (interrupt pin), NOT USED
 
 volatile uint32_t travelTime = 0;     // the time it takes the sound to comback to the sensor in micoseconds
 volatile bool newMesurement = false;  // is true when the interupt is triggerd to indicate a new mesurement of een nieuwe gyro meting.
@@ -27,8 +25,8 @@ void call_INT0();
 
 void setup_Ultrasonic_Module() {
   pinMode(trig_1_pin, OUTPUT);                                            // Pin 3 as trig_1_pin (output)
-  pinMode(echo_1_pin, INPUT);                                             // Pin 2 [INT0] as echo_1_pin (input)
-  attachInterrupt(digitalPinToInterrupt(echo_1_pin), call_INT0, CHANGE);  // Pin 2 -> INT0 // Attach function call_INT0 to pin 2 when it CHANGEs state
+  pinMode(echo_1_pin, INPUT);                                             // [INT0] as echo_1_pin (input)
+  attachInterrupt(digitalPinToInterrupt(echo_1_pin), call_INT0, CHANGE);  // Attach function call_INT0 to echo_1_pin when it CHANGEs state
 }
 
 //=================================================================== doMeasurement =================================================================
@@ -47,13 +45,10 @@ void doMeasurement() {
 // Interrupt handling for INT0 (pin 2 on Arduino Uno)
 // Keep this as FAST and LIGHT (cpu load) as possible !
 void call_INT0() {
-  byte pinRead;
-  pinRead = digitalRead(echo_1_pin);  // same as digitalRead(2) but faster
-
   unsigned long currentTime = micros();  // Get current time (in µs)
   static volatile uint32_t startTime;
   static volatile uint32_t oldTravelTime = 0;
-  if (pinRead) {
+  if (digitalRead(echo_1_pin)) {
     // If pin state has changed to HIGH -> remember start time (in µs)
     startTime = currentTime;
   } else {
@@ -82,11 +77,11 @@ void call_INT0() {
 
 //============================================================= computeDistance ===================================================================
 void computeDistance() {
-  static int16_t distance_sensor;
-  distance_sensor = (travelTime + (0.5 * soundSpeed)) / soundSpeed;  // afstand in cm. because int are rounded down we add 0,5 cm or 29 micoseconds
+  static int16_t distance_ultrasonic_module;
+  distance_ultrasonic_module = (travelTime + (0.5 * soundSpeed)) / soundSpeed;  // afstand in cm. because int are rounded down we add 0,5 cm or 29 micoseconds
 
-  pitch_rad = pitch * Globals::pi / 180.0;                           // degees to radians
-  distance = distance_sensor - (270 * tan(pitch_rad)) - 40.0 + 0.5;  // afstand van de onderkant van de boot (-40) tot het water onder de vleugel door rekening te houden met de hoek van de boot(-270*tan(pitch_rad). because int are rounded down we add 0,5
+  pitch_rad = pitch * Globals::pi / 180.0;                                      // degees to radians
+  distance = distance_ultrasonic_module - (270 * tan(pitch_rad)) - 40.0 + 0.5;  // afstand van de onderkant van de boot (-40) tot het water onder de vleugel door rekening te houden met de hoek van de boot(-270*tan(pitch_rad). because int are rounded down we add 0,5
 }
 
 

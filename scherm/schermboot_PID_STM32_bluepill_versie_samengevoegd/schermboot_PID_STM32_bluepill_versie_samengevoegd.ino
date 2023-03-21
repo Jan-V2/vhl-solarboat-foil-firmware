@@ -1,20 +1,12 @@
 //#include <Arduino.h>
 #include "pinmap_bluepill.h"
 #include "LCD.h"
-#include "CAN.h"
+#include "CAN_Module.h"
 #include "Ultrasonic_Module.h"
 #include "Buttons.h"
 #include "Globals.h"
 
-#include <SPI.h>
-#include <mcp2515.h>
-
 using namespace Globals;
-
-enum CAN_netwerk {
-  telemetry,
-  motor
-};
 
 enum class Menu : uint8_t {
   OFF,
@@ -27,11 +19,6 @@ enum class Menu : uint8_t {
 
 Menu menu;
 
-struct can_frame canMsg;
-MCP2515 mcp2515_telemetry(PB0);
-MCP2515 mcp2515_motor(PA4);
-
-
 const uint8_t buttonPin4 = BUTTON_1;  // Pin number for button
 const uint8_t buttonPin3 = BUTTON_2;  // Pin number for button
 const uint8_t buttonPin2 = BUTTON_3;  // Pin number for button
@@ -40,27 +27,20 @@ const uint8_t buttonPin_encoder_1 = ENC_1_BTN;
 const uint8_t buttonPin_encoder_2 = ENC_2_BTN;
 const uint8_t pollTimeSensor = 89;  // How many milliseconds between sensor polls (the PID runs at the same speed)
 
-const uint16_t refreshDistanceDisplay = 399;                         // How many milliseconds between display updates
-const uint8_t pollTimeButtons = 24;                                  // How many milliseconds between button polls
-const uint8_t buttonCompompute = 49;                                 // How many milliseconds between button compute. less mili is faster long press
-const uint8_t SendCanMotorTime = 10;                                 // How many milliseconds between sending CAN frames
-const uint8_t SendCanTelemetryTime = 10;                             // How many milliseconds between sending CAN frames
+const uint16_t refreshDistanceDisplay = 399;  // How many milliseconds between display updates
+const uint8_t pollTimeButtons = 24;           // How many milliseconds between button polls
+const uint8_t buttonCompompute = 49;          // How many milliseconds between button compute. less mili is faster long press
+
 const uint16_t PID_compute_time = 250;                               // How many milliseconds between PID compute.
 const uint16_t maxPulseEncoder = 11487;                              // the maximum amount of pulses for the front foil motor encoder
 const uint16_t maxAfstandEncoder = 200;                              // de afstand in mm die de voor linieare motor kan uit schuiven
 const uint16_t pulsen_per_mm = maxPulseEncoder / maxAfstandEncoder;  // pulsen per mm van de linieare motor
 const int16_t minDistance = 5;                                       // als de boot onder de minimale hoogte komt dan wordt de hoek van de vleugel aggresiever.
 const int16_t maxDistance = 30;                                      // als de boot boven de maximale hoogte komt dan wordt de hoek van de vleugel minder aggresief.
-const int16_t SendCanTelemetryTimeStatus = 450;                      // iedere seconden word er een berichtje naar de telemetrie verstuurd om te laten weten dat het scherm werkt en de voo/achter vleugel
-const int16_t offline_time = 2500;                                   // als de voor of achtervleugel langer dan 2,5 seconden niks over de can versturen word de online status false. deze info word naar de telemetrie en scherm verstuurd
-
-
-
-
 
 //uint8_t controlMode = 0;          // 0 = off, 1 = manuel, 2 = Vvl, 3 = HOME, 4 = balans en 5 = Avl
-uint8_t cursorPlace = 0;          // is used to select the parameter that you want to change when in PID controlmode
-uint16_t pidChangeDetection = 0;  // is used to see if there are changes in the PID setting
+uint8_t cursorPlace = 0;  // is used to select the parameter that you want to change when in PID controlmode
+
 int16_t kp_Vvl = 0;               // P parameter from the PID voorvleugel
 int16_t ki_Vvl = 0;               // I parameter from the PID voorvleugel
 int16_t kd_Vvl = 0;               // D parameter from the PID voorvleugel
@@ -70,6 +50,8 @@ int16_t kd_Avl = 0;               // D parameter from the PID voorvleugel
 int16_t kp_balans = 0;            // P parameter from the PID voorvleugel
 int16_t ki_balans = 0;            // I parameter from the PID voorvleugel
 int16_t kd_balans = 0;            // D parameter from the PID voorvleugel
+uint16_t pidChangeDetection = 0;  // is used to see if there are changes in the PID setting
+
 float P_Vvl;
 float I_Vvl;
 float D_Vvl;
@@ -82,32 +64,6 @@ float D_Balans;
 float pidVvlTotal = 0;
 float pidAvlTotal = 0;
 float pidBalansTotal = 0;
-
-int16_t P_Vvl_telemetry;
-int16_t I_Vvl_telemetry;
-int16_t D_Vvl_telemetry;
-int16_t P_Avl_telemetry;
-int16_t I_Avl_telemetry;
-int16_t D_Avl_telemetry;
-int8_t P_Balans_telemetry;
-int8_t I_Balans_telemetry;
-int8_t D_Balans_telemetry;
-int16_t pidVvlTotal_telemetry;
-int16_t pidAvlTotal_telemetry;
-int8_t pidBalansTotal_telemetry;
-int8_t distance_telemetry;
-bool PID_debug_telemetry;
-bool status_Vvl = false;
-bool status_Avl = false;
-bool status_gryo = false;
-bool status_gashendel = false;
-bool status_temp = false;
-bool status_telemetrie_verbinding_server = false;
-bool status_telemetrie_verbinding_CAN = false;
-
-uint32_t last_Vvl_online_millis;
-uint32_t last_Avl_online_millis;
-uint32_t last_gyro_online_millis;
 
 uint8_t setDistance = 10;              // target distance in cm that the PID will try to reach, this value can be changed on de
 int8_t setRoll = 0;                    // target roll in 10de graden( 1 = 0,1 graden en 10 = 1 graad) that the PID will try to reach, this value can be changed on de
@@ -168,30 +124,14 @@ byte smile_sad[8] =
     0b11111
   };
 
-// data van CAN
-float pitch;
-float roll;
-int16_t amps_achter_vleugel;
-int16_t PWM_links;
-int16_t PWM_rechts;
-int16_t PWM_achter;
 
-int16_t CAN_pulsen_voor = 0;
-int16_t CAN_pulsen_offset = 0;
-int16_t CAN_pulsen_achter = 0;
-
-bool home_front_foil;
-bool home_rear_foil;
-int16_t has_homed_voor_vleugel;
-int16_t has_homed_achter_vleugel;
 
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(RS, E, D4, D5, D6, D7);
 //RunningMedian travelTimeMedian = RunningMedian(medianSize);
 
 void setup() {
-  using namespace Ultrasonic_Module;
-  
+
   Serial.begin(115200);
   setup_buttons_and_encoders();
 
@@ -205,15 +145,12 @@ void setup() {
   lcd.setCursor(1, 2);
   lcd.print F(("Zonnebootteam"));
 
-  mcp2515_telemetry.reset();
-  mcp2515_telemetry.setBitrate(CAN_125KBPS, MCP_8MHZ);
-  mcp2515_telemetry.setNormalMode();
 
-  mcp2515_motor.reset();
-  mcp2515_motor.setBitrate(CAN_125KBPS);
-  mcp2515_motor.setNormalMode();
 
   Ultrasonic_Module::setup_Ultrasonic_Module();
+
+  CAN_Module::setup_CAN_Module();
+
   pinMode(buttonPin1, INPUT_PULLUP);
   pinMode(buttonPin2, INPUT_PULLUP);
   pinMode(buttonPin3, INPUT_PULLUP);
@@ -240,6 +177,8 @@ void setup() {
   Serial.println F(("--- Serial monitor started ---"));
 }
 void loop() {
+
+  CAN_Module::CAN_loop();
 
   //================================================================== main loop poll sensor ==========================================================================
 
@@ -324,45 +263,6 @@ void loop() {
     home();
   }
 
-  read_CAN_data();
-
-  static uint32_t lastSendCanMotor = 0;
-  if (millis() - lastSendCanMotor > SendCanMotorTime) {
-    lastSendCanMotor = millis();
-    send_CAN_data_motor();
-  }
-
-  static uint32_t lastSendCanTelemetry = 0;
-  if (millis() - lastSendCanTelemetry > SendCanTelemetryTime) {
-    lastSendCanTelemetry = millis();
-    send_CAN_data_telemetry();
-  }
-
-  static uint32_t lastSendCanTelemetryStatus = 0;
-  //  static uint32_t last_Vvl_online_millis = 0;
-  //  static uint32_t last_Avl_online_millis = 0;
-
-  if (millis() - lastSendCanTelemetryStatus > SendCanTelemetryTimeStatus) {
-    lastSendCanTelemetryStatus = millis();
-    if (millis() - last_Vvl_online_millis > offline_time) {
-      status_Vvl = false;
-    } else {
-      status_Vvl = true;
-    }
-    if (millis() - last_Avl_online_millis > offline_time) {
-      status_Avl = false;
-    } else {
-      status_Avl = true;
-    }
-    if (millis() - last_gyro_online_millis > offline_time) {
-      status_gryo = false;
-    } else {
-      status_gryo = true;
-    }
-
-    int8_t_to_frame(status_Vvl, status_Avl, 0, 0, 0, 0, 0, 0, 54, telemetry);
-  }
-
   //===================================================================== main loop reset buttonStateChange ============================================================
 
   buttonStateChange_enc_1 = false;
@@ -374,82 +274,6 @@ void loop() {
   buttonStateChange = false;   // reset buttonStateChange at the end of the loop if removed the numbers increase with two instead of one
 }
 
-//======================================================================== read_CAN_data ======================================================================
-
-void read_CAN_data() {
-  if (mcp2515_motor.readMessage(&canMsg) == MCP2515::ERROR_OK) {
-    //  Serial.print("CAN ID: ");
-    //  Serial.println(canMsg.can_id, DEC);
-
-    if (canMsg.can_id == 0x64) {
-      pitch = float_from_can(0);                // byte 0-3 is float pitch
-      roll = float_from_can(4);                 // byte 4-7 is float roll
-      Ultrasonic_Module::newMesurement = true;  // er is een nieuwe meting voor de PID compute
-      last_gyro_online_millis = millis();
-
-      can_frame ret;
-      for (uint8_t i = 0; i < sizeof(float) * 2; i++) {
-        ret.data[i] = canMsg.data[i];
-      }
-      ret.can_id = 50;
-      ret.can_dlc = sizeof(float) * 2;
-      mcp2515_telemetry.sendMessage(&ret);  // verstuur pitch en roll door naar de telemetry
-    }
-  } else if (canMsg.can_id == 0x34) {                             // CAN ID 52
-    PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]);   // byte 0-1 is int16_t amps links
-    PWM_rechts = int16_from_can(canMsg.data[2], canMsg.data[3]);  // byte 0-1 is int16_t amps rechts
-    last_Vvl_online_millis = millis();
-
-  } else if (canMsg.can_id == 0x33) {                             // CAN ID 51
-    PWM_links = int16_from_can(canMsg.data[0], canMsg.data[1]);   // byte 0-1 is int16_t PWM links
-    PWM_rechts = int16_from_can(canMsg.data[2], canMsg.data[3]);  // byte 0-1 is int16_t PWM rechts
-    has_homed_voor_vleugel = int16_from_can(canMsg.data[4], canMsg.data[5]);
-    last_Vvl_online_millis = millis();
-
-  } else if (canMsg.can_id == 0x32) {                                           // CAN ID 50
-    PWM_achter = int16_from_can(canMsg.data[0], canMsg.data[1]);                // byte 0-1 is int16_t PWM achter
-    amps_achter_vleugel = int16_from_can(canMsg.data[2], canMsg.data[3]);       // byte 2-3 is uint8_t overcurrent achter uint8_t
-    has_homed_achter_vleugel = int16_from_can(canMsg.data[4], canMsg.data[5]);  // byte 3-4 is bool has homed achtervleugel
-    last_Avl_online_millis = millis();
-  }
-}
-
-//========================================================================= send_CAN_data_telemetry ==================================================================
-
-void send_CAN_data_telemetry() {
-  P_Vvl_telemetry = constrain(P_Vvl, -12.0, 12.0) * 100.0;
-  I_Vvl_telemetry = constrain(I_Vvl, -12.0, 12.0) * 100.0;
-  D_Vvl_telemetry = constrain(D_Vvl, -12.0, 12.0) * 100.0;
-  pidVvlTotal_telemetry = constrain(pidVvlTotal, -12.0, 12.0) * 100.0;
-  P_Avl_telemetry = constrain(P_Avl, -12.0, 12.0) * 100.0;
-  I_Avl_telemetry = constrain(I_Avl, -12.0, 12.0) * 100.0;
-  D_Avl_telemetry = constrain(D_Avl, -12.0, 12.0) * 100.0;
-  pidAvlTotal_telemetry = constrain(pidAvlTotal, -12.0, 12.0) * 100.0;
-  P_Balans_telemetry = constrain(P_Balans, -5.0, 5.0) * 20.0;
-  I_Balans_telemetry = constrain(I_Balans, -5.0, 5.0) * 20.0;
-  D_Balans_telemetry = constrain(D_Balans, -5.0, 5.0) * 20.0;
-  pidBalansTotal_telemetry = constrain(pidBalansTotal, -5.0, 5.0) * 20.0;
-  distance_telemetry = constrain(Ultrasonic_Module::distance, -127, 127);
-
-  int_to_frame_thrice(P_Vvl_telemetry, I_Vvl_telemetry, D_Vvl_telemetry, pidVvlTotal_telemetry, 51, telemetry);
-  int_to_frame_thrice(P_Avl_telemetry, I_Avl_telemetry, D_Avl_telemetry, pidAvlTotal_telemetry, 52, telemetry);
-  int8_t_to_frame(P_Balans_telemetry, I_Balans_telemetry, D_Balans_telemetry, pidBalansTotal_telemetry, distance_telemetry, PID_debug_telemetry, 0, 0, 53, telemetry);
-}
-
-//========================================================================= send_CAN_data_motor ==================================================================
-
-void send_CAN_data_motor() {
-  if (!home_front_foil && !home_rear_foil && pid_actief) {
-    int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 0, 200, motor);
-    Serial.println(CAN_pulsen_achter);
-  }
-  if (home_front_foil) {
-    bool_to_frame(home_front_foil, 301, motor);
-  }
-  if (home_rear_foil) {
-    bool_to_frame(home_rear_foil, 300, motor);
-  }
-}
 
 
 //============================================================================ pidDisplay ===============================================================
@@ -875,7 +699,7 @@ void computePid_Vvl() {
     diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
 
     P_Vvl = float(kp_Vvl) * error / 100.0;  // delen door 100 om komma te besparen op het display.
-    if ((abs(PWM_links) + abs(PWM_rechts)) != 800) {
+    if ((abs(CAN_Module::PWM_links) + abs(CAN_Module::PWM_rechts)) != 800) {
       static float I_Vvl_new = 0;
       I_Vvl_new = float(ki_Vvl) * error * pidLoopTime_s / 100.0;
 
@@ -908,7 +732,7 @@ void computePid_Vvl() {
 
   //Serial.print("pidVvlTotal: ");
   //Serial.println(pidVvlTotal);
-  hoek_voor_vleugel = pidVvlTotal - pitch;
+  hoek_voor_vleugel = pidVvlTotal - CAN_Module::pitch;
   //Serial.print("hoek_voor_vleugel: ");
   //Serial.println(hoek_voor_vleugel);
   afstand_liniear = (sqrt(43.2 * 43.2 + 17.2 * 17.2 - 2 * 43.2 * 17.2 * cos((hoek_voor_vleugel + 90.0 - 3) * pi / 180.0))) - 30.55;  // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel)) wanneer vleugel 0 graden is staat deze haaks op de boot dus 90graden. -3 omdat de vleugel hoger gemonteerd zit dan de linieare motor.
@@ -917,7 +741,7 @@ void computePid_Vvl() {
   pulsen_liniear = afstand_liniear * pulsen_per_mm * 10;  // pulsen naar voorvleugel = afstand in cm maal pulsen per cm
   //Serial.print("pulsen_liniear: ");
   //Serial.println(pulsen_liniear);
-  CAN_pulsen_voor = pulsen_liniear;
+  CAN_Module::CAN_pulsen_voor = pulsen_liniear;
 }
 
 //============================================================================== compute pid achtervleugel========================================================================
@@ -939,13 +763,13 @@ void computePid_Avl() {
   pidLoopTime_ms = pidTime - lastPidTime;
   lastPidTime = pidTime;
   pidLoopTime_s = float(pidLoopTime_ms) / 1000.0;
-  error = pitch - float(setPitch) / 10.0;  // f is het zelfde als .0
+  error = CAN_Module::pitch - float(setPitch) / 10.0;  // f is het zelfde als .0
   diffError = error - oldError;
   oldError = error;
   diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
 
   P_Avl = float(kp_Avl) * error / 100.0;  // delen door 100 om komma te besparen op het display.
-  if (abs(PWM_achter) != 400) {
+  if (abs(CAN_Module::PWM_achter) != 400) {
     I_Avl = I_Avl + (float(ki_Avl) * error * pidLoopTime_s / 100.0);
   }
   D_Avl = (float(kd_Avl) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
@@ -961,10 +785,10 @@ void computePid_Avl() {
 
   pidAvlTotal = constrain(pidAvlTotal, hoek_home, 12.0);
 
-  hoek_achter_vleugel = pitch - pidAvlTotal;
+  hoek_achter_vleugel = CAN_Module::pitch - pidAvlTotal;
   pulsen_liniear = (hoek_achter_vleugel - hoek_home) * 105.595;
-  CAN_pulsen_achter = pulsen_liniear;
-  Serial.print(CAN_pulsen_achter);
+  CAN_Module::CAN_pulsen_achter = pulsen_liniear;
+  Serial.print(CAN_Module::CAN_pulsen_achter);
 }
 
 //======================================================================== PID offset ===========================================================================
@@ -985,13 +809,13 @@ void computePid_balans() {
   pidLoopTime_ms = pidTime - lastPidTime;
   lastPidTime = pidTime;
   pidLoopTime_s = float(pidLoopTime_ms) / 1000.0;
-  error = float(setRoll) / 10.0 - roll;
+  error = float(setRoll) / 10.0 - CAN_Module::roll;
   diffError = error - oldError;
   oldError = error;
   diffErrorFilter = diffErrorFilter * 0.7 + diffError * 0.3;  // filter om te voorkomen dat de D te aggrasief reageert op ruis.
 
   P_Balans = float(kp_balans) * error / 100.0;  // delen door 100 om komma te besparen op het display.
-  if ((abs(PWM_links) + abs(PWM_rechts)) != 800) {
+  if ((abs(CAN_Module::PWM_links) + abs(CAN_Module::PWM_rechts)) != 800) {
     I_Balans = I_Balans + (float(ki_balans) * error * pidLoopTime_s / 100.0);
   }
   D_Balans = (float(kd_balans) * float(diffErrorFilter) / pidLoopTime_s) / 100.0;
@@ -1009,7 +833,7 @@ void computePid_balans() {
 
   offset_voor_vleugel = pidBalansTotal;                  // offset is in mm
   pulsen_liniear = offset_voor_vleugel * pulsen_per_mm;  // mm naar pulsen
-  CAN_pulsen_offset = pulsen_liniear;
+  CAN_Module::CAN_pulsen_offset = pulsen_liniear;
 }
 
 //======================================================================= displayData ==========================================================================
@@ -1034,14 +858,14 @@ void displayData() {
   if (menu != Menu::DEBUG) {
     lcd.setCursor(16, 3);
     lcd.print(char(224));
-    if (pitch > -1 && pitch < 10) {
+    if (CAN_Module::pitch > -1 && CAN_Module::pitch < 10) {
       lcd.print F((" "));
-      if (pitch >= 0 && pitch < 1) {
+      if (CAN_Module::pitch >= 0 && CAN_Module::pitch < 1) {
         lcd.print F((" "));
       }
     }
   }
-  float pitch_display = pitch * 10;
+  float pitch_display = CAN_Module::pitch * 10;
   pitch_display = constrain(pitch_display, -99, 999);
   lcd.print(pitch_display, 0);
 
@@ -1052,7 +876,7 @@ void displayData() {
     case Menu::DEBUG:
       lcd.setCursor(13, 0);  // set curser at debug vvl place
       lcd.print F(("vvl: "));
-      if (status_Vvl) {
+      if (CAN_Module::status_Vvl) {
         lcd.write(1);
       } else {
         lcd.write(3);
@@ -1060,7 +884,7 @@ void displayData() {
 
       lcd.setCursor(13, 1);  // set curser at debug avl place
       lcd.print F(("avl: "));
-      if (status_Avl) {
+      if (CAN_Module::status_Avl) {
         lcd.write(1);
       } else {
         lcd.write(3);
@@ -1068,7 +892,7 @@ void displayData() {
 
       lcd.setCursor(6, 0);  // set curser at debug gyroscoop place
       lcd.print F(("gyro:"));
-      if (status_gryo) {
+      if (CAN_Module::status_gryo) {
         lcd.write(1);
       } else {
         lcd.write(3);
@@ -1076,7 +900,7 @@ void displayData() {
 
       lcd.setCursor(0, 1);  // set curser at debug gashendel place
       lcd.print F(("Gas:"));
-      if (status_gashendel) {
+      if (CAN_Module::status_gashendel) {
         lcd.write(1);
       } else {
         lcd.write(3);
@@ -1085,27 +909,27 @@ void displayData() {
       lcd.setCursor(9, 2);  // set curser at homing vvl place
       lcd.print F(("HomeVvl:"));
 
-      if (!home_front_foil && !has_homed_voor_vleugel) {  // if not homed
+      if (!CAN_Module::home_front_foil && !CAN_Module::has_homed_voor_vleugel) {  // if not homed
         lcd.write(3);
-      } else if (home_front_foil) {  // if homing
+      } else if (CAN_Module::home_front_foil) {  // if homing
         lcd.write(2);
-      } else if (!home_front_foil && has_homed_voor_vleugel) {  // if homed
+      } else if (!CAN_Module::home_front_foil && CAN_Module::has_homed_voor_vleugel) {  // if homed
         lcd.write(1);
       }
 
       lcd.setCursor(9, 3);  // set curser at homing vvl place
       lcd.print F(("HomeAvl:"));
-      if (!home_rear_foil && !has_homed_achter_vleugel) {  // if not homed
+      if (!CAN_Module::home_rear_foil && !CAN_Module::has_homed_achter_vleugel) {  // if not homed
         lcd.write(3);
-      } else if (home_rear_foil) {  // if homing
+      } else if (CAN_Module::home_rear_foil) {  // if homing
         lcd.write(2);
-      } else if (!home_rear_foil && has_homed_achter_vleugel) {  // if homed
+      } else if (!CAN_Module::home_rear_foil && CAN_Module::has_homed_achter_vleugel) {  // if homed
         lcd.write(1);
       }
 
       lcd.setCursor(6, 1);  // set curser at debug tempratuur sensor
       lcd.print F(("temp:"));
-      if (status_temp) {
+      if (CAN_Module::status_temp) {
         lcd.write(1);
       } else {
         lcd.write(3);
@@ -1113,7 +937,7 @@ void displayData() {
 
       lcd.setCursor(0, 3);  // status telemetrie server
       lcd.print F(("tlmWWW:"));
-      if (status_telemetrie_verbinding_server) {
+      if (CAN_Module::status_telemetrie_verbinding_server) {
         lcd.write(1);
       } else {
         lcd.write(3);
@@ -1121,7 +945,7 @@ void displayData() {
 
       lcd.setCursor(0, 2);  // status telemetrie CAN
       lcd.print F(("tlmCAN:"));
-      if (status_telemetrie_verbinding_CAN) {
+      if (CAN_Module::status_telemetrie_verbinding_CAN) {
         lcd.write(1);
       } else {
         lcd.write(3);
@@ -1317,7 +1141,7 @@ void OFF() {
   if (menu == Menu::OFF) {
     if (button_encoder_1 && buttonStateChange_enc_1) {
       pid_actief = !pid_actief;
-      PID_debug_telemetry = pid_actief;
+      CAN_Module::PID_debug_telemetry = pid_actief;
     }
     lcd.setCursor(16, 0);
     if (pid_actief) {
@@ -1336,24 +1160,24 @@ void home() {
     if (button_encoder_1 && buttonStateChange_enc_1) {
       // lcd.setCursor(0, 1);
       // lcd.print("Home voor");
-      home_front_foil = true;
+      CAN_Module::home_front_foil = true;
       pid_actief = false;
-      CAN_pulsen_voor = 0;
-      CAN_pulsen_offset = 0;
+      CAN_Module::CAN_pulsen_voor = 0;
+      CAN_Module::CAN_pulsen_offset = 0;
       last_home_time = millis();
     } else if (millis() - last_home_time > min_home_time) {
-      home_front_foil = false;
+      CAN_Module::home_front_foil = false;
     }
     if (button_encoder_1 && buttonStateChange_enc_1) {
       Serial.println("homeing");
       //lcd.setCursor(0, 2);
       //lcd.print("Home achter");
-      home_rear_foil = true;
+      CAN_Module::home_rear_foil = true;
       pid_actief = false;
-      CAN_pulsen_achter = 0;
+      CAN_Module::CAN_pulsen_achter = 0;
       last_home_time = millis();
     } else if (millis() - last_home_time > min_home_time) {
-      home_rear_foil = false;
+      CAN_Module::home_rear_foil = false;
     }
   }
 }
@@ -1491,80 +1315,4 @@ void startupMenu() {
     delay(25);
   }
   lcd.clear();
-}
-
-float float_from_can(uint8_t start_idx) {
-  byte byteVal[sizeof(float)];
-  for (uint i = 0; i < sizeof(float); i++) {
-    byteVal[i] = canMsg.data[start_idx + i];
-  }
-  float f;
-  memcpy(&f, byteVal, sizeof(float));
-  return f;
-}
-
-int16_t int16_from_can(uint8_t b1, uint8_t b2) {
-  // maakt van twee bytes een int16_t
-  int16_t ret;
-  ret = b1 | (int16_t)b2 << 8;
-  return ret;
-}
-
-can_frame int_to_frame_thrice(int16_t i16_1, int16_t i16_2, int16_t i16_3, int16_t i16_4, uint16_t can_id, CAN_netwerk CAN_controller) {
-  byte bytes[sizeof(int16_t) * 4];
-  memcpy(bytes, &i16_1, sizeof(int16_t));
-  memcpy(bytes + sizeof(int16_t), &i16_2, sizeof(int16_t));
-  memcpy(bytes + sizeof(int16_t) * 2, &i16_3, sizeof(int16_t));
-  memcpy(bytes + sizeof(int16_t) * 3, &i16_4, sizeof(int16_t));
-  can_frame ret;
-  for (uint8_t i = 0; i < sizeof(int16_t) * 4; i++) {
-    ret.data[i] = bytes[i];
-  }
-  ret.can_id = can_id;
-  ret.can_dlc = sizeof(int16_t) * 4;
-  if (CAN_controller == motor) {
-    mcp2515_motor.sendMessage(&ret);
-  } else if (CAN_controller == telemetry) {
-    mcp2515_telemetry.sendMessage(&ret);
-  }
-  return ret;
-}
-
-can_frame int8_t_to_frame(int8_t i8_1, int8_t i8_2, int8_t i8_3, int8_t i8_4, int8_t i8_5, int8_t i8_6, int8_t i8_7, int8_t i8_8, uint16_t can_id, CAN_netwerk CAN_controller) {
-  byte bytes[sizeof(int8_t) * 8];
-  memcpy(bytes, &i8_1, sizeof(int8_t));
-  memcpy(bytes + sizeof(int8_t), &i8_2, sizeof(int8_t));
-  memcpy(bytes + sizeof(int8_t) * 2, &i8_3, sizeof(int8_t));
-  memcpy(bytes + sizeof(int8_t) * 3, &i8_4, sizeof(int8_t));
-  memcpy(bytes + sizeof(int8_t) * 4, &i8_5, sizeof(int8_t));
-  memcpy(bytes + sizeof(int8_t) * 5, &i8_6, sizeof(int8_t));
-  memcpy(bytes + sizeof(int8_t) * 6, &i8_7, sizeof(int8_t));
-  memcpy(bytes + sizeof(int8_t) * 7, &i8_8, sizeof(int8_t));
-  can_frame ret;
-  for (uint8_t i = 0; i < sizeof(int8_t) * 8; i++) {
-    ret.data[i] = bytes[i];
-  }
-  ret.can_id = can_id;
-  ret.can_dlc = sizeof(int8_t) * 8;
-  if (CAN_controller == motor) {
-    mcp2515_motor.sendMessage(&ret);
-  } else if (CAN_controller == telemetry) {
-    mcp2515_telemetry.sendMessage(&ret);
-  }
-  return ret;
-}
-
-can_frame bool_to_frame(bool b, uint16_t can_id, CAN_netwerk CAN_controller) {
-  byte bytes[sizeof(bool)];
-  memcpy(bytes, &b, sizeof(bool));
-  can_frame ret;
-  for (uint8_t i = 0; i < sizeof(bool); i++) {
-    ret.data[i] = bytes[i];
-  }
-  ret.can_id = can_id;
-  ret.can_dlc = sizeof(bool);
-  if (CAN_controller == motor) {
-    mcp2515_motor.sendMessage(&ret);
-  }
-  return ret;
 }
