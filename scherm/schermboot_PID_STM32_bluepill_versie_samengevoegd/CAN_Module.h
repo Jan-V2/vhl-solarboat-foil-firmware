@@ -20,19 +20,6 @@ const uint8_t SendCanTelemetryTime = 10;         // How many milliseconds betwee
 const int16_t SendCanTelemetryTimeStatus = 450;  // iedere seconden word er een berichtje naar de telemetrie verstuurd om te laten weten dat het scherm werkt en de voo/achter vleugel
 const int16_t offline_time = 2500;               // als de voor of achtervleugel langer dan 2,5 seconden niks over de can versturen word de online status false. deze info word naar de telemetrie en scherm verstuurd
 
-float P_Vvl;               // tijdelijk voor debuggen moet uit de PID_vleugels.h komen
-float I_Vvl;               // tijdelijk voor debuggen moet uit de PID_vleugels.h komen
-float D_Vvl;               // tijdelijk voor debuggen moet uit de PID_vleugels.h komen
-float P_Avl;               // tijdelijk voor debuggen moet uit de PID_vleugels.h komen
-float I_Avl;               // tijdelijk voor debuggen moet uit de PID_vleugels.h komen
-float D_Avl;               // tijdelijk voor debuggen moet uit de PID_vleugels.h komen
-float P_Balans;            // tijdelijk voor debuggen moet uit de PID_vleugels.h komen
-float I_Balans;            // tijdelijk voor debuggen moet uit de PID_vleugels.h komen
-float D_Balans;            // tijdelijk voor debuggen moet uit de PID_vleugels.h komen
-float pidVvlTotal = 0;     // tijdelijk voor debuggen moet uit de PID_vleugels.h komen
-float pidAvlTotal = 0;     // tijdelijk voor debuggen moet uit de PID_vleugels.h komen
-float pidBalansTotal = 0;  // tijdelijk voor debuggen moet uit de PID_vleugels.h komen
-
 bool pid_actief = false;   // tijdelijk voor debuggen moet uit de Globals.h komen
 
 int16_t P_Vvl_telemetry;

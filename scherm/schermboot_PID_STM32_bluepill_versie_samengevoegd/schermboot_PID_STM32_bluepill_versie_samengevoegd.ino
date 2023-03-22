@@ -12,7 +12,7 @@
 
 
 //uint8_t controlMode = 0;          // 0 = off, 1 = manuel, 2 = Vvl, 3 = HOME, 4 = balans en 5 = Avl
-uint8_t cursorPlace = 0;  // is used to select the parameter that you want to change when in PID controlmode
+
 
 
 

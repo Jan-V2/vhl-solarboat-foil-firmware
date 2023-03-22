@@ -22,6 +22,8 @@ Menu menu;
 
 const float pi = 3.14159265359;
 
+uint8_t cursorPlace = 0;  // is used to select the parameter that you want to change when in PID controlmode
+
 // Functions have to be decalred before they can be used in another function this is called a "forward declaration"
 void computeButtonPress();
 void startupMenu();
