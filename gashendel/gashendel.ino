@@ -1,7 +1,7 @@
 #include "types.h"
 #define IDLE_TIMEOUT
 
-#define DEBUG
+//#define DEBUG
 
 // 1000 us backwards max
 // 1500 us neutral
@@ -22,7 +22,7 @@ ulong last_idle_ms = millis();
 bool is_idle = false;
 #endif
 
-const int adc_low = 420;
+const int adc_low = 460;
 const int adc_high = 900;
 const int range = adc_high - adc_low;
 const int deadzone_low = (int)((float)range * 0.05);
