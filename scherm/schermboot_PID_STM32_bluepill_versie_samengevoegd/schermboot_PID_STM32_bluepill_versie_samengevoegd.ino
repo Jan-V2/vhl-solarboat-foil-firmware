@@ -290,6 +290,7 @@ void loop() {
     computePid_Avl();
     computePid_balans();
 
+/*
     Serial.print(millis() - last_PID_compute_time);
     Serial.print(" - ");
     Serial.print(PID_compute_time);
@@ -301,6 +302,7 @@ void loop() {
     Serial.print(lastPidChangeDetection);
     Serial.print(" - ");
     Serial.println(pid_actief);
+    */
   }
 
   //================================================================== main loop display data ==========================================================================
@@ -452,7 +454,7 @@ void send_CAN_data_telemetry() {
 void send_CAN_data_motor() {
   if (!home_front_foil && !home_rear_foil && pid_actief) {
     int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 0, 200, motor);
-    Serial.println(CAN_pulsen_achter);
+    Serial.println(CAN_pulsen_voor);
   }
   if (home_front_foil) {
     bool_to_frame(home_front_foil, 301, motor);
@@ -995,7 +997,7 @@ void computePid_Avl() {
   hoek_achter_vleugel = pitch - pidAvlTotal;
   pulsen_liniear = (hoek_achter_vleugel - hoek_home) * 105.595;
   CAN_pulsen_achter = pulsen_liniear;
-  Serial.print(CAN_pulsen_achter);
+  //Serial.print(CAN_pulsen_achter);
 }
 
 //======================================================================== PID offset ===========================================================================
