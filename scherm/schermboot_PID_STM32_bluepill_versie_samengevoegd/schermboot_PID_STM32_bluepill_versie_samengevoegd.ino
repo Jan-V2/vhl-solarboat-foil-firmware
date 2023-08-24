@@ -125,6 +125,8 @@ bool buttonStateChange4 = false;       // is true if a button is recently change
 bool buttonStateChange = false;        // is true if one of of the buttons has a state change. can be used as a flag to update the screen once before the refreshDisplay counter
 bool pid_actief = false;               // PID staat uit wanneer false. kan aangepast worden in OFF controlmode 0
 
+int32_t afstand_liniear_manual = 0;
+
 byte smile_happy[8] =
 
   {
@@ -282,6 +284,7 @@ void loop() {
   }
   static uint32_t last_PID_compute_time = 0;
   static uint16_t lastPidChangeDetection = 1;
+  static uint32_t last_manual_time = 0;
   if ((((millis() - last_PID_compute_time > PID_compute_time) || newMesurement || (pidChangeDetection != lastPidChangeDetection)) && pid_actief)) {
     last_PID_compute_time = millis();
     newMesurement = false;
@@ -304,6 +307,11 @@ void loop() {
     Serial.println(pid_actief);
     */
   }
+  if(menu == Menu::MANUALLY && !pid_actief && (millis() - last_manual_time > PID_compute_time)){
+    manual();
+last_manual_time = millis();
+  }
+
 
   //================================================================== main loop display data ==========================================================================
 
@@ -452,7 +460,7 @@ void send_CAN_data_telemetry() {
 //========================================================================= send_CAN_data_motor ==================================================================
 
 void send_CAN_data_motor() {
-  if (!home_front_foil && !home_rear_foil && pid_actief) {
+  if (!home_front_foil && !home_rear_foil && (pid_actief || menu == Menu::MANUALLY)) {
     int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 0, 200, motor);
     Serial.println(CAN_pulsen_voor);
   }
@@ -733,6 +741,7 @@ void computeButtonPress() {
 
       case Menu::DEBUG:
         menu = Menu::MANUALLY;
+        afstand_liniear_manual = 0;
         break;
 
       case Menu::MANUALLY:
@@ -848,6 +857,17 @@ void computeButtonPress() {
     }
     pidChangeDetection = setDistance + cursorPlace + kp_Avl + ki_Avl + kd_Avl + setPitch + setRoll;
   }
+  else if (((buttonAll == 1) && (menu == Menu::MANUALLY)) ){
+  if ((button1 == HIGH)) {
+      afstand_liniear_manual--;
+    } else if ((button2 == HIGH)) {
+      afstand_liniear_manual++;
+    } else if ((button3 == HIGH) && (buttonStateChange3)) {  // if cursor place is at 0 change setDistance
+      afstand_liniear_manual = afstand_liniear_manual -10;
+    } else if ((button4 == HIGH) && (buttonStateChange4)) {
+      afstand_liniear_manual = afstand_liniear_manual +10;
+    }
+  }
   cursorPlace = constrain(cursorPlace, 0, 5);
   setDistance = constrain(setDistance, 0, 99);
 
@@ -864,6 +884,12 @@ void computeButtonPress() {
   kd_balans = constrain(kd_balans, 0, 999);
 
   setPitch = constrain(setPitch, -99, 999);
+}
+//======================================================================= Manual ===========================================================================================
+void manual(){
+  static uint16_t pulsen_liniear = 0;
+  pulsen_liniear = afstand_liniear_manual * pulsen_per_mm * 10;  // pulsen naar voorvleugel = afstand in cm maal pulsen per cm
+  CAN_pulsen_voor = pulsen_liniear;
 }
 
 //======================================================================= computeDistance ==========================================================================
@@ -1082,6 +1108,12 @@ void displayData() {
       /*
     online status: vvl & avl controller & homed?, gyroscoop, telemetrie en telemetrie online, gashendel en temperatuursensor
     */
+    case Menu::MANUALLY:
+      lcd.setCursor(1, 1);
+      lcd.print F(afstand_liniear_manual);
+      lcd.print F(" mm  ");     
+      break;
+    
     case Menu::DEBUG:
       lcd.setCursor(13, 0);  // set curser at debug vvl place
       lcd.print F(("vvl: "));
