@@ -125,7 +125,8 @@ bool buttonStateChange4 = false;       // is true if a button is recently change
 bool buttonStateChange = false;        // is true if one of of the buttons has a state change. can be used as a flag to update the screen once before the refreshDisplay counter
 bool pid_actief = false;               // PID staat uit wanneer false. kan aangepast worden in OFF controlmode 0
 
-int32_t afstand_liniear_manual = 0;
+int32_t hoek_voor_vleugel_manual = 0;
+bool man_actief = false;
 
 byte smile_happy[8] =
 
@@ -460,7 +461,7 @@ void send_CAN_data_telemetry() {
 //========================================================================= send_CAN_data_motor ==================================================================
 
 void send_CAN_data_motor() {
-  if (!home_front_foil && !home_rear_foil && (pid_actief || menu == Menu::MANUALLY)) {
+  if (!home_front_foil && !home_rear_foil && (pid_actief || man_actief)) {
     int_to_frame_thrice(CAN_pulsen_voor, CAN_pulsen_offset, CAN_pulsen_achter, 0, 200, motor);
     Serial.println(CAN_pulsen_voor);
   }
@@ -741,7 +742,7 @@ void computeButtonPress() {
 
       case Menu::DEBUG:
         menu = Menu::MANUALLY;
-        afstand_liniear_manual = 0;
+        hoek_voor_vleugel_manual = 0;
         break;
 
       case Menu::MANUALLY:
@@ -859,14 +860,15 @@ void computeButtonPress() {
   }
   else if (((buttonAll == 1) && (menu == Menu::MANUALLY)) ){
   if ((button1 == HIGH)) {
-      afstand_liniear_manual--;
+      hoek_voor_vleugel_manual = hoek_voor_vleugel_manual - 0.1;
     } else if ((button2 == HIGH)) {
-      afstand_liniear_manual++;
+      hoek_voor_vleugel_manual = hoek_voor_vleugel_manual + 0.1;
     } else if ((button3 == HIGH) && (buttonStateChange3)) {  // if cursor place is at 0 change setDistance
-      afstand_liniear_manual = afstand_liniear_manual -10;
+      hoek_voor_vleugel_manual--;
     } else if ((button4 == HIGH) && (buttonStateChange4)) {
-      afstand_liniear_manual = afstand_liniear_manual +10;
-    }
+      hoek_voor_vleugel_manual++;
+    } else if (button_encoder_1 && buttonStateChange_enc_1) {
+      man_actief = !man_actief;}
   }
   cursorPlace = constrain(cursorPlace, 0, 5);
   setDistance = constrain(setDistance, 0, 99);
@@ -888,7 +890,9 @@ void computeButtonPress() {
 //======================================================================= Manual ===========================================================================================
 void manual(){
   static uint16_t pulsen_liniear = 0;
-  pulsen_liniear = afstand_liniear_manual * pulsen_per_mm * 10;  // pulsen naar voorvleugel = afstand in cm maal pulsen per cm
+  static float afstand_liniear = 0;
+  afstand_liniear = (sqrt(43.2 * 43.2 + 17.2 * 17.2 - 2 * 43.2 * 17.2 * cos((hoek_voor_vleugel_manual + 90.0 - 3) * pi / 180.0))) - 30.55;  // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel)) wanneer vleugel 0 graden is staat deze haaks op de boot dus 90graden. -3 omdat de vleugel hoger gemonteerd zit dan de linieare motor.
+  pulsen_liniear = afstand_liniear * pulsen_per_mm * 10;  // pulsen naar voorvleugel = afstand in cm maal pulsen per cm
   CAN_pulsen_voor = pulsen_liniear;
 }
 
@@ -1109,9 +1113,17 @@ void displayData() {
     online status: vvl & avl controller & homed?, gyroscoop, telemetrie en telemetrie online, gashendel en temperatuursensor
     */
     case Menu::MANUALLY:
-      lcd.setCursor(1, 1);
-      lcd.print F(afstand_liniear_manual);
-      lcd.print F(" mm  ");     
+    lcd.setCursor(1, 1);
+    if(man_actief){
+      lcd.print F(("manual on "));
+    }else {
+      lcd.print F(("manual off"));
+    }
+      lcd.setCursor(1, 2);
+      lcd.print F(("VVL "));  
+      lcd.print F(char(224));
+      lcd.print F((hoek_voor_vleugel_manual));
+      lcd.print F((" mm  "));     
       break;
     
     case Menu::DEBUG:
@@ -1401,6 +1413,7 @@ void home() {
       // lcd.print("Home voor");
       home_front_foil = true;
       pid_actief = false;
+      man_actief = false;
       CAN_pulsen_voor = 0;
       CAN_pulsen_offset = 0;
       last_home_time = millis();
@@ -1413,6 +1426,7 @@ void home() {
       //lcd.print("Home achter");
       home_rear_foil = true;
       pid_actief = false;
+      man_actief = false;
       CAN_pulsen_achter = 0;
       last_home_time = millis();
     } else if (millis() - last_home_time > min_home_time) {
