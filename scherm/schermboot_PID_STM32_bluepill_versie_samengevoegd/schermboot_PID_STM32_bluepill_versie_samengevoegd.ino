@@ -125,8 +125,9 @@ bool buttonStateChange4 = false;       // is true if a button is recently change
 bool buttonStateChange = false;        // is true if one of of the buttons has a state change. can be used as a flag to update the screen once before the refreshDisplay counter
 bool pid_actief = false;               // PID staat uit wanneer false. kan aangepast worden in OFF controlmode 0
 
-int32_t hoek_voor_vleugel_manual = 0;
+float hoek_voor_vleugel_manual = 0;
 bool man_actief = false;
+//int32_t afstand_liniear_manual;
 
 byte smile_happy[8] =
 
@@ -860,13 +861,13 @@ void computeButtonPress() {
   }
   else if (((buttonAll == 1) && (menu == Menu::MANUALLY)) ){
   if ((button1 == HIGH)) {
-      hoek_voor_vleugel_manual = hoek_voor_vleugel_manual - 0.1;
+      hoek_voor_vleugel_manual--; 
     } else if ((button2 == HIGH)) {
-      hoek_voor_vleugel_manual = hoek_voor_vleugel_manual + 0.1;
+      hoek_voor_vleugel_manual++ ;
     } else if ((button3 == HIGH) && (buttonStateChange3)) {  // if cursor place is at 0 change setDistance
-      hoek_voor_vleugel_manual--;
+      hoek_voor_vleugel_manual= hoek_voor_vleugel_manual - 10;
     } else if ((button4 == HIGH) && (buttonStateChange4)) {
-      hoek_voor_vleugel_manual++;
+      hoek_voor_vleugel_manual= hoek_voor_vleugel_manual + 10;
     } else if (button_encoder_1 && buttonStateChange_enc_1) {
       man_actief = !man_actief;}
   }
@@ -891,9 +892,10 @@ void computeButtonPress() {
 void manual(){
   static uint16_t pulsen_liniear = 0;
   static float afstand_liniear = 0;
-  afstand_liniear = (sqrt(43.2 * 43.2 + 17.2 * 17.2 - 2 * 43.2 * 17.2 * cos((hoek_voor_vleugel_manual + 90.0 - 3) * pi / 180.0))) - 30.55;  // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel)) wanneer vleugel 0 graden is staat deze haaks op de boot dus 90graden. -3 omdat de vleugel hoger gemonteerd zit dan de linieare motor.
+  afstand_liniear = (sqrt(43.2 * 43.2 + 17.2 * 17.2 - 2 * 43.2 * 17.2 * cos((hoek_voor_vleugel_manual/10 + 90.0 - 3) * pi / 180.0))) - 30.55;  // lengte linieare motor in cm is wortel(b^2+c^2 - 2*b*c*cos(hoek vleugel)) wanneer vleugel 0 graden is staat deze haaks op de boot dus 90graden. -3 omdat de vleugel hoger gemonteerd zit dan de linieare motor.
   pulsen_liniear = afstand_liniear * pulsen_per_mm * 10;  // pulsen naar voorvleugel = afstand in cm maal pulsen per cm
   CAN_pulsen_voor = pulsen_liniear;
+  //afstand_liniear_manual = afstand_liniear;
 }
 
 //======================================================================= computeDistance ==========================================================================
@@ -1121,9 +1123,9 @@ void displayData() {
     }
       lcd.setCursor(1, 2);
       lcd.print F(("VVL "));  
-      lcd.print F(char(224));
-      lcd.print F((hoek_voor_vleugel_manual));
-      lcd.print F((" mm  "));     
+      lcd.print(char(224));
+      lcd.print (hoek_voor_vleugel_manual/10);
+      lcd.print F(("    "));     
       break;
     
     case Menu::DEBUG:
